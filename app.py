@@ -10,7 +10,7 @@ app = Flask(__name__)
 def webhook():
     if request.method == 'POST':
         try:
-            repo = git.Repo("ChatProject")
+            repo = git.Repo("chat")
             origin = repo.remotes.origin
             origin.pull()
             return 'Updated PythonAnywhere successfully', 200
@@ -21,4 +21,4 @@ def webhook():
 
 @app.route('/')
 def hello_world():
-    return 'Hello from Flask!'
+    return 'Hello from Flask!1'
