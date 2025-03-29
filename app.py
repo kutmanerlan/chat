@@ -21,4 +21,4 @@ def webhook():
 
 @app.route('/')
 def hello_world():
-    return 'Hello from Flask!3'
+    return 'Chat is running!'
