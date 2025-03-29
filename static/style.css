@@ -1,0 +1,166 @@
+body {
+    font-family: Arial, sans-serif;
+    background-color: #393737; /* фон всей страницы */
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    height: 100vh;
+    margin: 0;
+}
+
+.login-container {
+    background-color: #1b1919; /* фон окна */
+    padding: 30px;
+    border-radius: 8px;
+    box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+    width: 300px;
+    text-align: center;
+}
+
+h1 {
+    margin-top: 0;
+    margin-bottom: 25px;
+    font-size: 24px;
+    color: #f4f4f4; /* цвет текста */
+}
+
+.input-group {
+    margin-bottom: 20px;
+    text-align: left;
+}
+
+label {
+    display: block;
+    margin-bottom: 5px;
+    font-weight: bold;
+    color: #474747; /* цвет текста */
+}
+
+input {
+    width: 100%;
+    padding: 10px;
+    border: 1px solid #474747;
+    border-radius: 4px;
+    box-sizing: border-box;
+    background-color: #1b1919;
+    color: #f4f4f4; /* текст внутри полей */
+}
+
+input::placeholder {
+    color: #6b6b6b;
+}
+
+button {
+    width: 100%;
+    padding: 12px;
+    background-color: #6b6b6b; /* цвет кнопки */
+    color: #f4f4f4; /* текст на кнопке */
+    border: none;
+    border-radius: 4px;
+    font-size: 16px;
+    cursor: pointer;
+    margin-bottom: 15px;
+}
+
+button:hover {
+    background-color: #5a5a5a;
+}
+
+.footer {
+    font-size: 12px;
+    color: #474747; /* цвет текста */
+    margin-top: 10px;
+}
+
+.footer a {
+    color: #6b6b6b;
+    text-decoration: none;
+}
+
+.footer a:hover {
+    text-decoration: underline;
+}
+
+/* Остальной код остается без изменений */
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+body {
+    font-family: Arial, sans-serif;
+    background-color: #100E0E;
+    color: #fff;
+    display: flex;
+}
+
+.sidebar {
+    width: 320px;
+    height: 100vh;
+    background-color: #1c1c1c;
+    padding: 15px;
+    display: flex;
+    flex-direction: column;
+}
+
+.top-bar {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.menu-btn {
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+    align-items: center;
+    width: 12px;
+    height: 10px;
+    background-color: transparent;
+    border: none;
+    padding: 0;
+    margin: 0;
+    cursor: pointer;
+    outline: none;
+}
+
+.menu-btn:focus,
+.menu-btn:active {
+    outline: none;
+    box-shadow: none;
+}
+
+.menu-btn span {
+    display: block;
+    width: 100%;
+    height: 2px;
+    background-color: white;
+    border-radius: 1px;
+}
+
+#searchInput {
+    flex-grow: 1;
+    height: 32px;
+    padding: 0 12px;
+    border: none;
+    border-radius: 16px;
+    background-color: #100E0E;
+    color: #fff;
+    font-size: 14px;
+    outline: none;
+}
+
+#searchInput:focus {
+    outline: none;
+    box-shadow: none;
+}
+
+#searchInput::placeholder {
+    color: #aaa;
+}
+
+.main-content {
+    flex-grow: 1;
+    background-color: #000;
+}
