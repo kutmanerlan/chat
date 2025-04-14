@@ -104,39 +104,43 @@ def login():
 @app.route('/register', methods=['GET', 'POST'])
 def register():
     if request.method == 'POST':
-        name = request.form['name']
-        email = request.form['email']
-        password = request.form['password']
-        
-        # Проверка существования пользователя
-        existing_user = User.query.filter_by(email=email).first()
-        if existing_user:
-            flash('Пользователь с таким email уже зарегистрирован', 'error')
-            return redirect(url_for('register'))
-        
-        # Проверка валидности email
-        if not is_email_valid(email):
-            flash('Указан некорректный email адрес', 'error')
-            return redirect(url_for('register'))
-        
-        # Генерация токена для подтверждения
-        confirmation_token = generate_confirmation_token()
-        token_expiration = datetime.datetime.now() + datetime.timedelta(days=1)
-        
-        # Хеширование пароля (убедитесь, что у вас импортирован werkzeug.security)
-        hashed_password = generate_password_hash(password)
-        
-        # Создание нового пользователя
-        new_user = User(
-            name=name,
-            email=email,
-            password=hashed_password,
-            email_confirmed=False,
-            confirmation_token=confirmation_token,
-            token_expiration=token_expiration
-        )
-        
         try:
+            name = request.form['name']
+            email = request.form['email']
+            password = request.form['password']
+            
+            logging.info(f"Попытка регистрации пользователя с email: {email}")
+            
+            # Проверка существования пользователя
+            existing_user = User.query.filter_by(email=email).first()
+            if existing_user:
+                flash('Пользователь с таким email уже зарегистрирован', 'error')
+                return redirect(url_for('register'))
+            
+            # Проверка валидности email
+            if not is_email_valid(email):
+                flash('Указан некорректный email адрес', 'error')
+                return redirect(url_for('register'))
+            
+            # Генерация токена для подтверждения
+            confirmation_token = generate_confirmation_token()
+            token_expiration = datetime.datetime.now() + datetime.timedelta(days=1)
+            
+            # Хеширование пароля
+            hashed_password = generate_password_hash(password)
+            
+            # Создание нового пользователя
+            new_user = User(
+                name=name,
+                email=email,
+                password=hashed_password,
+                email_confirmed=False,
+                confirmation_token=confirmation_token,
+                token_expiration=token_expiration
+            )
+            
+            logging.info("Сохранение нового пользователя в базу данных")
+            
             db.session.add(new_user)
             db.session.commit()
             
@@ -148,6 +152,7 @@ def register():
                 
         except Exception as e:
             db.session.rollback()
+            logging.error(f"Ошибка при регистрации: {str(e)}")
             flash(f'Ошибка при создании аккаунта: {str(e)}', 'error')
         
         return redirect(url_for('login'))

@@ -6,10 +6,12 @@ import datetime
 from flask import url_for
 import re
 import os
+import uuid
+import logging
 
 def generate_confirmation_token():
     """Генерирует уникальный токен для подтверждения email"""
-    return secrets.token_urlsafe(32)
+    return str(uuid.uuid4())
 
 def send_confirmation_email(user_email, token):
     """Отправка письма с подтверждением на email пользователя"""
@@ -69,10 +71,10 @@ def send_confirmation_email(user_email, token):
         server.quit()
         return True
     except Exception as e:
-        print(f"Ошибка отправки email: {e}")
+        logging.error(f"Ошибка отправки email: {e}")
         return False
 
 def is_email_valid(email):
     """Простая проверка формата email"""
-    pattern = r'^[\w\.-]+@[\w\.-]+\.\w+$'
-    return bool(re.match(pattern, email))
+    pattern = r"^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$"
+    return re.match(pattern, email) is not None
