@@ -2,6 +2,7 @@ from flask import Flask, json, request, render_template, redirect, url_for, flas
 from flask_sqlalchemy import SQLAlchemy
 import logging
 import os
+from werkzeug.security import generate_password_hash, check_password_hash
 from email_utils import generate_confirmation_token, send_confirmation_email, is_email_valid
 import datetime
 
@@ -94,7 +95,7 @@ def login():
         if check_password_hash(user.password, password):
             # Успешная авторизация
             session['user_id'] = user.id
-            return redirect(url_for('index'))
+            return redirect(url_for('main'))
         else:
             flash('Неверный пароль', 'error')
             

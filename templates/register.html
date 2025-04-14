@@ -44,7 +44,31 @@
             {% endif %}
         {% endwith %}
         
-        <!-- ...existing code... -->
+        <form method="POST" action="{{ url_for('register') }}">
+            <div class="input-group">
+                <label for="name">Имя пользователя</label>
+                <input type="text" id="name" name="name" placeholder="Введите имя" required>
+            </div>
+            
+            <div class="input-group">
+                <label for="email">Email адрес</label>
+                <input type="email" id="email" name="email" placeholder="Введите email" required>
+            </div>
+            
+            <div class="input-group">
+                <label for="password">Пароль</label>
+                <input type="password" id="password" name="password" placeholder="Пароль" required>
+            </div>
+            
+            <div class="divider"></div>
+            
+            <button type="submit">Зарегистрироваться</button>
+        </form>
+        
+        <div class="footer">
+            <a href="{{ url_for('login') }}">Уже есть аккаунт? Войти</a><br>
+            вер. 0.0.0 (демо)
+        </div>
     </div>
 </body>
 </html>
