@@ -92,9 +92,11 @@ def login():
             flash('Пожалуйста, подтвердите ваш email перед входом в систему', 'error')
             return redirect(url_for('login'))
         
-        if check_password_hash(user.password, password):
+        # Исправление: используем правильный метод проверки пароля
+        if user.check_password(password):
             # Успешная авторизация
             session['user_id'] = user.id
+            session['user_name'] = user.name  # Добавляем имя в сессию
             return redirect(url_for('main'))
         else:
             flash('Неверный пароль', 'error')
@@ -113,7 +115,7 @@ def register():
             
             # Проверка существования пользователя
             existing_user = User.query.filter_by(email=email).first()
-            if existing_user:
+            if (existing_user):
                 flash('Пользователь с таким email уже зарегистрирован', 'error')
                 return redirect(url_for('register'))
             
@@ -126,18 +128,14 @@ def register():
             confirmation_token = generate_confirmation_token()
             token_expiration = datetime.datetime.now() + datetime.timedelta(days=1)
             
-            # Хеширование пароля
-            hashed_password = generate_password_hash(password)
-            
             # Создание нового пользователя
             new_user = User(
                 name=name,
                 email=email,
-                password=hashed_password,
-                email_confirmed=False,
-                confirmation_token=confirmation_token,
-                token_expiration=token_expiration
             )
+            
+            # Устанавливаем пароль правильно через метод
+            new_user.set_password(password)
             
             logging.info("Сохранение нового пользователя в базу данных")
             
