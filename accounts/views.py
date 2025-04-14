@@ -1,11 +1,18 @@
-# ...existing code...
+from django.contrib.auth.models import User
+from django.shortcuts import render, redirect
 
-# Find the part where you create a new user, it probably looks something like this:
-# user = User(username=username, password=password, email=email)  # This is the incorrect line
-
-# Replace it with:
-user = User(username=username, email=email)  # Remove password from constructor
-user.set_password(password)  # Set password properly using this method
-user.save()
-
-# ...existing code...
+def register(request):
+    if request.method == 'POST':
+        username = request.POST.get('username')
+        email = request.POST.get('email')
+        password = request.POST.get('password')
+        
+        # Create user correctly
+        user = User.objects.create_user(username=username, email=email, password=password)
+        # The create_user method handles password hashing internally
+        
+        # ... rest of your code (login, redirect, etc.) ...
+        
+        return redirect('login')  # or wherever you want to redirect after registration
+    
+    return render(request, 'accounts/register.html')  # your registration template
