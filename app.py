@@ -214,6 +214,15 @@ def logout():
 def main():
     if 'user_id' not in session:
         return redirect(url_for('login'))
+    
+    # Проверяем, существует ли пользователь в базе данных
+    user = User.query.get(session['user_id'])
+    if user is None:
+        # Пользователь не найден в базе, очищаем сессию
+        session.clear()
+        flash('Ваша сессия была завершена, так как пользователь не найден в базе данных', 'info')
+        return redirect(url_for('login'))
+    
     return render_template('main.html')
 
 # Добавим маршрут для проверки работоспособности
