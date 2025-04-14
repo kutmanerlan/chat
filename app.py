@@ -21,4 +21,4 @@ def webhook():
 
 @app.route('/')
 def hello_world():
-    return 'Chat is running!'
+    return 'Chat is running'
