@@ -14,10 +14,15 @@ except ImportError:
 # Настройка логирования
 logging.basicConfig(level=logging.DEBUG)
 
+# Убедитесь, что директория instance существует
+basedir = os.path.abspath(os.path.dirname(__file__))
+instance_path = os.path.join(basedir, 'instance')
+os.makedirs(instance_path, exist_ok=True)
+
 # Инициализация приложения Flask
 app = Flask(__name__)
 app.config['SECRET_KEY'] = 'ваш_секретный_ключ'  # Измените это в продакшне
-app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///instance/chat.db'
+app.config['SQLALCHEMY_DATABASE_URI'] = f'sqlite:///{os.path.join(instance_path, "chat.db")}'
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 
 # Инициализация базы данных
@@ -26,18 +31,21 @@ db.init_app(app)
 
 # Функция для создания таблиц базы данных
 def create_tables():
-    db.create_all()
-    # Создаем тестового пользователя, если его нет
-    if not User.query.filter_by(email='test@example.com').first():
-        test_user = User(name='Test User', email='test@example.com')
-        test_user.set_password('password123')
-        db.session.add(test_user)
-        try:
-            db.session.commit()
-            logging.info('Тестовый пользователь создан')
-        except Exception as e:
-            db.session.rollback()
-            logging.error(f'Ошибка при создании тестового пользователя: {str(e)}')
+    try:
+        db.create_all()
+        # Создаем тестового пользователя, если его нет
+        if not User.query.filter_by(email='test@example.com').first():
+            test_user = User(name='Test User', email='test@example.com')
+            test_user.set_password('password123')
+            db.session.add(test_user)
+            try:
+                db.session.commit()
+                logging.info('Тестовый пользователь создан')
+            except Exception as e:
+                db.session.rollback()
+                logging.error(f'Ошибка при создании тестового пользователя: {str(e)}')
+    except Exception as e:
+        logging.error(f'Ошибка при создании таблиц базы данных: {str(e)}')
 
 # Маршруты для автообновления PythonAnywhere
 @app.route('/update_server', methods=['POST'])
@@ -120,9 +128,6 @@ def main():
     return render_template('main.html')
 
 if __name__ == '__main__':
-    # Убедитесь, что директория instance существует
-    os.makedirs('instance', exist_ok=True)
-    
     # Инициализация базы данных в контексте приложения
     with app.app_context():
         create_tables()
