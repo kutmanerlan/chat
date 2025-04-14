@@ -29,11 +29,13 @@ app.config['SQLALCHEMY_DATABASE_URI'] = f'sqlite:///{os.path.join(instance_path,
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 
 # Добавляем SERVER_NAME для правильной генерации URL в письмах
-# В продакшене укажите фактический домен вашего сайта
+# НЕ ИСПОЛЬЗУЙТЕ SERVER_NAME для работы с PythonAnywhere
 if os.environ.get('FLASK_ENV') == 'production':
-    app.config['SERVER_NAME'] = 'ваш-домен.com'  # для продакшена
+    # Не устанавливаем SERVER_NAME для продакшена
+    pass
 else:
-    app.config['SERVER_NAME'] = 'localhost:5000'  # для разработки
+    # Не устанавливаем SERVER_NAME для разработки
+    pass
 
 # Инициализация базы данных
 from models.user import db, User
@@ -69,7 +71,9 @@ def webhook():
             return 'Git module not available', 500
         
         try:
-            repo = git.Repo("chat")
+            # Используем абсолютный путь или более надежный относительный путь
+            repo_path = os.path.abspath(os.path.dirname(__file__))
+            repo = git.Repo(repo_path)
             origin = repo.remotes.origin
             origin.pull()
             return 'Updated PythonAnywhere successfully', 200
@@ -212,6 +216,11 @@ def main():
         return redirect(url_for('login'))
     return render_template('main.html')
 
+# Добавим маршрут для проверки работоспособности
+@app.route('/ping')
+def ping():
+    return 'pong'
+
 if __name__ == '__main__':
     # Инициализация базы данных в контексте приложения
     with app.app_context():
@@ -222,3 +231,21 @@ if __name__ == '__main__':
     
     # Устанавливаем host='0.0.0.0', чтобы приложение было доступно извне
     app.run(debug=True, host='0.0.0.0')
+else:
+    # Для запуска через WSGI (PythonAnywhere)
+    try:
+        with app.app_context():
+            logging.basicConfig(filename='/tmp/flask_app_error.log', level=logging.DEBUG)
+            logging.info("Запускаем приложение через WSGI")
+            try:
+                # Проверяем существование таблиц и создаем если нужно
+                if not db.engine.dialect.has_table(db.engine, 'user'):
+                    create_tables()
+                logging.info("Приложение успешно запущено на PythonAnywhere")
+            except Exception as e:
+                logging.error(f"Ошибка при запуске приложения: {str(e)}")
+    except Exception as e:
+        import traceback
+        with open('/tmp/flask_startup_error.log', 'w') as f:
+            f.write(f"Критическая ошибка: {str(e)}\n")
+            f.write(traceback.format_exc())
