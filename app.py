@@ -35,7 +35,10 @@ db.init_app(app)
 # Функция для создания таблиц базы данных
 def create_tables():
     try:
+        # Удаляем существующие таблицы перед созданием новых
+        db.drop_all()  # Добавляем эту строку для пересоздания таблиц
         db.create_all()
+        
         # Создаем тестового пользователя, если его нет
         if not User.query.filter_by(email='test@example.com').first():
             test_user = User(name='Test User', email='test@example.com')
@@ -115,7 +118,7 @@ def register():
             
             # Проверка существования пользователя
             existing_user = User.query.filter_by(email=email).first()
-            if (existing_user):
+            if existing_user:
                 flash('Пользователь с таким email уже зарегистрирован', 'error')
                 return redirect(url_for('register'))
             
@@ -132,6 +135,9 @@ def register():
             new_user = User(
                 name=name,
                 email=email,
+                email_confirmed=False,
+                confirmation_token=confirmation_token,
+                token_expiration=token_expiration
             )
             
             # Устанавливаем пароль правильно через метод
