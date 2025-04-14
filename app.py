@@ -2,7 +2,14 @@ from flask import Flask, json, request, render_template, redirect, url_for, flas
 from flask_sqlalchemy import SQLAlchemy
 import logging
 import os
-import git
+
+# Try to import git, but continue if it's not available
+git_available = False
+try:
+    import git
+    git_available = True
+except ImportError:
+    logging.warning("GitPython not installed. To use Git functionality, install with: pip install GitPython")
 
 # Настройка логирования
 logging.basicConfig(level=logging.DEBUG)
@@ -17,15 +24,29 @@ app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 from models.user import db, User
 db.init_app(app)
 
-# Создание таблиц базы данных
-@app.before_first_request
+# Функция для создания таблиц базы данных
 def create_tables():
     db.create_all()
+    # Создаем тестового пользователя, если его нет
+    if not User.query.filter_by(email='test@example.com').first():
+        test_user = User(name='Test User', email='test@example.com')
+        test_user.set_password('password123')
+        db.session.add(test_user)
+        try:
+            db.session.commit()
+            logging.info('Тестовый пользователь создан')
+        except Exception as e:
+            db.session.rollback()
+            logging.error(f'Ошибка при создании тестового пользователя: {str(e)}')
 
 # Маршруты для автообновления PythonAnywhere
 @app.route('/update_server', methods=['POST'])
 def webhook():
     if request.method == 'POST':
+        if not git_available:
+            logging.error("Git functionality unavailable. Install GitPython with: pip install GitPython")
+            return 'Git module not available', 500
+        
         try:
             repo = git.Repo("chat")
             origin = repo.remotes.origin
@@ -99,4 +120,12 @@ def main():
     return render_template('main.html')
 
 if __name__ == '__main__':
-    app.run(debug=True)
+    # Убедитесь, что директория instance существует
+    os.makedirs('instance', exist_ok=True)
+    
+    # Инициализация базы данных в контексте приложения
+    with app.app_context():
+        create_tables()
+    
+    # Устанавливаем host='0.0.0.0', чтобы приложение было доступно извне
+    app.run(debug=True, host='0.0.0.0')
