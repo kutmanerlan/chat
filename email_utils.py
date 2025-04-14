@@ -16,11 +16,15 @@ def generate_confirmation_token():
 def send_confirmation_email(user_email, token):
     """Отправка письма с подтверждением на email пользователя"""
     
-    # Настройки для SMTP-сервера (лучше хранить в переменных окружения)
-    SMTP_SERVER = os.environ.get("SMTP_SERVER", "smtp.gmail.com")
-    SMTP_PORT = int(os.environ.get("SMTP_PORT", "587"))
-    SENDER_EMAIL = os.environ.get("SENDER_EMAIL", "your_email@gmail.com")
-    SENDER_PASSWORD = os.environ.get("SENDER_PASSWORD", "your_password")
+    # Gmail SMTP настройки
+    SMTP_SERVER = "smtp.gmail.com"
+    SMTP_PORT = 587
+    SENDER_EMAIL = "erlan310706@gmail.com"  # Замените на ваш реальный Gmail
+    SENDER_PASSWORD = "srtf zqdd qkzb diaz"  # 16-символьный пароль приложения
+    USE_SSL = False  # Для Gmail с портом 587 используем TLS, а не SSL
+    
+    # Настройка логирования для отладки
+    logging.info(f"Попытка отправки email на адрес: {user_email}")
     
     # Настройка сообщения
     message = MIMEMultipart("alternative")
@@ -29,6 +33,7 @@ def send_confirmation_email(user_email, token):
     message["To"] = user_email
     
     # Создаем ссылку для подтверждения
+    # Используем SERVER_NAME из конфигурации Flask, если он установлен
     confirmation_url = url_for('confirm_email', token=token, _external=True)
     
     # Формируем тело письма
@@ -63,15 +68,32 @@ def send_confirmation_email(user_email, token):
     message.attach(part2)
     
     try:
-        # Соединение с SMTP-сервером и отправка сообщения
-        server = smtplib.SMTP(SMTP_SERVER, SMTP_PORT)
-        server.starttls()
+        logging.info(f"Подключение к SMTP-серверу: {SMTP_SERVER}:{SMTP_PORT}")
+        
+        # Используем правильный способ подключения в зависимости от настроек
+        if USE_SSL:
+            server = smtplib.SMTP_SSL(SMTP_SERVER, SMTP_PORT)
+        else:
+            server = smtplib.SMTP(SMTP_SERVER, SMTP_PORT)
+            server.starttls()
+        
+        logging.info("Аутентификация на SMTP-сервере")
         server.login(SENDER_EMAIL, SENDER_PASSWORD)
+        
+        logging.info("Отправка сообщения")
         server.sendmail(SENDER_EMAIL, user_email, message.as_string())
         server.quit()
+        
+        logging.info("Email успешно отправлен")
         return True
     except Exception as e:
-        logging.error(f"Ошибка отправки email: {e}")
+        logging.error(f"Ошибка отправки email: {str(e)}")
+        # Более подробное логирование для диагностики
+        if "authentication failed" in str(e).lower():
+            logging.error("Ошибка аутентификации: проверьте логин и пароль")
+        elif "timed out" in str(e).lower():
+            logging.error("Превышено время ожидания: проверьте настройки сервера и сетевое подключение")
+        
         return False
 
 def is_email_valid(email):

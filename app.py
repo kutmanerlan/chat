@@ -28,6 +28,13 @@ app.config['SECRET_KEY'] = 'ваш_секретный_ключ'  # Измени�
 app.config['SQLALCHEMY_DATABASE_URI'] = f'sqlite:///{os.path.join(instance_path, "chat.db")}'
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 
+# Добавляем SERVER_NAME для правильной генерации URL в письмах
+# В продакшене укажите фактический домен вашего сайта
+if os.environ.get('FLASK_ENV') == 'production':
+    app.config['SERVER_NAME'] = 'ваш-домен.com'  # для продакшена
+else:
+    app.config['SERVER_NAME'] = 'localhost:5000'  # для разработки
+
 # Инициализация базы данных
 from models.user import db, User
 db.init_app(app)
@@ -149,9 +156,11 @@ def register():
             db.session.commit()
             
             # Отправка письма с подтверждением
-            if send_confirmation_email(email, confirmation_token):
+            result = send_confirmation_email(email, confirmation_token)
+            if result:
                 flash('Регистрация прошла успешно! Пожалуйста, проверьте ваш email для подтверждения аккаунта', 'success')
             else:
+                logging.error(f"Не удалось отправить email на адрес {email}")
                 flash('Возникла ошибка при отправке email. Пожалуйста, свяжитесь с администратором', 'error')
                 
         except Exception as e:
@@ -207,6 +216,9 @@ if __name__ == '__main__':
     # Инициализация базы данных в контексте приложения
     with app.app_context():
         create_tables()
+    
+    # Временно отключаем SERVER_NAME для локального запуска
+    app.config.pop('SERVER_NAME', None)
     
     # Устанавливаем host='0.0.0.0', чтобы приложение было доступно извне
     app.run(debug=True, host='0.0.0.0')
