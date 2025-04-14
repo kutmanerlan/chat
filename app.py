@@ -2,6 +2,8 @@ from flask import Flask, json, request, render_template, redirect, url_for, flas
 from flask_sqlalchemy import SQLAlchemy
 import logging
 import os
+from email_utils import generate_confirmation_token, send_confirmation_email, is_email_valid
+import datetime
 
 # Try to import git, but continue if it's not available
 git_available = False
@@ -76,44 +78,108 @@ def hello_world():
 @app.route('/login', methods=['GET', 'POST'])
 def login():
     if request.method == 'POST':
-        email = request.form.get('email')
-        password = request.form.get('password')
+        email = request.form['email']
+        password = request.form['password']
         
         user = User.query.filter_by(email=email).first()
         
-        if user and user.check_password(password):
+        if not user:
+            flash('Пользователь с таким email не найден', 'error')
+            return redirect(url_for('login'))
+        
+        if not user.email_confirmed:
+            flash('Пожалуйста, подтвердите ваш email перед входом в систему', 'error')
+            return redirect(url_for('login'))
+        
+        if check_password_hash(user.password, password):
+            # Успешная авторизация
             session['user_id'] = user.id
-            session['user_name'] = user.name
-            return redirect(url_for('main'))
+            return redirect(url_for('index'))
         else:
-            flash('Неверный email или пароль')
-    
+            flash('Неверный пароль', 'error')
+            
     return render_template('login.html')
 
 @app.route('/register', methods=['GET', 'POST'])
 def register():
     if request.method == 'POST':
-        name = request.form.get('name')
-        email = request.form.get('email')
-        password = request.form.get('password')
+        name = request.form['name']
+        email = request.form['email']
+        password = request.form['password']
         
         # Проверка существования пользователя
         existing_user = User.query.filter_by(email=email).first()
         if existing_user:
-            flash('Email уже зарегистрирован')
-            return render_template('register.html')
-            
+            flash('Пользователь с таким email уже зарегистрирован', 'error')
+            return redirect(url_for('register'))
+        
+        # Проверка валидности email
+        if not is_email_valid(email):
+            flash('Указан некорректный email адрес', 'error')
+            return redirect(url_for('register'))
+        
+        # Генерация токена для подтверждения
+        confirmation_token = generate_confirmation_token()
+        token_expiration = datetime.datetime.now() + datetime.timedelta(days=1)
+        
+        # Хеширование пароля (убедитесь, что у вас импортирован werkzeug.security)
+        hashed_password = generate_password_hash(password)
+        
         # Создание нового пользователя
-        new_user = User(name=name, email=email)
-        new_user.set_password(password)
+        new_user = User(
+            name=name,
+            email=email,
+            password=hashed_password,
+            email_confirmed=False,
+            confirmation_token=confirmation_token,
+            token_expiration=token_expiration
+        )
         
-        db.session.add(new_user)
-        db.session.commit()
+        try:
+            db.session.add(new_user)
+            db.session.commit()
+            
+            # Отправка письма с подтверждением
+            if send_confirmation_email(email, confirmation_token):
+                flash('Регистрация прошла успешно! Пожалуйста, проверьте ваш email для подтверждения аккаунта', 'success')
+            else:
+                flash('Возникла ошибка при отправке email. Пожалуйста, свяжитесь с администратором', 'error')
+                
+        except Exception as e:
+            db.session.rollback()
+            flash(f'Ошибка при создании аккаунта: {str(e)}', 'error')
         
-        flash('Регистрация успешна! Пожалуйста, войдите.')
         return redirect(url_for('login'))
-        
+    
     return render_template('register.html')
+
+@app.route('/confirm-email/<token>')
+def confirm_email(token):
+    # Поиск пользователя по токену
+    user = User.query.filter_by(confirmation_token=token).first()
+    
+    if not user:
+        flash('Недействительная ссылка для подтверждения', 'error')
+        return redirect(url_for('login'))
+    
+    # Проверка не истек ли срок действия токена
+    if datetime.datetime.now() > user.token_expiration:
+        flash('Срок действия ссылки для подтверждения истек', 'error')
+        return redirect(url_for('login'))
+    
+    # Подтверждаем email
+    user.email_confirmed = True
+    user.confirmation_token = None
+    user.token_expiration = None
+    
+    try:
+        db.session.commit()
+        flash('Ваш email успешно подтвержден! Теперь вы можете войти в систему', 'success')
+    except:
+        db.session.rollback()
+        flash('Произошла ошибка при подтверждении email', 'error')
+    
+    return redirect(url_for('login'))
 
 @app.route('/logout')
 def logout():
