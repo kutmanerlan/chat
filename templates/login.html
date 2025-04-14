@@ -1,32 +1,45 @@
+chat\templates\login.html -->
 <!DOCTYPE html>
-<html lang="en">
+<html lang="ru">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Log In</title>
-    <link rel="stylesheet" href="../static/style.css">
+    <title>Вход</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
 </head>
 <body>
     <div class="login-container">
-        <h1>Log In</h1>
+        <h1>Вход</h1>
         
-        <div class="input-group">
-            <label for="email">Email Address</label>
-            <input type="email" id="email" placeholder="Enter email">
-        </div>
+        {% with messages = get_flashed_messages() %}
+            {% if messages %}
+                <div class="flash-messages">
+                    {% for message in messages %}
+                        <p>{{ message }}</p>
+                    {% endfor %}
+                </div>
+            {% endif %}
+        {% endwith %}
         
-        <div class="input-group">
-            <label for="password">Password</label>
-            <input type="password" id="password" placeholder="Password">
-        </div>
-        
-        <div class="divider"></div>
-        
-        <button>Log In</button>
+        <form method="POST" action="{{ url_for('login') }}">
+            <div class="input-group">
+                <label for="email">Email адрес</label>
+                <input type="email" id="email" name="email" placeholder="Введите email" required>
+            </div>
+            
+            <div class="input-group">
+                <label for="password">Пароль</label>
+                <input type="password" id="password" name="password" placeholder="Пароль" required>
+            </div>
+            
+            <div class="divider"></div>
+            
+            <button type="submit">Войти</button>
+        </form>
         
         <div class="footer">
-            <a href="register.html">Log in</a><br>
-            ver. 0.0.0 (demo)
+            <a href="{{ url_for('register') }}">Регистрация</a><br>
+            вер. 0.0.0 (демо)
         </div>
     </div>
 </body>
