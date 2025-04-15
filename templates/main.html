@@ -6,65 +6,21 @@
   <title>Главное окно</title>
   <link rel="stylesheet" href="../static/style.css">
   <script src="../static/script.js" defer></script>
-  <style>
-    /* Стили для меню */
-    .menu-dropdown {
-      display: none;
-      position: absolute;
-      top: 50px;
-      right: 20px;
-      background-color: #1b1919;
-      border: 1px solid #706c6c;
-      border-radius: 8px;
-      box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
-      z-index: 1000;
-    }
-
-    .menu-dropdown button {
-      display: block;
-      width: 100%;
-      padding: 10px;
-      background: none;
-      border: none;
-      color: white;
-      text-align: left;
-      cursor: pointer;
-    }
-
-    .menu-dropdown button:hover {
-      background-color: #333;
-    }
-  </style>
 </head>
 <body>
   <!-- Боковая панель -->
-  <div class="menu-dropdown" id="menuDropdown">
-    <a href="{{ url_for('profile') }}">
-      <button>Профиль</button>
-    </a>
-    <a href="{{ url_for('logout') }}">
-      <button>Лог аут</button>
-    </a>
+  <div class="sidebar">
+    <div class="top-bar">
+      <button class="menu-btn">
+        <span></span>
+        <span></span>
+        <span></span>
+      </button>
+      <input type="text" placeholder="Поиск" id="searchInput">
+    </div>
   </div>
 
   <!-- Основная область -->
   <div class="main-content"></div>
-
-  <script>
-    // JavaScript для управления меню
-    const menuButton = document.getElementById('menuButton');
-    const menuDropdown = document.getElementById('menuDropdown');
-
-    menuButton.addEventListener('click', () => {
-      menuDropdown.style.display = menuDropdown.style.display === 'block' ? 'none' : 'block';
-    });
-
-    // Закрытие меню при клике вне его
-    document.addEventListener('click', (event) => {
-      if (!menuButton.contains(event.target) && !menuDropdown.contains(event.target)) {
-        menuDropdown.style.display = 'none';
-      }
-    });
-  </script>
 </body>
 </html>
