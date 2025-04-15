@@ -216,16 +216,17 @@ def logout():
 @app.route('/main')
 def main():
     if 'user_id' not in session:
+        logging.debug("Сессия не содержит user_id, перенаправляем на логин")
         return redirect(url_for('login'))
     
-    # Проверяем, существует ли пользователь в базе данных
     user = User.query.get(session['user_id'])
     if user is None:
-        # Пользователь не найден в базе, очищаем сессию
+        logging.debug("Пользователь не найден в базе данных, очищаем сессию")
         session.clear()
         flash('Ваша сессия была завершена, так как пользователь не найден в базе данных', 'info')
         return redirect(url_for('login'))
     
+    logging.debug(f"Пользователь найден: {user.name}")
     return render_template('main.html')
 
 # Добавим маршрут для проверки работоспособности
@@ -236,13 +237,16 @@ def ping():
 @app.route('/profile')
 def profile():
     if 'user_id' not in session:
+        logging.debug("Сессия не содержит user_id, перенаправляем на логин")
         return redirect(url_for('login'))
         
     user = User.query.get(session['user_id'])
     if not user:
+        logging.debug("Пользователь не найден в базе данных")
         flash('Пользователь не найден', 'error')
         return redirect(url_for('login'))
         
+    logging.debug(f"Профиль пользователя: {user.name}")
     return render_template('profile.html', user=user)
 
 if __name__ == '__main__':
