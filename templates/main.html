@@ -38,24 +38,14 @@
 </head>
 <body>
   <!-- Боковая панель -->
-  <div class="sidebar">
-    <div class="top-bar">
-      <button class="menu-btn" id="menuButton">
-        <span></span>
-        <span></span>
-        <span></span>
-      </button>
-      <input type="text" placeholder="Поиск" id="searchInput">
-    </div>
-    <!-- Меню -->
-    <div class="menu-dropdown" id="menuDropdown">
-      <a href="{{ url_for('profile') }}">
-        <button>Профиль</button>
-      </a>
-      <a href="{{ url_for('logout') }}">
-        <button>Лог аут</button>
-      </a>
-    </div>
+  <div class="menu-dropdown" id="menuDropdown">
+    <a href="{{ url_for('profile') }}">
+      <button>Профиль</button>
+    </a>
+    <a href="{{ url_for('logout') }}">
+      <button>Лог аут</button>
+    </a>
+  </div>
 
   <!-- Основная область -->
   <div class="main-content"></div>

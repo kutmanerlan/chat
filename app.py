@@ -210,6 +210,7 @@ def confirm_email(token):
 def logout():
     session.pop('user_id', None)
     session.pop('user_name', None)
+    flash('Вы успешно вышли из системы', 'success')
     return redirect(url_for('login'))
 
 @app.route('/main')
