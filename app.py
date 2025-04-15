@@ -27,7 +27,6 @@ app = Flask(__name__)
 app.config['SECRET_KEY'] = 'ваш_секретный_ключ'  # Измените это в продакшне
 app.config['SQLALCHEMY_DATABASE_URI'] = f'sqlite:///{os.path.join(instance_path, "chat.db")}'
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
-app.config['SERVER_NAME'] = 'localhost:5000'
 
 # Добавляем SERVER_NAME для правильной генерации URL в письмах
 # НЕ ИСПОЛЬЗУЙТЕ SERVER_NAME для работы с PythonAnywhere
@@ -43,25 +42,24 @@ from models.user import db, User
 db.init_app(app)
 
 # Функция для создания таблиц базы данных
-from sqlalchemy import inspect
-
 def create_tables():
     try:
-        # Используем inspect для проверки существования таблицы
-        inspector = inspect(db.engine)
-        if 'user' in inspector.get_table_names():
-            db.drop_all()  # Удаляем существующие таблицы
-
-        db.create_all()  # Создаем таблицы
-
+        # Удаляем существующие таблицы перед созданием новых
+        db.drop_all()  # Добавляем эту строку для пересоздания таблиц
+        db.create_all()
+        
         # Создаем тестового пользователя, если его нет
         if not User.query.filter_by(email='test@example.com').first():
-            test_user = User(username='Test User', email='test@example.com', password='password123')
+            test_user = User(name='Test User', email='test@example.com')
+            test_user.set_password('password123')
             db.session.add(test_user)
-            db.session.commit()
-            logging.info('Тестовый пользователь создан')
+            try:
+                db.session.commit()
+                logging.info('Тестовый пользователь создан')
+            except Exception as e:
+                db.session.rollback()
+                logging.error(f'Ошибка при создании тестового пользователя: {str(e)}')
     except Exception as e:
-        db.session.rollback()
         logging.error(f'Ошибка при создании таблиц базы данных: {str(e)}')
 
 # Маршруты для автообновления PythonAnywhere
@@ -231,18 +229,6 @@ def main():
 @app.route('/ping')
 def ping():
     return 'pong'
-
-@app.route('/profile')
-def profile():
-    if 'user_id' not in session:
-        return redirect(url_for('login'))
-        
-    user = User.query.get(session['user_id'])
-    if not user:
-        flash('Пользователь не найден', 'error')
-        return redirect(url_for('login'))
-        
-    return render_template('profile.html', user=user)
 
 if __name__ == '__main__':
     # Инициализация базы данных в контексте приложения
