@@ -97,23 +97,49 @@ def hello_world():
 @app.route('/login', methods=['GET', 'POST'])
 def login():
     if request.method == 'POST':
-        email = request.form['email']
-        password = request.form['password']
+        # Проверка на наличие полей
+        if 'email' not in request.form or 'password' not in request.form:
+            flash('Пожалуйста, заполните все поля', 'error')
+            return render_template('login.html')
+            
+        email = request.form['email'].strip()
+        password = request.form['password'].strip()
+        
+        # Проверка на пустые поля
+        if not email:
+            flash('Email не может быть пустым', 'error')
+            return render_template('login.html')
+        
+        if not password:
+            flash('Пароль не может быть пустым', 'error')
+            return render_template('login.html')
+        
+        # Проверка формата email
+        if not is_email_valid(email):
+            flash('Введен некорректный формат email', 'error')
+            return render_template('login.html')
+        
+        # Проверка существования пользователя
         user = User.query.filter_by(email=email).first()
         if not user:
-            flash('Пользователь с таким email не найден', 'error')
-            return redirect(url_for('login'))
+            flash('Пользователь с таким email не найден. Возможно, вы еще не зарегистрированы?', 'error')
+            return render_template('login.html')
+        
+        # Проверка подтверждения email
         if not user.email_confirmed:
-            flash('Пожалуйста, подтвердите ваш email перед входом в систему', 'error')
-            return redirect(url_for('login'))
-        # Исправление: используем правильный метод проверки пароля
-        if user.check_password(password):
-            # Успешная авторизация
-            session['user_id'] = user.id
-            session['user_name'] = user.name  # Добавляем имя в сессию
-            return redirect(url_for('main'))
-        else:
-            flash('Неверный пароль', 'error')
+            flash('Пожалуйста, подтвердите ваш email перед входом в систему. Проверьте свою почту.', 'error')
+            return render_template('login.html')
+        
+        # Проверка правильности пароля
+        if not user.check_password(password):
+            flash('Неверный пароль. Пожалуйста, попробуйте снова.', 'error')
+            return render_template('login.html')
+        
+        # Успешная авторизация
+        session['user_id'] = user.id
+        session['user_name'] = user.name
+        return redirect(url_for('main'))
+        
     return render_template('login.html')
 
 @app.route('/register', methods=['GET', 'POST'])

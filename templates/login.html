@@ -15,18 +15,34 @@
             margin-bottom: 15px;
             padding: 10px;
             border-radius: 5px;
+            background-color: #282626;
+            border-left: 4px solid #333;
         }
         
         .flash-messages .success {
             color: #58d68d;
+            border-left: 4px solid #58d68d;
         }
         
         .flash-messages .error {
             color: #e74c3c;
+            border-left: 4px solid #e74c3c;
         }
         
         .flash-messages p {
             margin: 5px 0;
+            padding: 5px;
+        }
+        
+        .input-error {
+            border: 1px solid #e74c3c !important;
+        }
+        
+        .field-error {
+            color: #e74c3c;
+            font-size: 12px;
+            margin-top: 5px;
+            display: none;
         }
     </style>
 </head>
@@ -34,6 +50,7 @@
     <div class="login-container">
         <h1>Вход</h1>
         
+        <!-- Улучшенное отображение флеш-сообщений -->
         {% with messages = get_flashed_messages(with_categories=true) %}
             {% if messages %}
                 <div class="flash-messages">
@@ -44,15 +61,17 @@
             {% endif %}
         {% endwith %}
         
-        <form method="POST" action="{{ url_for('login') }}">
+        <form method="POST" action="{{ url_for('login') }}" id="loginForm">
             <div class="input-group">
                 <label for="email">Email адрес</label>
                 <input type="email" id="email" name="email" placeholder="Введите email" required>
+                <div class="field-error" id="emailError">Пожалуйста, введите корректный email</div>
             </div>
             
             <div class="input-group">
                 <label for="password">Пароль</label>
                 <input type="password" id="password" name="password" placeholder="Пароль" required>
+                <div class="field-error" id="passwordError">Пароль не может быть пустым</div>
             </div>
             
             <div class="divider"></div>
@@ -65,5 +84,46 @@
             вер. 0.0.0 (демо)
         </div>
     </div>
+    
+    <script>
+        // Клиентская валидация
+        document.getElementById('loginForm').addEventListener('submit', function(e) {
+            let isValid = true;
+            const email = document.getElementById('email');
+            const password = document.getElementById('password');
+            const emailError = document.getElementById('emailError');
+            const passwordError = document.getElementById('passwordError');
+            
+            // Сбросить предыдущие ошибки
+            email.classList.remove('input-error');
+            password.classList.remove('input-error');
+            emailError.style.display = 'none';
+            passwordError.style.display = 'none';
+            
+            // Проверка email
+            if (!email.value.trim()) {
+                email.classList.add('input-error');
+                emailError.textContent = 'Email не может быть пустым';
+                emailError.style.display = 'block';
+                isValid = false;
+            } else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email.value.trim())) {
+                email.classList.add('input-error');
+                emailError.textContent = 'Введите корректный email адрес';
+                emailError.style.display = 'block';
+                isValid = false;
+            }
+            
+            // Проверка пароля
+            if (!password.value.trim()) {
+                password.classList.add('input-error');
+                passwordError.style.display = 'block';
+                isValid = false;
+            }
+            
+            if (!isValid) {
+                e.preventDefault(); // Отменить отправку формы при наличии ошибок
+            }
+        });
+    </script>
 </body>
 </html>

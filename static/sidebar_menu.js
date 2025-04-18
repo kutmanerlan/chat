@@ -5,6 +5,9 @@ document.addEventListener('DOMContentLoaded', function() {
     const menuBtn = document.getElementById('menuBtn');
     const sideMenu = document.getElementById('sideMenu');
     const overlay = document.getElementById('overlay');
+    const logoutBtn = document.getElementById('logoutBtn');
+    const logoutModal = document.getElementById('logoutModal');
+    const cancelLogout = document.getElementById('cancelLogout');
     
     // Проверяем, что все элементы найдены
     if (!menuBtn) console.error('Элемент menuBtn не найден');
@@ -25,15 +28,43 @@ document.addEventListener('DOMContentLoaded', function() {
         overlay.addEventListener('click', function() {
             console.log('Клик по подложке');
             sideMenu.classList.remove('active');
+            if (logoutModal) logoutModal.classList.remove('active');
             this.classList.remove('active');
+        });
+    }
+    
+    // Обработка кнопки выхода
+    if (logoutBtn) {
+        logoutBtn.addEventListener('click', function(e) {
+            e.preventDefault();
+            console.log('Клик по кнопке выхода');
+            if (logoutModal) {
+                logoutModal.classList.add('active');
+                if (overlay) overlay.classList.add('active');
+            }
+        });
+    }
+    
+    // Отмена выхода
+    if (cancelLogout) {
+        cancelLogout.addEventListener('click', function() {
+            console.log('Отмена выхода');
+            if (logoutModal) logoutModal.classList.remove('active');
+            if (overlay) overlay.classList.remove('active');
         });
     }
     
     // Закрытие меню при нажатии Escape
     document.addEventListener('keydown', function(e) {
-        if (e.key === 'Escape' && sideMenu && sideMenu.classList.contains('active')) {
-            sideMenu.classList.remove('active');
-            overlay.classList.remove('active');
+        if (e.key === 'Escape') {
+            if (sideMenu && sideMenu.classList.contains('active')) {
+                sideMenu.classList.remove('active');
+                if (overlay) overlay.classList.remove('active');
+            }
+            if (logoutModal && logoutModal.classList.contains('active')) {
+                logoutModal.classList.remove('active');
+                if (overlay) overlay.classList.remove('active');
+            }
         }
     });
     

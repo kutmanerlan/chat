@@ -37,7 +37,7 @@
     </div>
     
     <div class="menu-items">
-      <a href="{{ url_for('logout') }}" class="menu-item logout">
+      <a href="#" class="menu-item logout" id="logoutBtn">
         <span>Выйти</span>
       </a>
     </div>
@@ -48,5 +48,17 @@
 
   <!-- Основная область -->
   <div class="main-content"></div>
+  
+  <!-- Модальное окно подтверждения выхода -->
+  <div class="modal" id="logoutModal">
+    <div class="modal-content">
+      <h3>Подтверждение</h3>
+      <p>Вы действительно хотите выйти из аккаунта?</p>
+      <div class="modal-buttons">
+        <button id="cancelLogout" class="btn-secondary">Отмена</button>
+        <a href="{{ url_for('logout') }}" class="btn-primary">Выйти</a>
+      </div>
+    </div>
+  </div>
 </body>
 </html>

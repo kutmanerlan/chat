@@ -267,3 +267,73 @@ body {
 .overlay.active {
     display: block;
 }
+
+/* Стили для модального окна */
+.modal {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background-color: rgba(0, 0, 0, 0.7);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 1100;
+    opacity: 0;
+    visibility: hidden;
+    transition: opacity 0.3s, visibility 0.3s;
+}
+
+.modal.active {
+    opacity: 1;
+    visibility: visible;
+}
+
+.modal-content {
+    background-color: #1c1c1c;
+    padding: 20px;
+    border-radius: 8px;
+    width: 90%;
+    max-width: 400px;
+    box-shadow: 0 5px 15px rgba(0, 0, 0, 0.5);
+}
+
+.modal-content h3 {
+    margin-top: 0;
+    color: #fff;
+    font-size: 18px;
+    margin-bottom: 15px;
+}
+
+.modal-content p {
+    color: #ccc;
+    margin-bottom: 20px;
+}
+
+.modal-buttons {
+    display: flex;
+    justify-content: flex-end;
+    gap: 10px;
+}
+
+.btn-primary, .btn-secondary {
+    padding: 8px 16px;
+    border-radius: 4px;
+    cursor: pointer;
+    border: none;
+    font-size: 14px;
+}
+
+.btn-primary {
+    background-color: #e74c3c;
+    color: white;
+    text-decoration: none;
+    display: inline-block;
+    text-align: center;
+}
+
+.btn-secondary {
+    background-color: #333;
+    color: white;
+}
