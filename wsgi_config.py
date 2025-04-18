@@ -12,12 +12,13 @@ logging.basicConfig(
 try:
     logging.info("Запуск WSGI скрипта")
     
-    # Добавляем путь к проекту (измените на ваш путь на PythonAnywhere)
-    path = '/home/tymeer/chat'
-    if path not in sys.path:
-        sys.path.append(path)
+    # Получаем текущий путь к проекту (для PythonAnywhere)
+    path = os.path.dirname(os.path.abspath(__file__))
+    logging.info(f"Текущий путь проекта: {path}")
     
-    logging.info(f"Добавлен путь: {path}")
+    if path not in sys.path:
+        sys.path.insert(0, path)
+    
     logging.info(f"sys.path: {sys.path}")
     
     # Проверка существования файла app.py

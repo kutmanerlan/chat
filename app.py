@@ -28,247 +28,248 @@ app.config['SECRET_KEY'] = 'ваш_секретный_ключ'  # Измени�
 app.config['SQLALCHEMY_DATABASE_URI'] = f'sqlite:///{os.path.join(instance_path, "chat.db")}'
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 app.config['SERVER_NAME'] = 'localhost:5000'
-
-# Добавляем SERVER_NAME для правильной генерации URL в письмах
+# Определяем, находимся ли мы на PythonAnywhere
+# Добавляем SERVER_NAME для правильной генерации URL в письмахPYTHONANYWHERE_HOST' in os.environ
 # НЕ ИСПОЛЬЗУЙТЕ SERVER_NAME для работы с PythonAnywhere
 if os.environ.get('FLASK_ENV') == 'production':
     # Не устанавливаем SERVER_NAME для продакшена
-    pass
-else:
+    pass устанавливаем SERVER_NAME для PythonAnywhere
+else:pp.config.pop('SERVER_NAME', None)
     # Не устанавливаем SERVER_NAME для разработки
-    pass
-
+    passя локального окружения используем порт 5000, но также не устанавливаем SERVER_NAME
+    app.config.pop('SERVER_NAME', None)
 # Инициализация базы данных
 from models.user import db, User
+db.init_app(app) import db, User
 db.init_app(app)
-
 # Функция для создания таблиц базы данных
+from sqlalchemy import inspectбазы данных
 from sqlalchemy import inspect
-
 def create_tables():
-    try:
+    try:te_tables():
         # Используем inspect для проверки существования таблицы
-        inspector = inspect(db.engine)
+        inspector = inspect(db.engine)рки существования таблицы
         if 'user' in inspector.get_table_names():
             db.drop_all()  # Удаляем существующие таблицы
-
+            db.drop_all()  # Удаляем существующие таблицы
         db.create_all()  # Создаем таблицы
-
+        db.create_all()  # Создаем таблицы
         # Создаем тестового пользователя, если его нет
         if not User.query.filter_by(email='test@example.com').first():
             test_user = User(username='Test User', email='test@example.com', password='password123')
-            db.session.add(test_user)
-            db.session.commit()
+            db.session.add(test_user)='Test User', email='test@example.com', password='password123')
+            db.session.commit()_user)
             logging.info('Тестовый пользователь создан')
-    except Exception as e:
+    except Exception as e:Тестовый пользователь создан')
         db.session.rollback()
         logging.error(f'Ошибка при создании таблиц базы данных: {str(e)}')
-
+        logging.error(f'Ошибка при создании таблиц базы данных: {str(e)}')
 # Маршруты для автообновления PythonAnywhere
 @app.route('/update_server', methods=['POST'])
-def webhook():
+def webhook():pdate_server', methods=['POST'])
     if request.method == 'POST':
-        if not git_available:
+        if not git_available:T':
             logging.error("Git functionality unavailable. Install GitPython with: pip install GitPython")
+            return 'Git module not available', 500ilable. Install GitPython with: pip install GitPython")
             return 'Git module not available', 500
-        
         try:
             # Используем абсолютный путь или более надежный относительный путь
-            repo_path = os.path.abspath(os.path.dirname(__file__))
-            repo = git.Repo(repo_path)
+            repo_path = os.path.abspath(os.path.dirname(__file__))тельный путь
+            repo = git.Repo(repo_path)h(os.path.dirname(__file__))
             origin = repo.remotes.origin
-            origin.pull()
+            origin.pull().remotes.origin
             return 'Updated PythonAnywhere successfully', 200
-        except Exception as e:
+        except Exception as e:thonAnywhere successfully', 200
             logging.error(f"Error during pull: {str(e)}")
-            return 'Update failed', 500
+            return 'Update failed', 500g pull: {str(e)}")
+    return 'Method not allowed', 405500
     return 'Method not allowed', 405
-
 # Главный маршрут
-@app.route('/')
+@app.route('/')ут
 def hello_world():
     if 'user_id' in session:
         return redirect(url_for('main'))
+    return redirect(url_for('login'))'))
     return redirect(url_for('login'))
-
 # Маршруты авторизации
 @app.route('/login', methods=['GET', 'POST'])
-def login():
+def login():/login', methods=['GET', 'POST'])
     if request.method == 'POST':
         email = request.form['email']
         password = request.form['password']
-        
+        password = request.form['password']
         user = User.query.filter_by(email=email).first()
-        
+        user = User.query.filter_by(email=email).first()
         if not user:
             flash('Пользователь с таким email не найден', 'error')
+            return redirect(url_for('login')) не найден', 'error')
             return redirect(url_for('login'))
-        
         if not user.email_confirmed:
             flash('Пожалуйста, подтвердите ваш email перед входом в систему', 'error')
+            return redirect(url_for('login'))ш email перед входом в систему', 'error')
             return redirect(url_for('login'))
-        
         # Исправление: используем правильный метод проверки пароля
-        if user.check_password(password):
-            # Успешная авторизация
+        if user.check_password(password):ный метод проверки пароля
+            # Успешная авторизацияsword):
             session['user_id'] = user.id
             session['user_name'] = user.name  # Добавляем имя в сессию
-            return redirect(url_for('main'))
-        else:
+            return redirect(url_for('main'))  # Добавляем имя в сессию
+        else:eturn redirect(url_for('main'))
             flash('Неверный пароль', 'error')
-            
+            flash('Неверный пароль', 'error')
     return render_template('login.html')
-
+    return render_template('login.html')
 @app.route('/register', methods=['GET', 'POST'])
-def register():
+def register():gister', methods=['GET', 'POST'])
     if request.method == 'POST':
-        try:
+        try:st.method == 'POST':
             name = request.form['name']
             email = request.form['email']
             password = request.form['password']
-            
+            password = request.form['password']
             logging.info(f"Попытка регистрации пользователя с email: {email}")
-            
+            logging.info(f"Попытка регистрации пользователя с email: {email}")
             # Проверка существования пользователя
             existing_user = User.query.filter_by(email=email).first()
-            if existing_user:
+            if existing_user:ser.query.filter_by(email=email).first()
                 flash('Пользователь с таким email уже зарегистрирован', 'error')
+                return redirect(url_for('register'))е зарегистрирован', 'error')
                 return redirect(url_for('register'))
-            
             # Проверка валидности email
             if not is_email_valid(email):
                 flash('Указан некорректный email адрес', 'error')
+                return redirect(url_for('register'))ес', 'error')
                 return redirect(url_for('register'))
-            
             # Генерация токена для подтверждения
             confirmation_token = generate_confirmation_token()
             token_expiration = datetime.datetime.now() + datetime.timedelta(days=1)
-            
+            token_expiration = datetime.datetime.now() + datetime.timedelta(days=1)
             # Создание нового пользователя
-            new_user = User(
-                name=name,
+            new_user = User(о пользователя
+                name=name,r(
                 email=email,
                 email_confirmed=False,
                 confirmation_token=confirmation_token,
-                token_expiration=token_expiration
+                token_expiration=token_expirationoken,
+            )   token_expiration=token_expiration
             )
-            
             # Устанавливаем пароль правильно через метод
+            new_user.set_password(password)о через метод
             new_user.set_password(password)
-            
             logging.info("Сохранение нового пользователя в базу данных")
-            
+            logging.info("Сохранение нового пользователя в базу данных")
             db.session.add(new_user)
+            db.session.commit()user)
             db.session.commit()
-            
             # Отправка письма с подтверждением
             result = send_confirmation_email(email, confirmation_token)
-            if result:
+            if result:end_confirmation_email(email, confirmation_token)
                 flash('Регистрация прошла успешно! Пожалуйста, проверьте ваш email для подтверждения аккаунта', 'success')
-            else:
+            else:lash('Регистрация прошла успешно! Пожалуйста, проверьте ваш email для подтверждения аккаунта', 'success')
                 logging.error(f"Не удалось отправить email на адрес {email}")
                 flash('Возникла ошибка при отправке email. Пожалуйста, свяжитесь с администратором', 'error')
-                
+                flash('Возникла ошибка при отправке email. Пожалуйста, свяжитесь с администратором', 'error')
         except Exception as e:
             db.session.rollback()
             logging.error(f"Ошибка при регистрации: {str(e)}")
             flash(f'Ошибка при создании аккаунта: {str(e)}', 'error')
-        
+            flash(f'Ошибка при создании аккаунта: {str(e)}', 'error')
         return redirect(url_for('login'))
-    
+        return redirect(url_for('login'))
     return render_template('register.html')
-
+    return render_template('register.html')
 @app.route('/confirm-email/<token>')
-def confirm_email(token):
+def confirm_email(token):l/<token>')
     # Поиск пользователя по токену
     user = User.query.filter_by(confirmation_token=token).first()
-    
+    user = User.query.filter_by(confirmation_token=token).first()
     if not user:
         flash('Недействительная ссылка для подтверждения', 'error')
+        return redirect(url_for('login'))я подтверждения', 'error')
         return redirect(url_for('login'))
-    
     # Проверка не истек ли срок действия токена
     if datetime.datetime.now() > user.token_expiration:
         flash('Срок действия ссылки для подтверждения истек', 'error')
+        return redirect(url_for('login'))одтверждения истек', 'error')
         return redirect(url_for('login'))
-    
     # Подтверждаем email
     user.email_confirmed = True
     user.confirmation_token = None
+    user.token_expiration = Nonene
     user.token_expiration = None
-    
     try:
         db.session.commit()
         flash('Ваш email успешно подтвержден! Теперь вы можете войти в систему', 'success')
-    except:
+    except:sh('Ваш email успешно подтвержден! Теперь вы можете войти в систему', 'success')
         db.session.rollback()
         flash('Произошла ошибка при подтверждении email', 'error')
-    
+        flash('Произошла ошибка при подтверждении email', 'error')
     return redirect(url_for('login'))
-
+    return redirect(url_for('login'))
 @app.route('/logout')
-def logout():
+def logout():logout')
     session.pop('user_id', None)
     session.pop('user_name', None)
     return redirect(url_for('login'))
-
+    return redirect(url_for('login'))
 @app.route('/main')
-def main():
+def main():'/main')
     if 'user_id' not in session:
         return redirect(url_for('login'))
-    
+        return redirect(url_for('login'))
     # Проверяем, существует ли пользователь в базе данных
-    user = User.query.get(session['user_id'])
-    if user is None:
+    user = User.query.get(session['user_id']) базе данных
+    if user is None:y.get(session['user_id'])
         # Пользователь не найден в базе, очищаем сессию
-        session.clear()
+        session.clear()не найден в базе, очищаем сессию
         flash('Ваша сессия была завершена, так как пользователь не найден в базе данных', 'info')
+        return redirect(url_for('login')), так как пользователь не найден в базе данных', 'info')
         return redirect(url_for('login'))
-    
     return render_template('main.html')
-
+    return render_template('main.html')
 # Добавим маршрут для проверки работоспособности
-@app.route('/ping')
-def ping():
+@app.route('/ping')ля проверки работоспособности
+def ping():'/ping')
     return 'pong'
-
+    return 'pong'
 @app.route('/profile')
-def profile():
+def profile():rofile')
     if 'user_id' not in session:
         return redirect(url_for('login'))
-        
-    user = User.query.get(session['user_id'])
-    if not user:
-        flash('Пользователь не найден', 'error')
         return redirect(url_for('login'))
-        
+    user = User.query.get(session['user_id'])
+    if not user:query.get(session['user_id'])
+        flash('Пользователь не найден', 'error')
+        return redirect(url_for('login'))error')
+        return redirect(url_for('login'))
     return render_template('profile.html', user=user)
-
+    return render_template('profile.html', user=user)
 if __name__ == '__main__':
     # Инициализация базы данных в контексте приложения
-    with app.app_context():
+    with app.app_context():нных в контексте приложения
+        create_tables()t():
         create_tables()
-    
     # Временно отключаем SERVER_NAME для локального запуска
+    app.config.pop('SERVER_NAME', None)я локального запуска
     app.config.pop('SERVER_NAME', None)
-    
     # Устанавливаем host='0.0.0.0', чтобы приложение было доступно извне
-    app.run(debug=True, host='0.0.0.0')
-else:
+    app.run(debug=True, host='0.0.0.0')бы приложение было доступно извне
+else:pp.run(debug=True, host='0.0.0.0')
     # Для запуска через WSGI (PythonAnywhere)
-    try:
+    try:я запуска через WSGI (PythonAnywhere)
         with app.app_context():
             logging.basicConfig(filename='/tmp/flask_app_error.log', level=logging.DEBUG)
-            logging.info("Запускаем приложение через WSGI")
-            try:
+            logging.info("Запускаем приложение через WSGI")ror.log', level=logging.DEBUG)
+            try:ing.info("Запускаем приложение через WSGI")
                 # Проверяем существование таблиц и создаем если нужно
                 if not db.engine.dialect.has_table(db.engine, 'user'):
-                    create_tables()
+                    create_tables()alect.has_table(db.engine, 'user'):
                 logging.info("Приложение успешно запущено на PythonAnywhere")
-            except Exception as e:
+            except Exception as e:ожение успешно запущено на PythonAnywhere")
                 logging.error(f"Ошибка при запуске приложения: {str(e)}")
-    except Exception as e:
-        import traceback
+    except Exception as e:ror(f"Ошибка при запуске приложения: {str(e)}")
+        import tracebacke:
         with open('/tmp/flask_startup_error.log', 'w') as f:
-            f.write(f"Критическая ошибка: {str(e)}\n")
+            f.write(f"Критическая ошибка: {str(e)}\n") as f:
+            f.write(traceback.format_exc())str(e)}\n")
             f.write(traceback.format_exc())

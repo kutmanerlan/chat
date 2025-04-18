@@ -32,9 +32,17 @@ def send_confirmation_email(user_email, token):
     message["From"] = SENDER_EMAIL
     message["To"] = user_email
     
+    # Определяем, находимся ли мы на PythonAnywhere
+    is_pythonanywhere = 'PYTHONANYWHERE_DOMAIN' in os.environ or 'PYTHONANYWHERE_HOST' in os.environ
+    
     # Создаем ссылку для подтверждения
-    # Используем SERVER_NAME из конфигурации Flask, если он установлен
-    confirmation_url = url_for('confirm_email', token=token, _external=True)
+    if is_pythonanywhere:
+        # На PythonAnywhere используем абсолютную ссылку
+        base_url = "https://tymeer.pythonanywhere.com"
+        confirmation_url = f"{base_url}/confirm-email/{token}"
+    else:
+        # Локально используем url_for
+        confirmation_url = url_for('confirm_email', token=token, _external=True)
     
     # Формируем тело письма
     text = f"""
