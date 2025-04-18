@@ -12,13 +12,12 @@ logging.basicConfig(
 try:
     logging.info("Запуск WSGI скрипта")
     
-    # Получаем текущий путь к проекту (для PythonAnywhere)
-    path = os.path.dirname(os.path.abspath(__file__))
-    logging.info(f"Текущий путь проекта: {path}")
-    
+g    # Путь к проекту на PythonAnywhere
+    path = '/home/tymeer/chat'
     if path not in sys.path:
-        sys.path.insert(0, path)
+        sys.path.insert(0, path)  # Insert at beginning to ensure it takes precedence
     
+    logging.info(f"Добавлен путь: {path}")
     logging.info(f"sys.path: {sys.path}")
     
     # Проверка существования файла app.py
@@ -28,6 +27,10 @@ try:
         logging.info("Файл app.py найден")
     else:
         logging.error(f"Файл app.py НЕ найден по пути: {app_path}")
+    
+    # Set environment variable to indicate we're on PythonAnywhere
+    os.environ['FLASK_ENV'] = 'production'
+    os.environ['PYTHONANYWHERE_HOST'] = 'tymeer.pythonanywhere.com'
     
     # Импортируем Flask-приложение
     from app import app as application

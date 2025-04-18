@@ -54,7 +54,10 @@ def create_tables():
         
         # Создаем тестового пользователя, если его нет
         if not User.query.filter_by(email='test@example.com').first():
-            test_user = User(username='Test User', email='test@example.com', password='password123')
+            # Fix: Use 'name' parameter instead of 'username'
+            test_user = User(name='Test User', email='test@example.com')
+            # Set password using the set_password method
+            test_user.set_password('password123')
             db.session.add(test_user)
             db.session.commit()
             logging.info('Тестовый пользователь создан')
