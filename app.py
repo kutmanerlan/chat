@@ -27,16 +27,18 @@ app = Flask(__name__)
 app.config['SECRET_KEY'] = 'ваш_секретный_ключ'  # Измените это в продакшне
 app.config['SQLALCHEMY_DATABASE_URI'] = f'sqlite:///{os.path.join(instance_path, "chat.db")}'
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
-app.config['SERVER_NAME'] = 'localhost:5000'
-# Определяем, находимся ли мы на PythonAnywhere
-# Добавляем SERVER_NAME для правильной генерации URL в письмах
-# НЕ ИСПОЛЬЗУЙТЕ SERVER_NAME для работы с PythonAnywhere
+
+# Настройка SERVER_NAME
+# Не используем app.config.pop() - это может вызвать KeyError, если ключа нет
+# Вместо этого явно устанавливаем или не устанавливаем значение
 if os.environ.get('FLASK_ENV') == 'production':
-    # Не устанавливаем SERVER_NAME для продакшена
-    app.config.pop('SERVER_NAME', None)
+    # Для PythonAnywhere определяем SERVER_NAME из переменной окружения
+    if 'PYTHONANYWHERE_HOST' in os.environ:
+        app.config['SERVER_NAME'] = os.environ['PYTHONANYWHERE_HOST']
+    # Иначе не устанавливаем SERVER_NAME для продакшена
 else:
-    # Для локального окружения используем порт 5000, но также не устанавливаем SERVER_NAME
-    app.config.pop('SERVER_NAME', None)
+    # Для локальной разработки используем localhost:5000
+    app.config['SERVER_NAME'] = 'localhost:5000'
 
 # Инициализация базы данных
 from models.user import db, User
