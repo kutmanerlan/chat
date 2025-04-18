@@ -1,14 +1,41 @@
 // JavaScript для управления боковым меню
 document.addEventListener('DOMContentLoaded', function() {
+    console.log('DOM полностью загружен и разобран');
+    
+    const menuBtn = document.getElementById('menuBtn');
+    const sideMenu = document.getElementById('sideMenu');
+    const overlay = document.getElementById('overlay');
+    
+    // Проверяем, что все элементы найдены
+    if (!menuBtn) console.error('Элемент menuBtn не найден');
+    if (!sideMenu) console.error('Элемент sideMenu не найден');
+    if (!overlay) console.error('Элемент overlay не найден');
+    
     // Обработка клика по кнопке меню
-    document.getElementById('menuBtn').addEventListener('click', function() {
-      document.getElementById('sideMenu').classList.toggle('active');
-      document.getElementById('overlay').classList.toggle('active');
-    });
+    if (menuBtn) {
+        menuBtn.addEventListener('click', function() {
+            console.log('Клик по кнопке меню');
+            sideMenu.classList.toggle('active');
+            overlay.classList.toggle('active');
+        });
+    }
 
     // Закрытие меню при клике на подложку
-    document.getElementById('overlay').addEventListener('click', function() {
-      document.getElementById('sideMenu').classList.remove('active');
-      this.classList.remove('active');
+    if (overlay) {
+        overlay.addEventListener('click', function() {
+            console.log('Клик по подложке');
+            sideMenu.classList.remove('active');
+            this.classList.remove('active');
+        });
+    }
+    
+    // Закрытие меню при нажатии Escape
+    document.addEventListener('keydown', function(e) {
+        if (e.key === 'Escape' && sideMenu && sideMenu.classList.contains('active')) {
+            sideMenu.classList.remove('active');
+            overlay.classList.remove('active');
+        }
     });
+    
+    console.log('Обработчики событий установлены');
 });
