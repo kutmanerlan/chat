@@ -313,8 +313,9 @@ body {
 
 .modal-buttons {
     display: flex;
-    justify-content: flex-end;
-    gap: 10px;
+    justify-content: center; /* Изменено с flex-end на center для выравнивания по центру */
+    gap: 20px; /* Увеличено с 10px до 20px для большего расстояния между кнопками */
+    margin-top: 25px; /* Добавлен отступ сверху для лучшего вида */
 }
 
 .btn-primary, .btn-secondary {
@@ -323,6 +324,8 @@ body {
     cursor: pointer;
     border: none;
     font-size: 14px;
+    min-width: 100px; /* Добавлено для равной ширины кнопок */
+    text-align: center; /* Центрируем текст в кнопках */
 }
 
 .btn-primary {
