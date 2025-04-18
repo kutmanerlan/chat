@@ -164,3 +164,106 @@ body {
     flex-grow: 1;
     background-color: #000;
 }
+
+/* Стили для выдвижного бокового меню */
+.side-menu {
+    position: fixed;
+    top: 0;
+    left: -320px; /* Скрыто за пределами экрана */
+    width: 320px;
+    height: 100vh;
+    background-color: #1c1c1c;
+    z-index: 1000;
+    transition: left 0.3s ease;
+    display: flex;
+    flex-direction: column;
+    padding: 15px;
+    box-sizing: border-box;
+}
+
+.side-menu.active {
+    left: 0; /* Показывается при активации */
+}
+
+/* Стили для профиля пользователя */
+.user-profile {
+    display: flex;
+    align-items: center;
+    padding: 10px 0;
+    margin-bottom: 20px;
+    border-bottom: 1px solid #333;
+}
+
+.avatar-placeholder {
+    width: 48px;
+    height: 48px;
+    border-radius: 50%;
+    background-color: #706c6c;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin-right: 15px;
+}
+
+.avatar-initials {
+    color: white;
+    font-size: 24px;
+}
+
+.user-info h3 {
+    margin: 0;
+    color: white;
+    font-size: 16px;
+}
+
+.user-status {
+    margin: 5px 0 0 0;
+    color: #aaa;
+    font-size: 13px;
+}
+
+/* Стили для пунктов меню */
+.menu-items {
+    margin-top: auto;
+    padding-bottom: 20px;
+}
+
+.menu-item {
+    display: flex;
+    align-items: center;
+    padding: 12px 10px;
+    color: white;
+    text-decoration: none;
+    border-radius: 8px;
+    transition: background-color 0.2s;
+}
+
+.menu-item:hover {
+    background-color: #333;
+}
+
+.menu-icon {
+    margin-right: 15px;
+    width: 24px;
+    text-align: center;
+}
+
+.menu-item.logout {
+    color: #e74c3c;
+}
+
+/* Затемняющая подложка при открытом меню */
+.overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background-color: rgba(0, 0, 0, 0.5);
+    z-index: 999;
+    display: none;
+}
+
+.overlay.active {
+    display: block;
+}

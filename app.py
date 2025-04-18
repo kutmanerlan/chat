@@ -203,7 +203,7 @@ def main():
         session.clear()
         flash('Ваша сессия была завершена, так как пользователь не найден в базе данных', 'info')
         return redirect(url_for('login'))
-    return render_template('main.html')
+    return render_template('dashboard.html')
 
 # Добавим маршрут для проверки работоспособности
 @app.route('/ping')

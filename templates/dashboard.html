@@ -6,6 +6,7 @@
   <title>Главное окно</title>
   <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
   <script src="{{ url_for('static', filename='script.js') }}" defer></script>
+  <script src="{{ url_for('static', filename='sidebar_menu.js') }}" defer></script>
 </head>
 <body>
   <!-- Боковая панель -->
@@ -52,19 +53,5 @@
 
   <!-- Основная область -->
   <div class="main-content"></div>
-
-  <script>
-    // Обработка клика по кнопке меню
-    document.getElementById('menuBtn').addEventListener('click', function() {
-      document.getElementById('sideMenu').classList.toggle('active');
-      document.getElementById('overlay').classList.toggle('active');
-    });
-
-    // Закрытие меню при клике на подложку
-    document.getElementById('overlay').addEventListener('click', function() {
-      document.getElementById('sideMenu').classList.remove('active');
-      this.classList.remove('active');
-    });
-  </script>
 </body>
 </html>
