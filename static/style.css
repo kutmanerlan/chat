@@ -466,27 +466,11 @@ body {
 
 .edit-field textarea {
     min-height: 100px;
-    max-height: 300px; /* Ограничиваем максимальную высоту */
-    resize: none; /* Убираем возможность растягивать поле вручную */
-    overflow-y: auto; /* Добавляем скролл при необходимости */
+    height: 150px; /* Фиксированная высота */
+    resize: none; /* Запрещаем изменение размера вручную */
+    overflow-y: auto; /* Добавляем вертикальную прокрутку */
     box-sizing: border-box;
-    color: #bbb; /* Меняем с белого на приглушенный светло-серый цвет */
-    font-size: 14px;
-    width: 100%;
-    padding: 10px;
-    background-color: #2c2c2c;
-    border: 1px solid #444;
-    border-radius: 4px;
-}
-
-/* Более специфичный селектор для textarea с использованием !important */
-.edit-profile-content .edit-field textarea#profileBio {
-    color: #bbb !important; /* Принудительно устанавливаем цвет текста */
-    min-height: 100px;
-    max-height: 300px;
-    resize: none;
-    overflow-y: auto;
-    box-sizing: border-box;
+    color: #aaa; /* Светло-серый цвет текста, более приглушенный */
     font-size: 14px;
     width: 100%;
     padding: 10px;
@@ -497,7 +481,7 @@ body {
 
 /* Также изменяем placeholder цвет для textarea */
 .edit-field textarea::placeholder {
-    color: #888 !important;
+    color: #666;
 }
 
 .save-profile-btn {

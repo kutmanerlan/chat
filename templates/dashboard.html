@@ -95,7 +95,7 @@
         
         <div class="edit-field">
           <label for="bio">Информация</label>
-          <textarea id="profileBio" name="bio" placeholder="Расскажите о себе" style="color: #bbb;">{{ user.bio if user and user.bio else '' }}</textarea>
+          <textarea id="profileBio" name="bio" placeholder="Расскажите о себе">{{ user.bio if user and user.bio else '' }}</textarea>
         </div>
         
         <button type="submit" class="save-profile-btn">Сохранить</button>

@@ -139,6 +139,8 @@ document.addEventListener('DOMContentLoaded', function() {
     // Запускаем обновление информации при загрузке страницы
     refreshUserInfo();
     
+    // Удаляем следующий код:
+    /*
     // Функция для автоматического изменения размера textarea
     function autoResizeTextarea(textarea) {
         // Сбрасываем высоту к минимальной, чтобы корректно определить новую высоту
@@ -183,6 +185,7 @@ document.addEventListener('DOMContentLoaded', function() {
             this.style.color = '#bbb'; // Вернуть обратно приглушенный цвет
         });
     }
+    */
     
     // Обработчик нажатия на аватарку для загрузки фотографии
     if (avatarPlaceholder) {
