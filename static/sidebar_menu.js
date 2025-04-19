@@ -709,46 +709,38 @@ document.addEventListener('DOMContentLoaded', function() {
             const messageInputContainer = document.createElement('div');
             messageInputContainer.className = 'message-input-container';
             
-            const messageInputWrapper = document.createElement('div');
-            messageInputWrapper.className = 'message-input-wrapper';
-            
-            // Поле для ввода текста
+            // Контейнер для поля ввода и кнопок
             const messageInputField = document.createElement('div');
             messageInputField.className = 'message-input-field';
             
-            const textarea = document.createElement('textarea');
-            textarea.placeholder = 'Сообщение';
-            textarea.rows = 1;
+            // Используем input вместо textarea
+            const inputField = document.createElement('input');
+            inputField.type = 'text';
+            inputField.placeholder = 'Сообщение';
             
-            // Кнопка для прикрепления файлов (скрепка)
-            const attachmentButton = document.createElement('button');
-            attachmentButton.className = 'attachment-button';
-            attachmentButton.innerHTML = `
-                <svg viewBox="0 0 24 24" width="24" height="24" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round">
+            // Кнопки скрепки и отправки
+            const paperclipButton = document.createElement('button');
+            paperclipButton.className = 'paperclip-button';
+            paperclipButton.innerHTML = `
+                <svg viewBox="0 0 24 24" width="24" height="24" stroke="currentColor" stroke-width="2" fill="none">
                     <path d="M21.44 11.05l-9.19 9.19a6 6 0 0 1-8.49-8.49l9.19-9.19a4 4 0 0 1 5.66 5.66l-9.2 9.19a2 2 0 0 1-2.83-2.83l8.49-8.48"></path>
                 </svg>
             `;
             
-            // Кнопка отправки сообщения
             const sendButton = document.createElement('button');
             sendButton.className = 'send-button';
             sendButton.innerHTML = `
-                <svg viewBox="0 0 24 24" width="24" height="24" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round">
+                <svg viewBox="0 0 24 24" width="24" height="24" stroke="currentColor" stroke-width="2" fill="none">
                     <line x1="22" y1="2" x2="11" y2="13"></line>
                     <polygon points="22 2 15 22 11 13 2 9 22 2"></polygon>
                 </svg>
             `;
             
-            // Добавляем textarea в поле ввода
-            messageInputField.appendChild(textarea);
-            
-            // Собираем элементы в обертку
-            messageInputWrapper.appendChild(messageInputField);
-            messageInputWrapper.appendChild(attachmentButton);
-            messageInputWrapper.appendChild(sendButton);
-            
-            // Добавляем обертку в контейнер
-            messageInputContainer.appendChild(messageInputWrapper);
+            // Собираем интерфейс
+            messageInputField.appendChild(inputField);
+            messageInputContainer.appendChild(paperclipButton);
+            messageInputContainer.appendChild(messageInputField);
+            messageInputContainer.appendChild(sendButton);
             
             // Скрытый input для выбора файлов
             const fileInput = document.createElement('input');
@@ -760,44 +752,30 @@ document.addEventListener('DOMContentLoaded', function() {
             
             // ===== ОБРАБОТЧИКИ СОБЫТИЙ =====
             
-            // Показываем/скрываем кнопку отправки при вводе текста
-            textarea.addEventListener('input', function() {
+            // Обработчик событий для input вместо textarea
+            inputField.addEventListener('input', function() {
                 if (this.value.trim()) {
-                    sendButton.classList.add('visible');
+                    sendButton.style.display = 'flex'; 
                 } else {
-                    sendButton.classList.remove('visible');
-                }
-                
-                // Автоизменение высоты textarea в пределах max-height
-                this.style.height = '40px'; // Сбрасываем высоту к минимальной
-                const maxHeight = 100; // Максимальная высота в пикселях (как в CSS)
-                const scrollHeight = this.scrollHeight;
-                const newHeight = Math.min(maxHeight, scrollHeight);
-                this.style.height = newHeight + 'px';
-                
-                // Если содержимое превышает высоту, активируем прокрутку
-                if (scrollHeight > maxHeight) {
-                    this.style.overflowY = 'auto';
-                } else {
-                    this.style.overflowY = 'hidden';
+                    sendButton.style.display = 'none';
                 }
             });
             
-            // Отправка сообщения по клику на кнопку
+            // Отправка сообщения нажатием на кнопку
             sendButton.addEventListener('click', function() {
-                sendTextMessage(textarea, chatMessages, user);
+                sendTextMessage(inputField, chatMessages, user);
             });
             
-            // Отправка сообщения по нажатию Enter (без Shift)
-            textarea.addEventListener('keydown', function(e) {
-                if (e.key === 'Enter' && !e.shiftKey) {
+            // Отправка нажатием Enter
+            inputField.addEventListener('keydown', function(e) {
+                if (e.key === 'Enter') {
                     e.preventDefault();
-                    sendTextMessage(textarea, chatMessages, user);
+                    sendTextMessage(inputField, chatMessages, user);
                 }
             });
             
             // Открытие диалога выбора файла
-            attachmentButton.addEventListener('click', function() {
+            paperclipButton.addEventListener('click', function() {
                 fileInput.click();
             });
             
@@ -823,13 +801,13 @@ document.addEventListener('DOMContentLoaded', function() {
             
             // Фокус на поле ввода после отрисовки
             setTimeout(() => {
-                textarea.focus();
+                inputField.focus();
             }, 0);
         }
         
         // Functions for sending messages
-        function sendTextMessage(textarea, chatMessages, user) {
-            const messageText = textarea.value.trim();
+        function sendTextMessage(inputField, chatMessages, user) {
+            const messageText = inputField.value.trim();
             if (messageText) {
                 // Get or create messages container
                 let messagesContainer = chatMessages.querySelector('.messages-container');
@@ -868,9 +846,8 @@ document.addEventListener('DOMContentLoaded', function() {
                 messagesContainer.appendChild(message);
                 
                 // Clear input and reset height
-                textarea.value = '';
-                textarea.style.height = '40px';
-                textarea.focus();
+                inputField.value = '';
+                inputField.focus();
                 
                 // Hide send button
                 document.querySelector('.send-btn').classList.remove('visible');
