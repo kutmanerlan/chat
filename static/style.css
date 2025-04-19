@@ -81,6 +81,25 @@ button:hover {
     text-decoration: underline;
 }
 
+.forgot-password-btn {
+    background: transparent;
+    border: none;
+    color: #3498db;
+    font-size: 14px;
+    text-decoration: none;
+    cursor: pointer;
+    padding: 0;
+    margin: 10px 0;
+}
+
+.forgot-password-btn:hover {
+    color: #3498db; /* Не меняем цвет при наведении */
+    text-decoration: none;
+    background-color: transparent !important; /* Принудительно убираем фон */
+    opacity: 1; /* Сохраняем полную непрозрачность */
+    transform: none; /* Убираем любые трансформации */
+}
+
 /* Остальной код остается без изменений */
 * {
     margin: 0;

@@ -229,8 +229,10 @@ def confirm_email(token):
 
 @app.route('/logout')
 def logout():
-    session.pop('user_id', None)
-    session.pop('user_name', None)
+    # Полностью очищаем всю сессию вместо удаления отдельных ключей
+    session.clear()
+    # Добавляем сообщение для пользователя
+    flash('Вы успешно вышли из аккаунта', 'info')
     return redirect(url_for('login'))
 
 @app.route('/main')
