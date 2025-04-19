@@ -376,5 +376,150 @@ document.addEventListener('DOMContentLoaded', function() {
         }
     });
 
+    // Добавляем обработчик для поиска пользователей
+    const searchInput = document.getElementById('searchInput');
+    const searchContainer = document.querySelector('.search-container');
+    
+    if (searchInput) {
+        // Создаем контейнер для результатов поиска
+        const searchResults = document.createElement('div');
+        searchResults.className = 'search-results';
+        searchResults.style.display = 'none';
+        
+        // Добавляем контейнер после поля поиска
+        if (searchContainer) {
+            searchContainer.parentNode.insertBefore(searchResults, searchContainer.nextSibling);
+        }
+        
+        // Функция для выполнения поиска с задержкой
+        let searchTimeout;
+        
+        function performSearch() {
+            const query = searchInput.value.trim();
+            
+            // Очищаем предыдущий таймаут
+            if (searchTimeout) {
+                clearTimeout(searchTimeout);
+            }
+            
+            // Если запрос пустой или слишком короткий, скрываем результаты
+            if (!query || query.length < 2) {
+                searchResults.style.display = 'none';
+                return;
+            }
+            
+            // Устанавливаем задержку перед отправкой запроса (300мс)
+            searchTimeout = setTimeout(() => {
+                // Отправляем запрос на сервер
+                fetch(`/search_users?query=${encodeURIComponent(query)}`, {
+                    method: 'GET',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    }
+                })
+                .then(response => response.json())
+                .then(data => {
+                    // Очищаем контейнер результатов
+                    searchResults.innerHTML = '';
+                    
+                    if (data.users && data.users.length > 0) {
+                        // Заголовок результатов
+                        const resultsHeader = document.createElement('div');
+                        resultsHeader.className = 'search-results-header';
+                        resultsHeader.textContent = 'Пользователи';
+                        searchResults.appendChild(resultsHeader);
+                        
+                        // Добавляем каждого пользователя в результаты
+                        data.users.forEach(user => {
+                            const userItem = document.createElement('div');
+                            userItem.className = 'search-user-item';
+                            userItem.dataset.userId = user.id;
+                            
+                            // Создаем аватар пользователя
+                            const userAvatar = document.createElement('div');
+                            userAvatar.className = 'search-user-avatar';
+                            
+                            if (user.avatar_path) {
+                                userAvatar.innerHTML = `<img src="${user.avatar_path}" alt="${user.name}">`;
+                            } else {
+                                userAvatar.innerHTML = `<div class="avatar-initials">${user.name.charAt(0)}</div>`;
+                            }
+                            
+                            // Создаем блок информации о пользователе
+                            const userInfo = document.createElement('div');
+                            userInfo.className = 'search-user-info';
+                            
+                            const userName = document.createElement('div');
+                            userName.className = 'search-user-name';
+                            userName.textContent = user.name;
+                            
+                            const userBio = document.createElement('div');
+                            userBio.className = 'search-user-bio';
+                            userBio.textContent = user.bio || 'Нет информации';
+                            
+                            userInfo.appendChild(userName);
+                            userInfo.appendChild(userBio);
+                            
+                            // Добавляем все элементы в карточку пользователя
+                            userItem.appendChild(userAvatar);
+                            userItem.appendChild(userInfo);
+                            
+                            // Добавляем обработчик клика для создания диалога
+                            userItem.addEventListener('click', function() {
+                                startChatWithUser(user.id, user.name);
+                            });
+                            
+                            // Добавляем пользователя в результаты
+                            searchResults.appendChild(userItem);
+                        });
+                        
+                        // Показываем результаты
+                        searchResults.style.display = 'block';
+                    } else {
+                        // Если нет результатов, показываем сообщение
+                        const noResults = document.createElement('div');
+                        noResults.className = 'search-no-results';
+                        noResults.textContent = 'Пользователи не найдены';
+                        searchResults.appendChild(noResults);
+                        searchResults.style.display = 'block';
+                    }
+                })
+                .catch(error => {
+                    console.error('Ошибка при поиске пользователей:', error);
+                    
+                    // Показываем сообщение об ошибке
+                    searchResults.innerHTML = '';
+                    const errorMsg = document.createElement('div');
+                    errorMsg.className = 'search-error';
+                    errorMsg.textContent = 'Ошибка при поиске. Попробуйте позже.';
+                    searchResults.appendChild(errorMsg);
+                    searchResults.style.display = 'block';
+                });
+            }, 300);
+        }
+        
+        // Обработчик события ввода в поле поиска
+        searchInput.addEventListener('input', performSearch);
+        
+        // Функция для начала чата с выбранным пользователем
+        function startChatWithUser(userId, userName) {
+            console.log(`Начинаем чат с пользователем: ${userName} (ID: ${userId})`);
+            
+            // Здесь будет реализация создания чата с пользователем
+            // Это будет добавлено позже при реализации чатов
+            
+            // Пока что просто закрываем результаты поиска
+            searchResults.style.display = 'none';
+            searchInput.value = '';
+        }
+        
+        // Закрытие результатов при клике вне поля поиска
+        document.addEventListener('click', function(e) {
+            if (!searchInput.contains(e.target) && !searchResults.contains(e.target)) {
+                searchResults.style.display = 'none';
+            }
+        });
+    }
+
     console.log('Обработчики событий установлены');
 });

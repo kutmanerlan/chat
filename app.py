@@ -154,6 +154,39 @@ def get_current_user_info():
         logging.error(f"Ошибка в get_current_user_info: {str(e)}")
         return jsonify({'error': 'Server error'}), 500
 
+# Новый маршрут для поиска пользователей
+@app.route('/search_users', methods=['GET'])
+def search_users():
+    if 'user_id' not in session:
+        return jsonify({'error': 'Unauthorized'}), 401
+    
+    query = request.args.get('query', '').strip()
+    
+    if not query or len(query) < 2:
+        return jsonify({'users': []})
+    
+    try:
+        # Поиск пользователей по имени (частичное совпадение)
+        # Исключаем текущего пользователя из результатов
+        users = User.query.filter(
+            User.name.ilike(f'%{query}%'),
+            User.id != session['user_id']
+        ).limit(10).all()
+        
+        results = []
+        for user in users:
+            results.append({
+                'id': user.id,
+                'name': user.name,
+                'avatar_path': user.avatar_path if hasattr(user, 'avatar_path') else None,
+                'bio': user.bio if hasattr(user, 'bio') else None
+            })
+        
+        return jsonify({'users': results})
+    except Exception as e:
+        logging.error(f"Ошибка при поиске пользователей: {str(e)}")
+        return jsonify({'error': 'Server error'}), 500
+
 # Главный маршрут
 @app.route('/')
 def hello_world():
