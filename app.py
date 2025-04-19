@@ -99,10 +99,15 @@ def login():
     if request.method == 'POST':
         email = request.form['email']
         password = request.form['password']
+        
+        # Добавляем логирование для отладки
+        logging.info(f"Попытка входа для email: {email}")
+        
         user = User.query.filter_by(email=email).first()
         if not user:
-            flash('Пользователь с таким email не найден', 'error')
-            return redirect(url_for('login'))
+            logging.info(f"Пользователь с email {email} не найден")
+            flash('Пользователь с таким email не найден. Проверьте правильность ввода или зарегистрируйтесь.', 'error')
+            return render_template('login.html')  # Остаемся на странице входа без редиректа
         if not user.email_confirmed:
             flash('Пожалуйста, подтвердите ваш email перед входом в систему', 'error')
             return redirect(url_for('login'))

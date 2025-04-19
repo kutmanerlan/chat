@@ -27,6 +27,9 @@
         .flash-messages .error {
             color: #e74c3c;
             border-left: 4px solid #e74c3c;
+            font-weight: bold; /* Делаем текст ошибки жирным */
+            background-color: rgba(231, 76, 60, 0.1); /* Добавляем фоновый цвет */
+            padding: 8px 10px; /* Увеличиваем отступы */
         }
         
         .flash-messages .info {
@@ -118,6 +121,11 @@
                                     document.getElementById('forgotPassword').style.display = 'block';
                                 }
                             </script>
+                        {% endif %}
+                        
+                        <!-- Добавляем ссылку на регистрацию если email не найден -->
+                        {% if category == 'error' and 'не найден' in message.lower() %}
+                            <p><a href="{{ url_for('register') }}" style="color: #3498db; text-decoration: underline;">Зарегистрироваться</a></p>
                         {% endif %}
                     {% endfor %}
                 </div>
