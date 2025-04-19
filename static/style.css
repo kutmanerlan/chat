@@ -2175,12 +2175,13 @@ body {
     align-items: center;
     width: 100%;
     height: 100%;
+    padding-left: 8px; /* Добавляем небольшой отступ слева для смещения скрепки */
 }
 
 /* Контейнер для кнопки скрепки - абсолютное позиционирование */
 .clip-button-container {
     position: absolute;
-    left: 0;
+    left: -5px; /* Уменьшаем значение, чтобы сдвинуть кнопку левее */
     top: 50%;
     transform: translateY(-50%);
     z-index: 2;
@@ -2202,7 +2203,11 @@ body {
     margin: 0;
 }
 
-/* Удален hover-эффект для кнопки скрепки */
+/* Скрываем все hover-эффекты для кнопки скрепки */
+.paperclip-button:hover {
+    color: #aaa; /* Тот же цвет, что и в обычном состоянии */
+    background-color: transparent;
+}
 
 /* Контейнер для поля ввода */
 .message-input-field {
@@ -2227,8 +2232,8 @@ body {
 
 /* Кнопка отправки сообщения - настройка состояний */
 .send-button {
-    width: 44px;
-    height: 44px;
+    width: 50px; /* Увеличиваем размер с 44px до 50px */
+    height: 50px; /* Увеличиваем размер с 44px до 50px */
     display: flex;
     justify-content: center;
     align-items: center;
@@ -2238,7 +2243,7 @@ body {
     cursor: default; /* Курсор по умолчанию (не pointer) */
     flex-shrink: 0;
     padding: 0;
-    margin: 0;
+    margin: 0 5px 0 5px; /* Добавляем отступы по бокам */
     opacity: 0.7; /* Уменьшаем непрозрачность для неактивного состояния */
     pointer-events: none; /* Блокируем события мыши для неактивного состояния */
 }
@@ -2251,7 +2256,18 @@ body {
     pointer-events: auto; /* Разрешаем события мыши для активного состояния */
 }
 
-/* Удален hover-эффект для кнопки отправки */
+/* Увеличиваем размер иконки внутри кнопки отправки */
+.send-button svg {
+    width: 28px; /* Увеличиваем с 24px до 28px */
+    height: 28px; /* Увеличиваем с 24px до 28px */
+}
+
+/* Скрываем все hover-эффекты для кнопки отправки */
+.send-button:hover,
+.send-button.active:hover {
+    color: inherit; /* Наследуем текущий цвет */
+    background-color: transparent;
+}
 
 /* Активное состояние кнопки отправки - синий цвет */
 .send-button.active {
