@@ -28,7 +28,7 @@
     <div class="user-profile">
       <div class="avatar-placeholder" id="avatarPlaceholder">
         <!-- Если есть аватарка - показываем, если нет - инициалы -->
-        {% if user and hasattr(user, 'avatar_path') and user.avatar_path %}
+        {% if user and user.avatar_path %}
           <img src="{{ url_for('static', filename=user.avatar_path.replace('static/', '')) }}" alt="{{ user.name }}" class="avatar-image">
         {% else %}
           <div class="avatar-initials" id="avatarInitials">{{ session.get('user_name', 'U')[0] }}</div>

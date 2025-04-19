@@ -23,6 +23,7 @@ os.makedirs(instance_path, exist_ok=True)
 
 # Инициализация приложения Flask
 app = Flask(__name__)
+app.jinja_env.globals.update(hasattr=hasattr)
 app.config['SECRET_KEY'] = 'ваш_секретный_ключ'  # Измените это в продакшне
 app.config['SQLALCHEMY_DATABASE_URI'] = f'sqlite:///{os.path.join(instance_path, "chat.db")}'
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
@@ -222,7 +223,7 @@ def register():
             logging.info(f"Попытка регистрации пользователя с email: {email}")
             # Проверка существования пользователя
             existing_user = User.query.filter_by(email=email).first()
-            if existing_user:
+            if (existing_user):
                 flash('Пользователь с таким email уже зарегистрирован', 'error')
                 return redirect(url_for('register'))
             # Проверка валидности email
