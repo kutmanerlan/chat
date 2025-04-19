@@ -204,12 +204,12 @@ body {
     left: 0; /* Показывается при активации */
 }
 
-/* Стили для профиля пользователя */
+/* Увеличенные стили для профиля пользователя */
 .user-profile-header {
     display: flex;
     justify-content: space-between;
     align-items: center;
-    padding: 10px 0;
+    padding: 15px 0; /* Увеличиваем верхний и нижний отступы */
     margin-bottom: 20px;
     border-bottom: 1px solid #333;
 }
@@ -217,13 +217,14 @@ body {
 .user-profile {
     display: flex;
     align-items: center;
+    width: 100%; /* Позволяет занимать всю доступную ширину */
 }
 
 .edit-profile-btn {
-    width: 34px;
-    height: 34px;
+    width: 38px; /* Немного увеличиваем размер кнопки */
+    height: 38px;
     padding: 0;
-    margin: 0;
+    margin-left: 10px; /* Добавляем отступ слева */
     background: transparent;
     border: none;
     cursor: pointer;
@@ -232,6 +233,7 @@ body {
     align-items: center;
     justify-content: center;
     border-radius: 50%;
+    flex-shrink: 0; /* Не позволяем кнопке сжиматься */
 }
 
 .edit-profile-btn:hover {
@@ -240,8 +242,8 @@ body {
 }
 
 .avatar-placeholder {
-    width: 48px;
-    height: 48px;
+    width: 60px; /* Увеличиваем с 48px до 60px */
+    height: 60px; /* Увеличиваем с 48px до 60px */
     border-radius: 50%;
     background-color: #706c6c;
     display: flex;
@@ -250,49 +252,48 @@ body {
     margin-right: 15px;
     position: relative;
     cursor: pointer;
-    overflow: hidden; /* Чтобы изображение не выходило за пределы круга */
+    overflow: hidden;
+    flex-shrink: 0; /* Запрещаем уменьшение размера */
 }
 
 .avatar-initials {
     color: white;
-    font-size: 24px;
+    font-size: 28px; /* Увеличиваем размер инициалов */
 }
 
 .avatar-image {
     width: 100%;
     height: 100%;
-    object-fit: cover; /* Чтобы изображение заполняло всю область */
+    object-fit: cover;
 }
 
-/* Стили для иконки загрузки фото, которая появляется при наведении */
-.avatar-upload-icon {
-    position: absolute;
-    top: 0;
-    left: 0;
-    width: 100%;
-    height: 100%;
-    background-color: rgba(0, 0, 0, 0.5);
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    opacity: 0;
-    transition: opacity 0.3s ease;
-}
-
-.avatar-placeholder:hover .avatar-upload-icon {
-    opacity: 1;
+/* Увеличиваем область для информации */
+.user-info {
+    flex-grow: 1; /* Позволяем расти, занимая доступное пространство */
+    min-width: 0; /* Предотвращает переполнение */
+    padding-right: 5px; /* Добавляем немного пространства справа */
 }
 
 .user-info h3 {
     margin: 0;
     color: white;
-    font-size: 16px;
+    font-size: 18px; /* Увеличиваем с 16px до 18px */
+    font-weight: 500; /* Делаем шрифт чуть полужирнее */
+    margin-bottom: 5px; /* Добавляем отступ снизу */
+    white-space: nowrap; /* Предотвращаем перенос текста */
+    overflow: hidden; /* Скрываем выходящий за пределы текст */
+    text-overflow: ellipsis; /* Добавляем многоточие для длинного текста */
 }
 
 .user-status {
-    margin: 5px 0 0 0;
+    margin: 0;
     color: #aaa;
-    font-size: 13px;
+    font-size: 14px; /* Увеличиваем с 13px до 14px */
+    line-height: 1.3; /* Улучшаем читаемость */
+    display: -webkit-box;
+    -webkit-line-clamp: 2; /* Ограничиваем двумя строками */
+    -webkit-box-orient: vertical;
+    overflow: hidden; /* Скрываем выходящий за пределы текст */
 }
 
 /* Стили для боковой панели редактирования профиля */
