@@ -2052,3 +2052,93 @@ body {
     background-color: #212121;
     position: relative;
 }
+
+/* Обновленные стили для поля ввода сообщений */
+.message-input-container {
+    width: 100%;
+    height: 68px; /* Увеличиваем высоту с 52px до 68px */
+    display: flex;
+    align-items: center;
+    padding: 0 12px; /* Увеличиваем боковые отступы */
+    background-color: #212121;
+    border-top: 1px solid #333;
+    position: relative;
+    z-index: 10;
+}
+
+/* Кнопка скрепки (вложений) - увеличиваем и центрируем вертикально */
+.paperclip-button {
+    width: 44px;
+    height: 44px;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    background: transparent;
+    border: none;
+    color: #aaa;
+    cursor: pointer;
+    flex-shrink: 0;
+    margin-right: 4px; /* Добавляем небольшой отступ справа */
+}
+
+.paperclip-button svg {
+    width: 24px;
+    height: 24px;
+}
+
+.paperclip-button:hover {
+    color: #ddd;
+}
+
+/* Контейнер для поля ввода */
+.message-input-field {
+    flex-grow: 1;
+    margin: 0 8px;
+    display: flex; /* Добавляем для лучшего выравнивания */
+    align-items: center;
+}
+
+/* Текстовое поле ввода сообщения */
+.message-input-field input {
+    width: 100%;
+    height: 42px; /* Увеличиваем высоту с 36px до 42px */
+    padding: 0 16px; /* Увеличиваем горизонтальные отступы */
+    border-radius: 21px; /* Половина высоты для круглых углов */
+    border: none;
+    background-color: #303030;
+    color: white;
+    font-size: 15px;
+}
+
+.message-input-field input:focus {
+    outline: none;
+    background-color: #404040; /* Немного светлее при фокусе */
+}
+
+.message-input-field input::placeholder {
+    color: #888;
+}
+
+/* Кнопка отправки сообщения */
+.send-button {
+    width: 44px;
+    height: 44px;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    background: transparent;
+    border: none;
+    color: #2b5278;
+    cursor: pointer;
+    flex-shrink: 0;
+    margin-left: 4px; /* Добавляем небольшой отступ слева */
+}
+
+.send-button svg {
+    width: 24px;
+    height: 24px;
+}
+
+.send-button:hover {
+    color: #366497;
+}
