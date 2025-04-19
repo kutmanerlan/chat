@@ -90,7 +90,7 @@ def webhook():
 @app.route('/')
 def hello_world():
     if 'user_id' in session:
-        return redirect(url_for('main'))
+        return redirect(url_for('dashboard'))
     return redirect(url_for('login'))
 
 # Маршруты авторизации
@@ -203,7 +203,7 @@ def main():
         session.clear()
         flash('Ваша сессия была завершена, так как пользователь не найден в базе данных', 'info')
         return redirect(url_for('login'))
-    return render_template('main.html')
+    return render_template('dashboard.html')
 
 # Добавим маршрут для проверки работоспособности
 @app.route('/ping')
@@ -226,8 +226,12 @@ def reset_password_request():
     if 'user_id' in session:
         return redirect(url_for('main'))
     
+    # Выводим отладочную информацию при обработке запроса
+    logging.info("Запрошена страница сброса пароля")
+    
     if request.method == 'POST':
         email = request.form.get('email', '').strip()
+        logging.info(f"Получен POST-запрос на сброс пароля для email: {email}")
         
         if not email:
             flash('Пожалуйста, введите email', 'error')
@@ -254,10 +258,13 @@ def reset_password_request():
         try:
             db.session.commit()
             # Отправляем письмо с ссылкой на сброс пароля
+            logging.info(f"Отправка письма для сброса пароля на {email}")
             result = send_reset_password_email(email, reset_token)
             if result:
+                logging.info(f"Письмо для сброса пароля успешно отправлено на {email}")
                 flash('Инструкции по сбросу пароля отправлены на ваш email', 'success')
             else:
+                logging.error(f"Не удалось отправить письмо для сброса пароля на {email}")
                 flash('Произошла ошибка при отправке email. Пожалуйста, попробуйте позже.', 'error')
         except Exception as e:
             db.session.rollback()
@@ -266,6 +273,8 @@ def reset_password_request():
         
         return redirect(url_for('login'))
     
+    # Отдаем HTML-шаблон
+    logging.info("Отдаем шаблон reset_password_request.html")
     return render_template('reset_password_request.html')
 
 # Маршрут для непосредственного сброса пароля

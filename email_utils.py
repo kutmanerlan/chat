@@ -114,8 +114,10 @@ def send_reset_password_email(user_email, token):
     SENDER_PASSWORD = "srtf zqdd qkzb diaz"  # 16-символьный пароль приложения
     USE_SSL = False  # Для Gmail с портом 587 используем TLS, а не SSL
     
-    # Настройка логирования для отладки
-    logging.info(f"Попытка отправки email для сброса пароля на адрес: {user_email}")
+    # Настройка логирования для отладки с повышенной детализацией
+    logging.info(f"===============================================")
+    logging.info(f"Начало отправки email для сброса пароля на адрес: {user_email}")
+    logging.info(f"Токен: {token}")
     
     # Настройка сообщения
     message = MIMEMultipart("alternative")
@@ -125,15 +127,18 @@ def send_reset_password_email(user_email, token):
     
     # Определяем, находимся ли мы на PythonAnywhere
     is_pythonanywhere = 'PYTHONANYWHERE_DOMAIN' in os.environ or 'PYTHONANYWHERE_HOST' in os.environ
+    logging.info(f"Запуск на PythonAnywhere: {is_pythonanywhere}")
     
     # Создаем ссылку для сброса пароля
     if is_pythonanywhere:
         # На PythonAnywhere используем абсолютную ссылку
         base_url = "https://tymeer.pythonanywhere.com"
         reset_url = f"{base_url}/reset-password/{token}"
+        logging.info(f"URL для сброса на PythonAnywhere: {reset_url}")
     else:
-        # Локально используем url_for
-        reset_url = url_for('reset_password', token=token, _external=True)
+        # Локально создаем URL вручную, т.к. url_for может не работать в этом контексте
+        reset_url = f"http://localhost:5000/reset-password/{token}"
+        logging.info(f"URL для сброса локально: {reset_url}")
     
     # Формируем тело письма
     text = f"""
@@ -187,9 +192,12 @@ def send_reset_password_email(user_email, token):
         server.quit()
         
         logging.info("Email для сброса пароля успешно отправлен")
+        logging.info(f"===============================================")
         return True
     except Exception as e:
         logging.error(f"Ошибка отправки email для сброса пароля: {str(e)}")
+        logging.error(f"Детали ошибки: {repr(e)}")
+        logging.info(f"===============================================")
         return False
 
 def is_email_valid(email):

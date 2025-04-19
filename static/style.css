@@ -314,19 +314,20 @@ body {
 .modal-buttons {
     display: flex;
     justify-content: center; /* Центрируем кнопки */
-    gap: 20px; /* Увеличенное расстояние между кнопками */
-    margin-top: 25px;
+    gap: 30px; /* Увеличиваем отступ между кнопками */
+    margin-top: 30px; /* Увеличиваем верхний отступ */
 }
 
 .btn-primary, .btn-secondary {
-    padding: 10px 16px; /* Увеличенное вертикальное padding */
-    border-radius: 4px;
+    padding: 12px 24px; /* Значительно увеличиваем размер кнопок */
+    border-radius: 6px; /* Увеличиваем скругление */
     cursor: pointer;
     border: none;
-    font-size: 14px;
-    min-width: 120px; /* Увеличиваем минимальную ширину */
+    font-size: 16px; /* Увеличиваем размер шрифта */
+    min-width: 140px; /* Делаем кнопки шире */
     text-align: center;
-    font-weight: 500; /* Делаем текст немного жирнее */
+    font-weight: 500;
+    transition: background-color 0.3s; /* Добавляем плавное изменение цвета при наведении */
 }
 
 .btn-primary {
@@ -336,7 +337,15 @@ body {
     display: inline-block;
 }
 
+.btn-primary:hover {
+    background-color: #c0392b; /* Цвет при наведении */
+}
+
 .btn-secondary {
     background-color: #333;
     color: white;
+}
+
+.btn-secondary:hover {
+    background-color: #444; /* Цвет при наведении */
 }
