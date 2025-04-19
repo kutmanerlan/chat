@@ -836,7 +836,7 @@ document.addEventListener('DOMContentLoaded', function() {
                 const hours = String(now.getHours()).padStart(2, '0');
                 const minutes = String(now.getMinutes()).padStart(2, '0');
                 
-                // Add message content
+                // Add message content with proper handling for very long text
                 message.innerHTML = `
                     <div class="message-content">${messageText}</div>
                     <div class="message-time">${hours}:${minutes}</div>
@@ -845,12 +845,9 @@ document.addEventListener('DOMContentLoaded', function() {
                 // Add message to container
                 messagesContainer.appendChild(message);
                 
-                // Clear input and reset height
+                // Clear input
                 inputField.value = '';
                 inputField.focus();
-                
-                // Hide send button
-                document.querySelector('.send-btn').classList.remove('visible');
                 
                 // Scroll chat down
                 chatMessages.scrollTop = chatMessages.scrollHeight;
