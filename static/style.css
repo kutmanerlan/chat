@@ -325,9 +325,12 @@ body {
 
 .btn-primary, .btn-secondary {
     /* Общие стили для обеих кнопок */
-    display: inline-block;
-    width: 100px;  /* Фиксированная ширина */
-    padding: 8px 0;  /* Только вертикальный отступ */
+    display: flex;             /* Меняем на flex вместо inline-block */
+    justify-content: center;   /* Центрируем содержимое по горизонтали */
+    align-items: center;       /* Центрируем содержимое по вертикали */
+    width: 100px;
+    height: 36px;              /* Задаем фиксированную высоту */
+    padding: 0;                /* Убираем вертикальные отступы */
     text-align: center;
     border-radius: 4px;
     font-size: 14px;
@@ -336,6 +339,7 @@ body {
     text-decoration: none;
     border: none;
     transition: background-color 0.2s;
+    box-sizing: border-box;    /* Учитываем границы в размере */
 }
 
 .btn-primary {
