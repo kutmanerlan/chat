@@ -765,18 +765,23 @@ document.addEventListener('DOMContentLoaded', function() {
             
             // ===== ОБРАБОТЧИКИ СОБЫТИЙ =====
             
-            // Обработчик событий для input вместо textarea
+            // Обработчик событий для поля ввода
             inputField.addEventListener('input', function() {
                 if (this.value.trim()) {
-                    sendButton.style.display = 'flex'; 
+                    // Если в поле есть текст - делаем кнопку активной и синей
+                    sendButton.classList.add('active');
                 } else {
-                    sendButton.style.display = 'none';
+                    // Если поле пустое - делаем кнопку неактивной и серой
+                    sendButton.classList.remove('active');
                 }
             });
             
             // Отправка сообщения нажатием на кнопку
             sendButton.addEventListener('click', function() {
-                sendTextMessage(inputField, chatMessages, user);
+                // Отправляем сообщение только если кнопка активна
+                if (this.classList.contains('active')) {
+                    sendTextMessage(inputField, chatMessages, user);
+                }
             });
             
             // Отправка нажатием Enter
