@@ -321,19 +321,21 @@ body {
     padding: 10px 0;
     margin-bottom: 20px;
     border-bottom: 1px solid #333;
+    height: 40px; /* Фиксированная высота для стабильного вида */
 }
 
 .header-title-wrapper {
     display: flex;
     align-items: center;
-    width: 100%; /* Занимаем всю ширину */
+    width: 100%;
+    position: relative; /* Для позиционирования */
 }
 
 .back-btn {
     background: transparent;
     border: none;
     color: #aaa;
-    padding: 5px;
+    padding: 0; /* Убираем отступы */
     cursor: pointer;
     border-radius: 50%;
     display: flex;
@@ -341,7 +343,11 @@ body {
     justify-content: center;
     width: 28px;
     height: 28px;
-    margin-right: 10px; /* Отступ от кнопки до заголовка */
+    position: absolute; /* Абсолютное позиционирование */
+    left: 0; /* Размещаем слева */
+    top: 50%; /* Центрируем по вертикали */
+    transform: translateY(-50%); /* Точное вертикальное центрирование */
+    z-index: 2; /* Чтобы кнопка была поверх текста */
 }
 
 .back-btn:hover {
@@ -355,11 +361,14 @@ body {
 }
 
 .edit-profile-header h3 {
+    width: 100%;
     margin: 0;
     color: white;
-    font-size: 18px;
-    flex-grow: 1; /* Растягиваем чтобы занимать доступное пространство */
-    text-align: center; /* Центрируем текст */
+    font-size: 16px; /* Меньший размер шрифта как на картинке */
+    text-align: center; /* Центрирование текста */
+    position: relative; /* Для позиционирования поверх других элементов */
+    font-weight: normal; /* Нежирный шрифт как на картинке */
+    z-index: 1;
 }
 
 .edit-profile-content {
