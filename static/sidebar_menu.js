@@ -710,6 +710,10 @@ document.addEventListener('DOMContentLoaded', function() {
             const chatInput = document.createElement('div');
             chatInput.className = 'chat-input';
             
+            // Создаем внутренний контейнер для поля ввода и иконок
+            const inputContainer = document.createElement('div');
+            inputContainer.className = 'input-container';
+            
             // Создаем кнопку скрепки для прикрепления файлов
             const attachmentBtn = document.createElement('button');
             attachmentBtn.className = 'attachment-btn';
@@ -734,9 +738,11 @@ document.addEventListener('DOMContentLoaded', function() {
             `;
             
             // Добавляем элементы в контейнер поля ввода
-            chatInput.appendChild(attachmentBtn);
-            chatInput.appendChild(textarea);
-            chatInput.appendChild(sendBtn);
+            inputContainer.appendChild(attachmentBtn);
+            inputContainer.appendChild(textarea);
+            inputContainer.appendChild(sendBtn);
+            
+            chatInput.appendChild(inputContainer);
             
             // Создаем модальное окно для выбора файлов
             const attachmentModal = document.createElement('div');
