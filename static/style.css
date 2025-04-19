@@ -1902,3 +1902,86 @@ body {
 .send-button.visible {
     display: flex;
 }
+
+/* Стили для простого поля ввода сообщений с элементами слева и справа */
+.message-input-container {
+    width: 100%;
+    height: 52px;
+    display: flex;
+    align-items: center;
+    padding: 0 6px;
+    background-color: #212121;
+    border-top: 1px solid #333;
+}
+
+/* Кнопка скрепки (вложений) */
+.paperclip-button {
+    width: 44px;
+    height: 44px;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    background: transparent;
+    border: none;
+    color: #aaa;
+    cursor: pointer;
+    flex-shrink: 0;
+}
+
+.paperclip-button svg {
+    width: 24px;
+    height: 24px;
+}
+
+.paperclip-button:hover {
+    color: #ddd;
+}
+
+/* Контейнер для поля ввода */
+.message-input-field {
+    flex-grow: 1;
+    margin: 0 8px;
+}
+
+/* Текстовое поле ввода сообщения */
+.message-input-field input {
+    width: 100%;
+    height: 36px;
+    padding: 0 12px;
+    border-radius: 18px;
+    border: none;
+    background-color: #303030;
+    color: white;
+    font-size: 15px;
+}
+
+.message-input-field input:focus {
+    outline: none;
+}
+
+.message-input-field input::placeholder {
+    color: #888;
+}
+
+/* Кнопка отправки сообщения */
+.send-button {
+    width: 44px;
+    height: 44px;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    background: transparent;
+    border: none;
+    color: #2b5278;
+    cursor: pointer;
+    flex-shrink: 0;
+}
+
+.send-button svg {
+    width: 24px;
+    height: 24px;
+}
+
+.send-button:hover {
+    color: #366497;
+}
