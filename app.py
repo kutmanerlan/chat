@@ -44,27 +44,40 @@ from models.user import db, User
 db.init_app(app)
 
 # Функция для создания таблиц базы данных
-from sqlalchemy import inspect
+from sqlalchemy import inspect, text
 def create_tables():
     try:
         # Используем inspect для проверки существования таблицы
         inspector = inspect(db.engine)
-        if 'user' in inspector.get_table_names():
-            db.drop_all()  # Удаляем существующие таблицы
-        db.create_all()  # Создаем таблицы
         
-        # Создаем тестового пользователя, если его нет
-        if not User.query.filter_by(email='test@example.com').first():
-            # Fix: Use 'name' parameter instead of 'username'
-            test_user = User(name='Test User', email='test@example.com')
-            # Set password using the set_password method
-            test_user.set_password('password123')
-            db.session.add(test_user)
-            db.session.commit()
-            logging.info('Тестовый пользователь создан')
+        # Проверяем, существует ли таблица user
+        if 'user' not in inspector.get_table_names():
+            # Если таблицы нет, создаем её
+            db.create_all()
+            logging.info('Таблицы созданы')
+            
+            # Создаем тестового пользователя
+            if not User.query.filter_by(email='test@example.com').first():
+                test_user = User(name='Test User', email='test@example.com')
+                test_user.set_password('password123')
+                db.session.add(test_user)
+                db.session.commit()
+                logging.info('Тестовый пользователь создан')
+        else:
+            # Если таблица существует, проверяем наличие новых колонок
+            columns = [column['name'] for column in inspector.get_columns('user')]
+            
+            # Проверяем, есть ли колонка avatar_path
+            if 'avatar_path' not in columns:
+                logging.info('Добавляем колонку avatar_path в таблицу user')
+                # Используем raw SQL для добавления колонки
+                with db.engine.connect() as connection:
+                    connection.execute(text("ALTER TABLE user ADD COLUMN avatar_path VARCHAR(255)"))
+                    connection.commit()
+                logging.info('Колонка avatar_path успешно добавлена')
     except Exception as e:
         db.session.rollback()
-        logging.error(f'Ошибка при создании таблиц базы данных: {str(e)}')
+        logging.error(f'Ошибка при обновлении схемы базы данных: {str(e)}')
 
 # Маршруты для автообновления PythonAnywhere
 @app.route('/update_server', methods=['POST'])
@@ -96,12 +109,17 @@ def get_current_user_info():
     if not user:
         return jsonify({'error': 'User not found'}), 404
     
+    # Проверяем наличие атрибута avatar_path
+    avatar_path = None
+    if hasattr(user, 'avatar_path'):
+        avatar_path = user.avatar_path
+    
     # Возвращаем актуальную информацию о пользователе
     return jsonify({
         'user_id': user.id,
         'user_name': user.name,
         'email': user.email,
-        'avatar_path': user.avatar_path if user.avatar_path else None
+        'avatar_path': avatar_path
     })
 
 # Главный маршрут
@@ -276,8 +294,12 @@ def main():
     # Обновляем данные пользователя в сессии для уверенности
     session['user_name'] = user.name
     
+    # Добавляем аватар в сессию, если он существует
+    if hasattr(user, 'avatar_path') and user.avatar_path:
+        session['avatar_path'] = user.avatar_path
+    
     # Добавляем антикэширующие заголовки
-    response = make_response(render_template('dashboard.html'))
+    response = make_response(render_template('dashboard.html', user=user))
     response.headers['Cache-Control'] = 'no-store, no-cache, must-revalidate, max-age=0'
     response.headers['Pragma'] = 'no-cache'
     response.headers['Expires'] = '0'
@@ -487,6 +509,11 @@ def upload_avatar():
         # Получаем пользователя и обновляем путь к аватарке
         user = User.query.get(session['user_id'])
         if user:
+            # Проверяем, есть ли атрибут avatar_path
+            if not hasattr(user, 'avatar_path'):
+                logging.warning('Колонка avatar_path отсутствует в базе данных')
+                return jsonify({'success': False, 'error': 'Database schema outdated'})
+                
             # Относительный путь для URL
             relative_path = os.path.join('static', 'avatars', filename).replace('\\', '/')
             user.avatar_path = relative_path
@@ -522,9 +549,9 @@ else:
             logging.basicConfig(filename='/tmp/flask_app_error.log', level=logging.DEBUG)
             logging.info("Запускаем приложение через WSGI")
             try:
-                # Проверяем существование таблиц и создаем если нужно
-                if not db.engine.dialect.has_table(db.engine, 'user'):
-                    create_tables()
+                # Всегда проверяем и обновляем схему базы данных
+                create_tables()
+                logging.info("Схема базы данных проверена и обновлена при необходимости")
                 logging.info("Приложение успешно запущено на PythonAnywhere")
             except Exception as e:
                 logging.error(f"Ошибка при запуске приложения: {str(e)}")
