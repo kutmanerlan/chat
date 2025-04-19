@@ -93,7 +93,8 @@ def hello_world():
         return redirect(url_for('dashboard'))
     return redirect(url_for('login'))
 
-# Маршруты авторизации
+// ...existing code...
+
 @app.route('/login', methods=['GET', 'POST'])
 def login():
     if request.method == 'POST':
@@ -103,22 +104,59 @@ def login():
         # Добавляем логирование для отладки
         logging.info(f"Попытка входа для email: {email}")
         
+        # Определяем, является ли запрос AJAX-запросом
+        is_ajax = request.headers.get('X-Requested-With') == 'XMLHttpRequest'
+        
         user = User.query.filter_by(email=email).first()
         if not user:
             logging.info(f"Пользователь с email {email} не найден")
-            flash('Пользователь с таким email не найден. Проверьте правильность ввода или зарегистрируйтесь.', 'error')
-            return render_template('login.html')  # Остаемся на странице входа без редиректа
+            message = 'Пользователь с таким email не найден. Проверьте правильность ввода или зарегистрируйтесь.'
+            
+            if is_ajax:
+                return jsonify({
+                    'success': False,
+                    'message': message
+                })
+            else:
+                flash(message, 'error')
+                return render_template('login.html')
+                
         if not user.email_confirmed:
-            flash('Пожалуйста, подтвердите ваш email перед входом в систему', 'error')
-            return redirect(url_for('login'))
+            message = 'Пожалуйста, подтвердите ваш email перед входом в систему'
+            
+            if is_ajax:
+                return jsonify({
+                    'success': False,
+                    'message': message
+                })
+            else:
+                flash(message, 'error')
+                return redirect(url_for('login'))
+                
         # Исправление: используем правильный метод проверки пароля
         if user.check_password(password):
             # Успешная авторизация
             session['user_id'] = user.id
             session['user_name'] = user.name  # Добавляем имя в сессию
-            return redirect(url_for('main'))
+            
+            if is_ajax:
+                return jsonify({
+                    'success': True,
+                    'redirect': url_for('main')
+                })
+            else:
+                return redirect(url_for('main'))
         else:
-            flash('Неверный пароль', 'error')
+            message = 'Неверный пароль'
+            
+            if is_ajax:
+                return jsonify({
+                    'success': False,
+                    'message': message
+                })
+            else:
+                flash(message, 'error')
+                
     return render_template('login.html')
 
 @app.route('/register', methods=['GET', 'POST'])

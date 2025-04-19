@@ -201,8 +201,10 @@
             });
         });
         
-        // Клиентская валидация
+        // Заменяем стандартную отправку формы на AJAX
         document.getElementById('loginForm').addEventListener('submit', function(e) {
+            e.preventDefault(); // Останавливаем стандартную отправку формы
+            
             let isValid = true;
             const email = document.getElementById('email');
             const password = document.getElementById('password');
@@ -214,6 +216,12 @@
             password.classList.remove('input-error');
             emailError.style.display = 'none';
             passwordError.style.display = 'none';
+            
+            // Очищаем предыдущие сообщения
+            const flashContainer = document.querySelector('.flash-messages');
+            if (flashContainer) {
+                flashContainer.innerHTML = '';
+            }
             
             // Проверка email
             if (!email.value.trim()) {
@@ -236,8 +244,58 @@
             }
             
             if (!isValid) {
-                e.preventDefault(); // Отменить отправку формы при наличии ошибок
+                return false; // Остановка отправки
             }
+            
+            // Отправляем AJAX запрос
+            const formData = new FormData(this);
+            
+            fetch('{{ url_for("login") }}', {
+                method: 'POST',
+                body: formData,
+                headers: {
+                    'X-Requested-With': 'XMLHttpRequest'
+                }
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    // Перенаправление на главную страницу
+                    window.location.href = data.redirect;
+                } else {
+                    // Показываем ошибку
+                    if (!flashContainer) {
+                        const newFlashContainer = document.createElement('div');
+                        newFlashContainer.className = 'flash-messages';
+                        this.parentNode.insertBefore(newFlashContainer, this);
+                    }
+                    
+                    const errorElement = document.createElement('p');
+                    errorElement.className = 'error';
+                    errorElement.textContent = data.message;
+                    
+                    if (flashContainer) {
+                        flashContainer.appendChild(errorElement);
+                    }
+                    
+                    // Если ошибка связана с паролем, показываем ссылку на сброс
+                    if (data.message.toLowerCase().includes('пароль')) {
+                        document.getElementById('forgotPassword').style.display = 'block';
+                    }
+                    
+                    // Если email не существует, добавляем ссылку на регистрацию
+                    if (data.message.toLowerCase().includes('не найден')) {
+                        const registerLink = document.createElement('p');
+                        registerLink.innerHTML = '<a href="{{ url_for("register") }}" style="color: #3498db; text-decoration: underline;">Зарегистрироваться</a>';
+                        if (flashContainer) {
+                            flashContainer.appendChild(registerLink);
+                        }
+                    }
+                }
+            })
+            .catch(error => {
+                console.error('Ошибка:', error);
+            });
         });
     </script>
 </body>
