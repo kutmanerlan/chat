@@ -149,6 +149,13 @@ body {
     transform: translateY(-50%);
     pointer-events: none; /* Чтобы иконка не блокировала клики по полю */
     z-index: 1;
+    width: 22px; /* Увеличили с 18px */
+    height: 22px; /* Увеличили с 18px */
+}
+
+.search-icon path {
+    stroke-width: 0.6; /* Добавляем обводку для большей толщины */
+    stroke: #aaa; /* Цвет обводки совпадает с цветом заливки */
 }
 
 .menu-btn {
@@ -204,7 +211,7 @@ body {
 #searchInput {
     flex-grow: 1;
     height: 36px; /* Высота как на фото 1 */
-    padding: 0 15px 0 38px; /* Увеличиваем левый отступ для иконки */
+    padding: 0 15px 0 42px; /* Увеличили левый отступ с 38px до 42px для учета увеличения размера иконки */
     border: none;
     border-radius: 18px;
     background-color: #100E0E;
