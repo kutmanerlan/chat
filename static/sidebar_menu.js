@@ -854,6 +854,12 @@ document.addEventListener('DOMContentLoaded', function() {
                 
                 // TODO: Send message to server
                 console.log(`Sending message to ${user.name} (ID: ${user.id}):`, messageText);
+                
+                // После отправки сообщения делаем кнопку серой снова
+                const sendButton = document.querySelector('.send-button');
+                if (sendButton) {
+                    sendButton.classList.remove('active');
+                }
             }
         }
         

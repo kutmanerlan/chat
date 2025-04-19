@@ -249,7 +249,7 @@ body {
     height: 60px; /* Изменяем высоту заголовка */
     background-color: #212121; /* Цвет как на фото 1 */
     display: flex;
-    align-items: center;
+    align-items: center; /* Убедимся, что все элементы вертикально центрированы */
     justify-content: space-between;
     padding: 0 16px;
     border-bottom: 1px solid #333; /* Более заметная граница */
@@ -311,6 +311,7 @@ body {
     display: flex;
     align-items: center;
     justify-content: center;
+    align-self: center; /* Добавляем для лучшего вертикального выравнивания */
 }
 
 .chat-menu-btn:hover {
@@ -2128,10 +2129,15 @@ body {
     align-items: center;
     background: transparent;
     border: none;
-    color: #2b5278;
+    color: #888; /* Серый цвет по умолчанию */
     cursor: pointer;
     flex-shrink: 0;
     margin-left: 4px; /* Добавляем небольшой отступ слева */
+}
+
+/* Активное состояние кнопки отправки - синий цвет */
+.send-button.active {
+    color: #2b5278; /* Синий цвет при наличии текста */
 }
 
 .send-button svg {
