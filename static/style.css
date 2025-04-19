@@ -327,18 +327,25 @@ body {
     background: transparent;
     border: none;
     color: #aaa;
-    padding: 8px;
+    padding: 5px; /* Уменьшено с 8px до 5px */
     margin-right: 10px;
     cursor: pointer;
     border-radius: 50%;
     display: flex;
     align-items: center;
     justify-content: center;
+    width: 28px; /* Добавлена фиксированная ширина */
+    height: 28px; /* Добавлена фиксированная высота */
 }
 
 .back-btn:hover {
     color: white;
     background-color: #333;
+}
+
+.back-btn svg {
+    width: 16px; /* Ограничиваем размер иконки */
+    height: 16px;
 }
 
 .edit-profile-header h3 {
