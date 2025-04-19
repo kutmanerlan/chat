@@ -568,23 +568,23 @@ document.addEventListener('DOMContentLoaded', function() {
             });
         }
         
-        // Функция для создания интерфейса чата
+        // Function for creating chat interface
         function createChatInterface(user) {
             const mainContent = document.querySelector('.main-content');
             if (!mainContent) return;
             
-            // Очищаем главный контент
+            // Clear the main content
             mainContent.innerHTML = '';
             
-            // Создаем шапку чата
+            // Create chat header
             const chatHeader = document.createElement('div');
             chatHeader.className = 'chat-header';
             
-            // Информация о пользователе
+            // User info
             const userInfo = document.createElement('div');
             userInfo.className = 'chat-user-info';
             
-            // Аватар пользователя
+            // User avatar
             const userAvatar = document.createElement('div');
             userAvatar.className = 'chat-user-avatar';
             
@@ -594,16 +594,16 @@ document.addEventListener('DOMContentLoaded', function() {
                 userAvatar.innerHTML = `<div class="avatar-initials">${user.name.charAt(0)}</div>`;
             }
             
-            // Имя пользователя
+            // User name
             const userName = document.createElement('div');
             userName.className = 'chat-user-name';
             userName.textContent = user.name;
             
-            // Добавляем элементы в информацию о пользователе
+            // Add elements to user info
             userInfo.appendChild(userAvatar);
             userInfo.appendChild(userName);
             
-            // Кнопка с вертикальными тремя точками (меню)
+            // Menu button (three vertical dots)
             const menuButton = document.createElement('button');
             menuButton.className = 'chat-menu-btn';
             menuButton.innerHTML = `
@@ -614,12 +614,12 @@ document.addEventListener('DOMContentLoaded', function() {
                 </svg>
             `;
             
-            // Создаем выпадающее меню
+            // Create dropdown menu
             const dropdown = document.createElement('div');
             dropdown.className = 'chat-dropdown-menu';
             dropdown.style.display = 'none';
             
-            // Проверяем, является ли пользователь контактом
+            // Check if user is a contact
             fetch('/check_contact', {
                 method: 'POST',
                 headers: {
@@ -629,7 +629,7 @@ document.addEventListener('DOMContentLoaded', function() {
             })
             .then(response => response.json())
             .then(data => {
-                // Создаем элементы меню в зависимости от статуса контакта
+                // Create menu items based on contact status
                 if (data.is_contact) {
                     dropdown.innerHTML = `
                         <div class="dropdown-item remove-contact" data-user-id="${user.id}">
@@ -644,7 +644,7 @@ document.addEventListener('DOMContentLoaded', function() {
                     `;
                 }
                 
-                // Обработчики для пунктов меню
+                // Add event handlers for menu items
                 dropdown.querySelectorAll('.dropdown-item').forEach(item => {
                     item.addEventListener('click', function() {
                         if (item.classList.contains('add-contact')) {
@@ -657,7 +657,7 @@ document.addEventListener('DOMContentLoaded', function() {
                 });
             })
             .catch(error => {
-                console.error('Ошибка при проверке статуса контакта:', error);
+                console.error('Error checking contact status:', error);
                 dropdown.innerHTML = `
                     <div class="dropdown-item add-contact" data-user-id="${user.id}">
                         Добавить в контакты
@@ -665,86 +665,80 @@ document.addEventListener('DOMContentLoaded', function() {
                 `;
             });
             
-            // Обработчик клика по кнопке меню
+            // Menu button click handler
             menuButton.addEventListener('click', function(e) {
                 e.stopPropagation();
                 dropdown.style.display = dropdown.style.display === 'none' ? 'block' : 'none';
             });
             
-            // Закрытие меню при клике вне его
+            // Close menu when clicking outside
             document.addEventListener('click', function() {
                 dropdown.style.display = 'none';
             });
             
-            // Предотвращение закрытия меню при клике на само меню
+            // Prevent menu closing when clicking on menu
             dropdown.addEventListener('click', function(e) {
                 e.stopPropagation();
             });
             
-            // Создаем область сообщений
+            // Create messages area
             const chatMessages = document.createElement('div');
             chatMessages.className = 'chat-messages';
             
-            // Проверка на наличие сообщений
-            const hasMessages = false; // Заменить на реальную проверку
+            // Check if there are messages
+            const hasMessages = false; // Replace with actual check
             
             if (hasMessages) {
-                // Добавляем контейнер для сообщений
+                // Add container for messages
                 const messagesContainer = document.createElement('div');
                 messagesContainer.className = 'messages-container';
                 chatMessages.appendChild(messagesContainer);
                 
-                // Здесь будут добавляться реальные сообщения
+                // Real messages will be added here
             } else {
-                // Добавляем заглушку "Нет сообщений"
+                // Add "No messages" placeholder
                 const noMessages = document.createElement('div');
                 noMessages.className = 'no-messages';
                 noMessages.textContent = 'Нет сообщений';
                 chatMessages.appendChild(noMessages);
             }
             
-            // НОВЫЙ КОД: Полностью переписанное поле ввода сообщений
-            // =======================================================
+            // ===== COMPLETELY NEW CHAT INPUT IMPLEMENTATION =====
             
-            // Создаем основной контейнер для поля ввода
+            // Create main input container
             const chatInput = document.createElement('div');
             chatInput.className = 'chat-input';
             
-            // Создаем внутренний контейнер для поля ввода и иконок
-            const inputContainer = document.createElement('div');
-            inputContainer.className = 'input-container';
-            
-            // Создаем кнопку скрепки для прикрепления файлов
+            // Attachment button (paperclip)
             const attachmentBtn = document.createElement('button');
             attachmentBtn.className = 'attachment-btn';
             attachmentBtn.innerHTML = `
-                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <svg viewBox="0 0 24 24" width="24" height="24" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round">
                     <path d="M21.44 11.05l-9.19 9.19a6 6 0 0 1-8.49-8.49l9.19-9.19a4 4 0 0 1 5.66 5.66l-9.2 9.19a2 2 0 0 1-2.83-2.83l8.49-8.48"></path>
                 </svg>
             `;
             
-            // Создаем поле для ввода текста
+            // Message input field
             const textarea = document.createElement('textarea');
             textarea.placeholder = 'Сообщение';
+            textarea.rows = 1;
             
-            // Создаем кнопку отправки (скрытую по умолчанию)
+            // Send button
             const sendBtn = document.createElement('button');
             sendBtn.className = 'send-btn';
             sendBtn.innerHTML = `
-                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2">
+                <svg viewBox="0 0 24 24" width="24" height="24" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round">
                     <line x1="22" y1="2" x2="11" y2="13"></line>
                     <polygon points="22 2 15 22 11 13 2 9 22 2"></polygon>
                 </svg>
             `;
             
-            // Добавляем элементы в контейнер поля ввода
-            inputContainer.appendChild(attachmentBtn);
-            inputContainer.appendChild(textarea);
-            inputContainer.appendChild(sendBtn);
+            // Add elements to chat input
+            chatInput.appendChild(attachmentBtn);
+            chatInput.appendChild(textarea);
+            chatInput.appendChild(sendBtn);
             
-            chatInput.appendChild(inputContainer);
-            
-            // Создаем модальное окно для выбора файлов
+            // Create attachment modal
             const attachmentModal = document.createElement('div');
             attachmentModal.className = 'attachment-modal';
             
@@ -761,38 +755,27 @@ document.addEventListener('DOMContentLoaded', function() {
                     </div>
                     <div class="attachment-modal-body">
                         <div class="attachment-grid">
-                            <div class="attachment-item">
-                                <img src="static/avatars/user_1_avatar.jpg" alt="File 1">
-                                <div class="attachment-item-name">komnata.jpg</div>
-                            </div>
-                            <div class="attachment-item">
-                                <img src="static/avatars/user_1_avatar.jpg" alt="File 2">
-                                <div class="attachment-item-name">463788.png</div>
-                            </div>
-                            <div class="attachment-item">
-                                <img src="static/avatars/user_1_avatar.jpg" alt="File 3">
-                                <div class="attachment-item-name">463788.webp</div>
-                            </div>
+                            <!-- Files will be displayed here -->
                         </div>
-                        <button class="show-all-files-btn">Показать все файлы...</button>
+                        <button class="show-all-files-btn">Выбрать из файлов</button>
                     </div>
                 </div>
             `;
             
-            // Скрытый input для выбора файлов через системный диалог
+            // Create hidden file input
             const fileInput = document.createElement('input');
             fileInput.type = 'file';
+            fileInput.multiple = true;
+            fileInput.accept = 'image/*,video/*,.pdf,.doc,.docx,.xls,.xlsx,.zip,.rar';
             fileInput.className = 'file-input';
-            fileInput.multiple = true; // Разрешаем выбирать несколько файлов
-            fileInput.accept = 'image/*,video/*,.doc,.docx,.pdf,.xls,.xlsx,.zip,.rar';
             
-            // Добавляем модальное окно и скрытый input в body
+            // Add attachment modal and file input to body
             document.body.appendChild(attachmentModal);
             document.body.appendChild(fileInput);
             
-            // Обработчики событий
+            // ===== EVENT HANDLERS =====
             
-            // 1. Показываем/скрываем кнопку отправки в зависимости от наличия текста
+            // Show/hide send button based on text input
             textarea.addEventListener('input', function() {
                 if (this.value.trim()) {
                     sendBtn.classList.add('visible');
@@ -800,71 +783,51 @@ document.addEventListener('DOMContentLoaded', function() {
                     sendBtn.classList.remove('visible');
                 }
                 
-                // Автоматически изменяем высоту textarea
+                // Auto-resize textarea
                 this.style.height = 'auto';
-                const newHeight = Math.min(120, this.scrollHeight);
+                const newHeight = Math.min(120, Math.max(40, this.scrollHeight));
                 this.style.height = newHeight + 'px';
             });
             
-            // 2. Обработчик для кнопки скрепки (открывает модальное окно)
+            // Open attachment modal when clicking the paperclip
             attachmentBtn.addEventListener('click', function() {
                 attachmentModal.classList.add('active');
             });
             
-            // 3. Закрытие модального окна
+            // Close attachment modal
             const closeModalBtn = attachmentModal.querySelector('.attachment-modal-close');
             closeModalBtn.addEventListener('click', function() {
                 attachmentModal.classList.remove('active');
             });
             
-            // 4. Закрытие модального окна при клике вне его
+            // Close modal when clicking outside
             attachmentModal.addEventListener('click', function(e) {
-                if (e.target === attachmentModal) {
-                    attachmentModal.classList.remove('active');
+                if (e.target === this) {
+                    this.classList.remove('active');
                 }
             });
             
-            // 5. Обработка клика "Показать все файлы"
+            // "Choose from files" button
             const showAllFilesBtn = attachmentModal.querySelector('.show-all-files-btn');
             showAllFilesBtn.addEventListener('click', function() {
                 fileInput.click();
                 attachmentModal.classList.remove('active');
             });
             
-            // 6. Обработка выбора файлов через системный диалог
+            // Handle file selection
             fileInput.addEventListener('change', function() {
                 if (this.files && this.files.length > 0) {
-                    // Здесь можно добавить логику обработки выбранных файлов
-                    console.log(`Выбрано ${this.files.length} файлов`);
-                    
-                    // Пример: Добавление сообщения о выбранных файлах
                     sendFileMessage(this.files, chatMessages, user);
-                    
-                    // Сбрасываем значение input для возможности повторного выбора тех же файлов
-                    this.value = '';
+                    this.value = ''; // Reset input for selecting the same files again
                 }
             });
             
-            // 7. Обработчик выбора файла в модальном окне
-            const attachmentItems = attachmentModal.querySelectorAll('.attachment-item');
-            attachmentItems.forEach(item => {
-                item.addEventListener('click', function() {
-                    // Здесь логика для выбора конкретного файла из галереи
-                    const fileName = this.querySelector('.attachment-item-name').textContent;
-                    console.log(`Выбран файл: ${fileName}`);
-                    
-                    // Здесь можно добавить логику отправки выбранного файла
-                    
-                    attachmentModal.classList.remove('active');
-                });
-            });
-            
-            // 8. Отправка сообщения при клике на кнопку отправки
+            // Send button click handler
             sendBtn.addEventListener('click', function() {
                 sendTextMessage(textarea, chatMessages, user);
             });
             
-            // 9. Отправка сообщения при нажатии Enter (без Shift)
+            // Enter key to send (without Shift)
             textarea.addEventListener('keydown', function(e) {
                 if (e.key === 'Enter' && !e.shiftKey) {
                     e.preventDefault();
@@ -872,7 +835,7 @@ document.addEventListener('DOMContentLoaded', function() {
                 }
             });
             
-            // Добавляем все элементы в область чата
+            // Add elements to main content
             chatHeader.appendChild(userInfo);
             chatHeader.appendChild(menuButton);
             chatHeader.appendChild(dropdown);
@@ -881,23 +844,23 @@ document.addEventListener('DOMContentLoaded', function() {
             mainContent.appendChild(chatMessages);
             mainContent.appendChild(chatInput);
             
-            // Показываем основную область
+            // Show main content
             mainContent.style.display = 'flex';
             
-            // Фокусируем поле ввода
+            // Focus the textarea
             setTimeout(() => {
                 textarea.focus();
             }, 0);
         }
         
-        // Функция для отправки текстового сообщения
+        // Functions for sending messages
         function sendTextMessage(textarea, chatMessages, user) {
             const messageText = textarea.value.trim();
             if (messageText) {
-                // Получаем или создаем контейнер для сообщений
+                // Get or create messages container
                 let messagesContainer = chatMessages.querySelector('.messages-container');
                 
-                // Удаляем сообщение "Нет сообщений" если оно есть
+                // Remove "No messages" if it exists
                 const noMessages = chatMessages.querySelector('.no-messages');
                 if (noMessages) {
                     chatMessages.removeChild(noMessages);
@@ -912,45 +875,47 @@ document.addEventListener('DOMContentLoaded', function() {
                     chatMessages.appendChild(messagesContainer);
                 }
                 
-                // Создаем элемент сообщения
+                // Create message element
                 const message = document.createElement('div');
                 message.className = 'message message-sent';
                 
-                // Текущее время для сообщения
+                // Current time for the message
                 const now = new Date();
                 const hours = String(now.getHours()).padStart(2, '0');
                 const minutes = String(now.getMinutes()).padStart(2, '0');
                 
-                // Добавляем содержимое сообщения
+                // Add message content
                 message.innerHTML = `
                     <div class="message-content">${messageText}</div>
                     <div class="message-time">${hours}:${minutes}</div>
                 `;
                 
-                // Добавляем сообщение в контейнер
+                // Add message to container
                 messagesContainer.appendChild(message);
                 
-                // Очищаем поле ввода и скрываем кнопку отправки
+                // Clear input and reset height
                 textarea.value = '';
-                textarea.style.height = 'auto';
+                textarea.style.height = '40px';
+                textarea.focus();
+                
+                // Hide send button
                 document.querySelector('.send-btn').classList.remove('visible');
                 
-                // Прокручиваем чат вниз
+                // Scroll chat down
                 chatMessages.scrollTop = chatMessages.scrollHeight;
                 
-                // TODO: Здесь будет отправка сообщения на сервер
-                console.log(`Отправка сообщения пользователю ${user.name} (ID: ${user.id}):`, messageText);
+                // TODO: Send message to server
+                console.log(`Sending message to ${user.name} (ID: ${user.id}):`, messageText);
             }
         }
         
-        // Функция для отправки файлов
         function sendFileMessage(files, chatMessages, user) {
             if (!files || files.length === 0) return;
             
-            // Получаем или создаем контейнер для сообщений
+            // Get or create messages container
             let messagesContainer = chatMessages.querySelector('.messages-container');
             
-            // Удаляем сообщение "Нет сообщений" если оно есть
+            // Remove "No messages" if it exists
             const noMessages = chatMessages.querySelector('.no-messages');
             if (noMessages) {
                 chatMessages.removeChild(noMessages);
@@ -965,24 +930,24 @@ document.addEventListener('DOMContentLoaded', function() {
                 chatMessages.appendChild(messagesContainer);
             }
             
-            // Текущее время для сообщения
+            // Current time for the message
             const now = new Date();
             const hours = String(now.getHours()).padStart(2, '0');
             const minutes = String(now.getMinutes()).padStart(2, '0');
             
-            // Перебираем все выбранные файлы
+            // Process each file
             Array.from(files).forEach(file => {
-                // Создаем элемент сообщения
+                // Create message element
                 const message = document.createElement('div');
                 message.className = 'message message-sent';
                 
-                // Определяем тип файла для правильного отображения
+                // Determine file type for proper display
                 const isImage = file.type.startsWith('image/');
                 
                 let fileContent;
                 
                 if (isImage) {
-                    // Создаем URL для предпросмотра изображения
+                    // Create URL for image preview
                     const imageUrl = URL.createObjectURL(file);
                     fileContent = `
                         <div class="message-image">
@@ -993,7 +958,7 @@ document.addEventListener('DOMContentLoaded', function() {
                         </div>
                     `;
                 } else {
-                    // Для неизображений просто показываем информацию о файле
+                    // For non-images just show file info
                     fileContent = `
                         <div class="message-content">
                             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2" style="margin-right: 5px; vertical-align: middle;">
@@ -1005,24 +970,24 @@ document.addEventListener('DOMContentLoaded', function() {
                     `;
                 }
                 
-                // Добавляем содержимое и время в сообщение
+                // Add content and time to message
                 message.innerHTML = `
                     ${fileContent}
                     <div class="message-time">${hours}:${minutes}</div>
                 `;
                 
-                // Добавляем сообщение в контейнер
+                // Add message to container
                 messagesContainer.appendChild(message);
             });
             
-            // Прокручиваем чат вниз
+            // Scroll chat down
             chatMessages.scrollTop = chatMessages.scrollHeight;
             
-            // TODO: Здесь будет логика отправки файлов на сервер
-            console.log(`Отправка ${files.length} файлов пользователю ${user.name} (ID: ${user.id})`);
+            // TODO: Send files to server
+            console.log(`Sending ${files.length} files to ${user.name} (ID: ${user.id})`);
         }
         
-        // Вспомогательная функция для форматирования размера файла
+        // Helper function for formatting file size
         function formatFileSize(bytes) {
             if (bytes < 1024) return bytes + ' B';
             else if (bytes < 1048576) return (bytes / 1024).toFixed(1) + ' KB';
