@@ -103,6 +103,29 @@
         .toggle-password:hover .eye-icon {
             fill: #aaaaaa;
         }
+        
+        .forgot-password-btn {
+            background: transparent;
+            border: none;
+            color: #3498db;
+            font-size: 14px;
+            text-decoration: underline;
+            cursor: pointer;
+            padding: 0;
+            margin: 10px 0;
+        }
+        
+        .forgot-password-btn:hover {
+            color: #2980b9;
+            text-decoration: none;
+        }
+        
+        .reset-message {
+            color: #58d68d;
+            font-size: 14px;
+            margin: 10px 0;
+            display: none;
+        }
     </style>
 </head>
 <body>
@@ -158,9 +181,12 @@
             <button type="submit">Войти</button>
         </form>
         
-        <!-- Ссылка на сброс пароля -->
+        <!-- Заменяем ссылку на кнопку для сброса пароля -->
         <div id="forgotPassword" class="forgot-password">
-            <a href="{{ url_for('reset_password_request') }}">Забыли пароль?</a>
+            <button type="button" id="forgotPasswordBtn" class="forgot-password-btn">Забыли пароль?</button>
+            <div id="resetMessage" class="reset-message">
+                Если указанный email зарегистрирован, инструкции по сбросу пароля будут отправлены на вашу почту.
+            </div>
         </div>
         
         <div class="footer">
@@ -309,6 +335,55 @@
                 errorElement.className = 'error';
                 errorElement.textContent = 'Произошла ошибка при отправке запроса. Попробуйте позже.';
                 flashContainer.appendChild(errorElement);
+            });
+        });
+        
+        // Добавляем обработчик для кнопки "Забыли пароль"
+        document.getElementById('forgotPasswordBtn').addEventListener('click', function() {
+            const email = document.getElementById('email').value.trim();
+            
+            // Проверяем, что email введен
+            if (!email) {
+                let flashContainer = document.querySelector('.flash-messages');
+                if (!flashContainer) {
+                    flashContainer = document.createElement('div');
+                    flashContainer.className = 'flash-messages';
+                    const loginForm = document.getElementById('loginForm');
+                    loginForm.parentNode.insertBefore(flashContainer, loginForm);
+                }
+                
+                // Очищаем предыдущие сообщения
+                flashContainer.innerHTML = '';
+                
+                const errorElement = document.createElement('p');
+                errorElement.className = 'error';
+                errorElement.textContent = 'Пожалуйста, введите ваш email адрес';
+                flashContainer.appendChild(errorElement);
+                return;
+            }
+            
+            // Отправляем запрос на сброс пароля
+            fetch('{{ url_for("reset_password_request") }}', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/x-www-form-urlencoded',
+                    'X-Requested-With': 'XMLHttpRequest'
+                },
+                body: 'email=' + encodeURIComponent(email)
+            })
+            .then(response => response.json())
+            .then(data => {
+                // Скрываем кнопку сброса
+                document.getElementById('forgotPasswordBtn').style.display = 'none';
+                
+                // Показываем сообщение об отправке письма
+                document.getElementById('resetMessage').style.display = 'block';
+            })
+            .catch(error => {
+                console.error('Ошибка:', error);
+                // При ошибке также показываем стандартное сообщение
+                document.getElementById('forgotPasswordBtn').style.display = 'none';
+                document.getElementById('resetMessage').style.display = 'block';
             });
         });
     </script>

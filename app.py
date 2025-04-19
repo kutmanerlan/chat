@@ -270,53 +270,96 @@ def reset_password_request():
     # Выводим отладочную информацию при обработке запроса
     logging.info("Запрошена страница сброса пароля")
     
+    # Определяем, является ли запрос AJAX-запросом
+    is_ajax = request.headers.get('X-Requested-With') == 'XMLHttpRequest'
+    
     if request.method == 'POST':
         email = request.form.get('email', '').strip()
         logging.info(f"Получен POST-запрос на сброс пароля для email: {email}")
         
         if not email:
-            flash('Пожалуйста, введите email', 'error')
-            return render_template('reset_password_request.html')
+            if is_ajax:
+                return jsonify({
+                    'success': False,
+                    'message': 'Пожалуйста, введите email'
+                })
+            else:
+                flash('Пожалуйста, введите email', 'error')
+                return render_template('reset_password_request.html')
             
         if not is_email_valid(email):
-            flash('Пожалуйста, введите корректный email', 'error')
-            return render_template('reset_password_request.html')
+            if is_ajax:
+                return jsonify({
+                    'success': False,
+                    'message': 'Пожалуйста, введите корректный email'
+                })
+            else:
+                flash('Пожалуйста, введите корректный email', 'error')
+                return render_template('reset_password_request.html')
         
         user = User.query.filter_by(email=email).first()
-        if not user:
-            # Для безопасности не сообщаем, существует ли пользователь
-            flash('Если указанный email зарегистрирован в системе, вы получите инструкции по сбросу пароля', 'info')
-            return redirect(url_for('login'))
         
-        # Генерация токена для сброса пароля
+        # Генерируем токен даже если пользователь не найден (для безопасности)
         reset_token = generate_confirmation_token()
         token_expiration = datetime.datetime.now() + datetime.timedelta(hours=1)
         
-        # Сохраняем токен в базе данных
-        user.confirmation_token = reset_token
-        user.token_expiration = token_expiration
-        
-        try:
-            db.session.commit()
-            # Отправляем письмо с ссылкой на сброс пароля
-            logging.info(f"Отправка письма для сброса пароля на {email}")
-            result = send_reset_password_email(email, reset_token)
-            if result:
-                logging.info(f"Письмо для сброса пароля успешно отправлено на {email}")
-                flash('Инструкции по сбросу пароля отправлены на ваш email', 'success')
+        if user:
+            # Сохраняем токен в базе данных только для существующего пользователя
+            user.confirmation_token = reset_token
+            user.token_expiration = token_expiration
+            
+            try:
+                db.session.commit()
+                # Отправляем письмо с ссылкой на сброс пароля
+                logging.info(f"Отправка письма для сброса пароля на {email}")
+                result = send_reset_password_email(email, reset_token)
+                
+                if is_ajax:
+                    return jsonify({
+                        'success': True,
+                        'message': 'Инструкции по сбросу пароля отправлены на ваш email'
+                    })
+                else:
+                    if result:
+                        logging.info(f"Письмо для сброса пароля успешно отправлено на {email}")
+                        flash('Инструкции по сбросу пароля отправлены на ваш email', 'success')
+                    else:
+                        logging.error(f"Не удалось отправить письмо для сброса пароля на {email}")
+                        flash('Произошла ошибка при отправке email. Пожалуйста, попробуйте позже.', 'error')
+            except Exception as e:
+                db.session.rollback()
+                logging.error(f"Ошибка при сбросе пароля: {str(e)}")
+                
+                if is_ajax:
+                    return jsonify({
+                        'success': False,
+                        'message': 'Произошла ошибка. Пожалуйста, попробуйте позже.'
+                    })
+                else:
+                    flash('Произошла ошибка. Пожалуйста, попробуйте позже.', 'error')
+        else:
+            # Для безопасности не сообщаем, существует ли пользователь
+            if is_ajax:
+                return jsonify({
+                    'success': True,
+                    'message': 'Если указанный email зарегистрирован в системе, вы получите инструкции по сбросу пароля'
+                })
             else:
-                logging.error(f"Не удалось отправить письмо для сброса пароля на {email}")
-                flash('Произошла ошибка при отправке email. Пожалуйста, попробуйте позже.', 'error')
-        except Exception as e:
-            db.session.rollback()
-            logging.error(f"Ошибка при сбросе пароля: {str(e)}")
-            flash('Произошла ошибка. Пожалуйста, попробуйте позже.', 'error')
+                flash('Если указанный email зарегистрирован в системе, вы получите инструкции по сбросу пароля', 'info')
         
-        return redirect(url_for('login'))
+        if not is_ajax:
+            return redirect(url_for('login'))
     
-    # Отдаем HTML-шаблон
-    logging.info("Отдаем шаблон reset_password_request.html")
-    return render_template('reset_password_request.html')
+    # Только для GET запросов отдаем HTML-шаблон
+    if request.method == 'GET':
+        logging.info("Отдаем шаблон reset_password_request.html")
+        return render_template('reset_password_request.html')
+    
+    # Для всех других случаев отдаем JSON-ответ для AJAX
+    return jsonify({
+        'success': True,
+        'message': 'Обработка запроса сброса пароля'
+    })
 
 # Маршрут для непосредственного сброса пароля
 @app.route('/reset-password/<token>', methods=['GET', 'POST'])
