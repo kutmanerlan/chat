@@ -126,8 +126,8 @@ body {
 .top-bar {
     display: flex;
     align-items: center;
-    gap: 12px;
-    padding: 20px 0 10px 0; /* Увеличиваем верхний отступ с 10px до 20px */
+    gap: 10px; /* Reduced from 12px to match image 1 */
+    padding: 12px 0; /* Adjusted padding for better vertical alignment */
     margin-bottom: 5px;
 }
 
@@ -136,12 +136,13 @@ body {
     flex-direction: column;
     justify-content: center;
     align-items: center;
-    width: 24px; /* Увеличенный размер с 12px до 24px */
-    height: 24px; /* Увеличенный размер с 10px до 24px */
+    width: 18px; /* Reduced from 24px to 18px to match image 1 */
+    height: 18px; /* Reduced from 24px to 18px to match image 1 */
     background-color: transparent;
     border: none;
     padding: 0;
     margin: 0;
+    margin-left: 2px; /* Add a small left margin */
     cursor: pointer;
     outline: none;
     position: relative;
@@ -167,31 +168,31 @@ body {
 
 /* Позиционируем каждую линию отдельно для более точного соответствия макету */
 .menu-btn span:nth-child(1) {
-    top: 6px;
+    top: 3px; /* Adjusted from 6px */
     transform: translateY(-50%);
 }
 
 .menu-btn span:nth-child(2) {
-    top: 12px;
+    top: 8px; /* Adjusted from 12px - exactly in the middle */
     transform: translateY(-50%);
 }
 
 .menu-btn span:nth-child(3) {
-    top: 18px;
+    top: 13px; /* Adjusted from 18px */
     transform: translateY(-50%);
 }
 
 #searchInput {
     flex-grow: 1;
-    height: 36px; /* Увеличенная высота с 32px до 36px */
-    padding: 0 15px; /* Увеличенный отступ для текста */
+    height: 32px; /* Reduced from 36px to match image 1 */
+    padding: 0 12px; /* Reduced horizontal padding */
     border: none;
-    border-radius: 18px; /* Увеличенный радиус для более округлой формы */
+    border-radius: 16px; /* Увеличенный радиус для более округлой формы */
     background-color: #100E0E;
     color: #fff;
-    font-size: 15px; /* Слегка увеличенный размер шрифта */
+    font-size: 14px; /* Reduced from 15px */
     outline: none;
-    margin-right: 5px; /* Добавляем небольшой отступ справа */
+    margin-left: 5px; /* Add a small left margin */
 }
 
 #searchInput:focus {
