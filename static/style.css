@@ -2153,3 +2153,106 @@ body {
 .send-button:hover {
     color: #366497;
 }
+
+/* Обновленные стили для поля ввода сообщений с правильным позиционированием */
+.message-input-container {
+    width: 100%;
+    height: 68px;
+    display: flex;
+    align-items: center;
+    padding: 0 16px;
+    background-color: #212121;
+    border-top: 1px solid #333;
+    position: relative;
+    z-index: 10;
+    box-sizing: border-box;
+}
+
+/* Обертка для элементов поля ввода */
+.input-wrapper {
+    position: relative; /* Важно для абсолютного позиционирования вложенных элементов */
+    display: flex;
+    align-items: center;
+    width: 100%;
+    height: 100%;
+}
+
+/* Контейнер для кнопки скрепки - абсолютное позиционирование */
+.clip-button-container {
+    position: absolute;
+    left: 0;
+    top: 50%;
+    transform: translateY(-50%);
+    z-index: 2;
+}
+
+/* Кнопка скрепки */
+.paperclip-button {
+    width: 44px;
+    height: 44px;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    background: transparent;
+    border: none;
+    color: #aaa;
+    cursor: pointer;
+    flex-shrink: 0;
+    padding: 0;
+    margin: 0;
+}
+
+.paperclip-button:hover {
+    color: #ddd;
+}
+
+/* Контейнер для поля ввода - с учетом места для кнопки скрепки */
+.message-input-field {
+    flex-grow: 1;
+    height: 44px;
+    margin: 0 10px 0 44px; /* Отступ слева с учетом кнопки скрепки */
+    display: flex;
+    align-items: center;
+}
+
+/* Текстовое поле ввода сообщения */
+.message-input-field input {
+    width: 100%;
+    height: 42px;
+    padding: 0 16px;
+    border-radius: 21px;
+    border: none;
+    background-color: #303030;
+    color: white;
+    font-size: 15px;
+}
+
+/* Кнопка отправки сообщения */
+.send-button {
+    width: 44px;
+    height: 44px;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    background: transparent;
+    border: none;
+    color: #888; /* Серый цвет по умолчанию */
+    cursor: pointer;
+    flex-shrink: 0;
+    padding: 0;
+    margin: 0;
+}
+
+/* Активное состояние кнопки отправки - синий цвет */
+.send-button.active {
+    color: #2b5278; /* Синий цвет при наличии текста */
+}
+
+.send-button svg {
+    width: 24px;
+    height: 24px;
+}
+
+.send-button:hover {
+    color: #366497;
+}

@@ -705,20 +705,19 @@ document.addEventListener('DOMContentLoaded', function() {
             
             // ===== НОВОЕ ПОЛЕ ВВОДА СООБЩЕНИЙ =====
             
-            // Главный контейнер для поля ввода
+            // Главный контейнер для поля ввода с relative positioning
             const messageInputContainer = document.createElement('div');
             messageInputContainer.className = 'message-input-container';
             
-            // Контейнер для поля ввода и кнопок
-            const messageInputField = document.createElement('div');
-            messageInputField.className = 'message-input-field';
+            // Обертка для всех элементов поля ввода
+            const inputWrapper = document.createElement('div');
+            inputWrapper.className = 'input-wrapper';
             
-            // Используем input вместо textarea
-            const inputField = document.createElement('input');
-            inputField.type = 'text';
-            inputField.placeholder = 'Сообщение';
+            // Контейнер для кнопки скрепки с absolute positioning
+            const clipButtonContainer = document.createElement('div');
+            clipButtonContainer.className = 'clip-button-container';
             
-            // Кнопки скрепки и отправки
+            // Кнопка скрепки
             const paperclipButton = document.createElement('button');
             paperclipButton.className = 'paperclip-button';
             paperclipButton.innerHTML = `
@@ -727,6 +726,16 @@ document.addEventListener('DOMContentLoaded', function() {
                 </svg>
             `;
             
+            // Контейнер для поля ввода
+            const messageInputField = document.createElement('div');
+            messageInputField.className = 'message-input-field';
+            
+            // Поле ввода
+            const inputField = document.createElement('input');
+            inputField.type = 'text';
+            inputField.placeholder = 'Сообщение';
+            
+            // Кнопка отправки - изначально серая
             const sendButton = document.createElement('button');
             sendButton.className = 'send-button';
             sendButton.innerHTML = `
@@ -736,11 +745,15 @@ document.addEventListener('DOMContentLoaded', function() {
                 </svg>
             `;
             
-            // Собираем интерфейс
+            // Собираем новую структуру
+            clipButtonContainer.appendChild(paperclipButton);
             messageInputField.appendChild(inputField);
-            messageInputContainer.appendChild(paperclipButton);
-            messageInputContainer.appendChild(messageInputField);
-            messageInputContainer.appendChild(sendButton);
+            
+            inputWrapper.appendChild(clipButtonContainer);
+            inputWrapper.appendChild(messageInputField);
+            inputWrapper.appendChild(sendButton);
+            
+            messageInputContainer.appendChild(inputWrapper);
             
             // Скрытый input для выбора файлов
             const fileInput = document.createElement('input');
