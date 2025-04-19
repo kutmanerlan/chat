@@ -313,19 +313,20 @@ body {
 
 .modal-buttons {
     display: flex;
-    justify-content: center; /* Изменено с flex-end на center для выравнивания по центру */
-    gap: 20px; /* Увеличено с 10px до 20px для большего расстояния между кнопками */
-    margin-top: 25px; /* Добавлен отступ сверху для лучшего вида */
+    justify-content: center; /* Центрируем кнопки */
+    gap: 20px; /* Увеличенное расстояние между кнопками */
+    margin-top: 25px;
 }
 
 .btn-primary, .btn-secondary {
-    padding: 8px 16px;
+    padding: 10px 16px; /* Увеличенное вертикальное padding */
     border-radius: 4px;
     cursor: pointer;
     border: none;
     font-size: 14px;
-    min-width: 100px; /* Добавлено для равной ширины кнопок */
-    text-align: center; /* Центрируем текст в кнопках */
+    min-width: 120px; /* Увеличиваем минимальную ширину */
+    text-align: center;
+    font-weight: 500; /* Делаем текст немного жирнее */
 }
 
 .btn-primary {
@@ -333,7 +334,6 @@ body {
     color: white;
     text-decoration: none;
     display: inline-block;
-    text-align: center;
 }
 
 .btn-secondary {
