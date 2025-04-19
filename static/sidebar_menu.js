@@ -603,14 +603,14 @@ document.addEventListener('DOMContentLoaded', function() {
             userInfo.appendChild(userAvatar);
             userInfo.appendChild(userName);
             
-            // Кнопка с тремя точками (меню)
+            // Кнопка с вертикальными тремя точками (меню)
             const menuButton = document.createElement('button');
             menuButton.className = 'chat-menu-btn';
             menuButton.innerHTML = `
                 <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <circle cx="12" cy="5" r="1"></circle>
                     <circle cx="12" cy="12" r="1"></circle>
-                    <circle cx="19" cy="12" r="1"></circle>
-                    <circle cx="5" cy="12" r="1"></circle>
+                    <circle cx="12" cy="19" r="1"></circle>
                 </svg>
             `;
             
@@ -619,58 +619,164 @@ document.addEventListener('DOMContentLoaded', function() {
             dropdown.className = 'chat-dropdown-menu';
             dropdown.style.display = 'none';
             
-            // Создаем область сообщений с фиксированной высотой
+            // Проверяем, является ли пользователь контактом
+            fetch('/check_contact', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({ contact_id: user.id })
+            })
+            .then(response => response.json())
+            .then(data => {
+                // Создаем элементы меню в зависимости от статуса контакта
+                if (data.is_contact) {
+                    dropdown.innerHTML = `
+                        <div class="dropdown-item remove-contact" data-user-id="${user.id}">
+                            Удалить из контактов
+                        </div>
+                    `;
+                } else {
+                    dropdown.innerHTML = `
+                        <div class="dropdown-item add-contact" data-user-id="${user.id}">
+                            Добавить в контакты
+                        </div>
+                    `;
+                }
+                
+                // Обработчики для пунктов меню
+                dropdown.querySelectorAll('.dropdown-item').forEach(item => {
+                    item.addEventListener('click', function() {
+                        if (item.classList.contains('add-contact')) {
+                            addToContacts(user.id, user.name);
+                        } else if (item.classList.contains('remove-contact')) {
+                            removeFromContacts(user.id);
+                        }
+                        dropdown.style.display = 'none';
+                    });
+                });
+            })
+            .catch(error => {
+                console.error('Ошибка при проверке статуса контакта:', error);
+                dropdown.innerHTML = `
+                    <div class="dropdown-item add-contact" data-user-id="${user.id}">
+                        Добавить в контакты
+                    </div>
+                `;
+            });
+            
+            // Обработчик клика по кнопке меню
+            menuButton.addEventListener('click', function(e) {
+                e.stopPropagation();
+                dropdown.style.display = dropdown.style.display === 'none' ? 'block' : 'none';
+            });
+            
+            // Закрытие меню при клике вне его
+            document.addEventListener('click', function() {
+                dropdown.style.display = 'none';
+            });
+            
+            // Предотвращение закрытия меню при клике на само меню
+            dropdown.addEventListener('click', function(e) {
+                e.stopPropagation();
+            });
+            
+            // Создаем область сообщений
             const chatMessages = document.createElement('div');
             chatMessages.className = 'chat-messages';
             
-            // Проверка на наличие сообщений и добавление заглушки "Нет сообщений"
-            const hasMessages = false; // Заменить на реальную проверку, когда появится API для сообщений
+            // Проверка на наличие сообщений
+            const hasMessages = false; // Заменить на реальную проверку
             
             if (hasMessages) {
-                // Добавляем контейнер для сообщений, который позволит им прижаться к низу
+                // Добавляем контейнер для сообщений
                 const messagesContainer = document.createElement('div');
                 messagesContainer.className = 'messages-container';
                 chatMessages.appendChild(messagesContainer);
                 
                 // Здесь будут добавляться реальные сообщения
             } else {
-                // Добавляем сообщение об отсутствии сообщений
+                // Добавляем заглушку "Нет сообщений"
                 const noMessages = document.createElement('div');
                 noMessages.className = 'no-messages';
                 noMessages.textContent = 'Нет сообщений';
                 chatMessages.appendChild(noMessages);
             }
             
-            // Создаем форму ввода сообщений
+            // Создаем форму для ввода сообщений (обновленный дизайн как в Telegram)
             const chatInput = document.createElement('div');
             chatInput.className = 'chat-input';
-            chatInput.innerHTML = `
-                <div class="emoji-button">
-                    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#aaa" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                        <circle cx="12" cy="12" r="10"></circle>
-                        <path d="M8 14s1.5 2 4 2 4-2 4-2"></path>
-                        <line x1="9" y1="9" x2="9.01" y2="9"></line>
-                        <line x1="15" y1="9" x2="15.01" y2="9"></line>
+            
+            // Панель с опциями прикрепления файлов (скрыта по умолчанию)
+            const attachmentOptions = document.createElement('div');
+            attachmentOptions.className = 'attachment-options';
+            attachmentOptions.innerHTML = `
+                <div class="attachment-item" data-type="photo">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="#4CAF50" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect>
+                        <circle cx="8.5" cy="8.5" r="1.5"></circle>
+                        <polyline points="21 15 16 10 5 21"></polyline>
                     </svg>
+                    <span>Фото или Видео</span>
                 </div>
-                <textarea placeholder="Сообщение"></textarea>
-                <button class="send-btn">
-                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                        <line x1="22" y1="2" x2="11" y2="13"></line>
-                        <polygon points="22 2 15 22 11 13 2 9 22 2"></polygon>
+                <div class="attachment-item" data-type="file">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="#2196F3" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
+                        <polyline points="14 2 14 8 20 8"></polyline>
+                        <line x1="9" y1="15" x2="15" y2="15"></line>
                     </svg>
-                </button>
+                    <span>Документ</span>
+                </div>
             `;
             
-            // Добавляем обработчики для выпадающего меню кнопки с тремя точками
-            // ...existing code for menu handlers...
+            // Создаем кнопки и поле ввода сообщения
+            const inputButtons = document.createElement('div');
+            inputButtons.className = 'chat-input-buttons';
             
-            // Добавляем элементы в шапку чата
+            // Кнопка скрепки для прикрепления файлов
+            const attachmentBtn = document.createElement('button');
+            attachmentBtn.className = 'attachment-btn';
+            attachmentBtn.innerHTML = `
+                <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M21.44 11.05l-9.19 9.19a6 6 0 0 1-8.49-8.49l9.19-9.19a4 4 0 0 1 5.66 5.66l-9.2 9.19a2 2 0 0 1-2.83-2.83l8.49-8.48"></path>
+                </svg>
+            `;
+            
+            // Поле для ввода текста
+            const textarea = document.createElement('textarea');
+            textarea.placeholder = 'Сообщение';
+            textarea.rows = 1;
+            
+            // Кнопка отправки (скрыта по умолчанию)
+            const sendButton = document.createElement('button');
+            sendButton.className = 'send-btn';
+            sendButton.innerHTML = `
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <line x1="22" y1="2" x2="11" y2="13"></line>
+                    <polygon points="22 2 15 22 11 13 2 9 22 2"></polygon>
+                </svg>
+            `;
+            
+            // Скрытый input для загрузки файлов
+            const fileInput = document.createElement('input');
+            fileInput.type = 'file';
+            fileInput.id = 'chatFileInput';
+            fileInput.accept = 'image/*,video/*,audio/*,.pdf,.doc,.docx,.xls,.xlsx,.zip';
+            fileInput.style.display = 'none';
+            
+            // Добавляем элементы в форму
+            inputButtons.appendChild(attachmentBtn);
+            chatInput.appendChild(attachmentOptions);
+            chatInput.appendChild(inputButtons);
+            chatInput.appendChild(textarea);
+            chatInput.appendChild(sendButton);
+            chatInput.appendChild(fileInput);
+            
+            // Добавляем все элементы в область чата
             chatHeader.appendChild(userInfo);
             chatHeader.appendChild(menuButton);
             chatHeader.appendChild(dropdown);
             
-            // Добавляем все элементы в область чата
             mainContent.appendChild(chatHeader);
             mainContent.appendChild(chatMessages);
             mainContent.appendChild(chatInput);
@@ -678,27 +784,118 @@ document.addEventListener('DOMContentLoaded', function() {
             // Показываем основную область
             mainContent.style.display = 'flex';
             
-            // Добавляем обработчик для отправки сообщений
-            const sendButton = chatInput.querySelector('.send-btn');
-            const textarea = chatInput.querySelector('textarea');
+            // Обработчик для текстового поля - показать/скрыть кнопку отправки
+            textarea.addEventListener('input', function() {
+                if (this.value.trim()) {
+                    sendButton.classList.add('visible');
+                } else {
+                    sendButton.classList.remove('visible');
+                }
+                
+                // Автоматическое изменение размера поля ввода
+                this.style.height = 'auto';
+                const newHeight = Math.min(120, this.scrollHeight);
+                this.style.height = newHeight + 'px';
+            });
             
-            // Функция для отправки сообщения
-            const sendMessage = () => {
-                const messageText = textarea.value.trim();
-                if (messageText) {
-                    // Убираем сообщение "Нет сообщений" если оно есть
+            // Обработчик для кнопки отправки сообщения
+            sendButton.addEventListener('click', sendMessage);
+            
+            // Обработчик для клавиши Enter (без Shift)
+            textarea.addEventListener('keydown', function(e) {
+                if (e.key === 'Enter' && !e.shiftKey) {
+                    e.preventDefault();
+                    sendMessage();
+                }
+            });
+            
+            // Обработчик для кнопки прикрепления файлов
+            attachmentBtn.addEventListener('click', function(e) {
+                e.stopPropagation();
+                attachmentOptions.classList.toggle('active');
+            });
+            
+            // Закрытие меню прикрепления при клике вне его
+            document.addEventListener('click', function() {
+                attachmentOptions.classList.remove('active');
+            });
+            
+            // Обработчики для разных типов прикреплений
+            attachmentOptions.querySelectorAll('.attachment-item').forEach(item => {
+                item.addEventListener('click', function(e) {
+                    e.stopPropagation();
+                    const type = this.getAttribute('data-type');
+                    
+                    if (type === 'photo') {
+                        fileInput.accept = 'image/*,video/*';
+                    } else if (type === 'file') {
+                        fileInput.accept = '.pdf,.doc,.docx,.xls,.xlsx,.zip,application/msword,application/vnd.openxmlformats-officedocument.wordprocessingml.document';
+                    }
+                    
+                    fileInput.click();
+                    attachmentOptions.classList.remove('active');
+                });
+            });
+            
+            // Обработчик для выбора файла
+            fileInput.addEventListener('change', function() {
+                if (this.files && this.files[0]) {
+                    const file = this.files[0];
+                    
+                    // Здесь можно добавить отправку файла на сервер
+                    console.log(`Выбран файл для отправки: ${file.name} (${file.type})`);
+                    
+                    // Пример: добавляем сообщение с информацией о файле
+                    const messagesContainer = chatMessages.querySelector('.messages-container') || 
+                                   chatMessages.appendChild(document.createElement('div'));
+                    messagesContainer.className = 'messages-container';
+                    
+                    // Удаляем сообщение "Нет сообщений" если оно есть
                     const noMessages = chatMessages.querySelector('.no-messages');
                     if (noMessages) {
                         chatMessages.removeChild(noMessages);
-                        
-                        // Создаем контейнер для сообщений
-                        const messagesContainer = document.createElement('div');
+                    }
+                    
+                    const now = new Date();
+                    const hours = String(now.getHours()).padStart(2, '0');
+                    const minutes = String(now.getMinutes()).padStart(2, '0');
+                    
+                    const message = document.createElement('div');
+                    message.className = 'message message-sent';
+                    message.innerHTML = `
+                        <div class="message-content">Файл: ${file.name}</div>
+                        <div class="message-time">${hours}:${minutes}</div>
+                    `;
+                    
+                    messagesContainer.appendChild(message);
+                    chatMessages.scrollTop = chatMessages.scrollHeight;
+                    
+                    // Сбрасываем значение input для возможности повторной отправки того же файла
+                    this.value = '';
+                }
+            });
+            
+            // Функция отправки сообщения
+            function sendMessage() {
+                const messageText = textarea.value.trim();
+                if (messageText) {
+                    // Получаем или создаем контейнер для сообщений
+                    let messagesContainer = chatMessages.querySelector('.messages-container');
+                    
+                    // Удаляем сообщение "Нет сообщений" если оно есть
+                    const noMessages = chatMessages.querySelector('.no-messages');
+                    if (noMessages) {
+                        chatMessages.removeChild(noMessages);
+                        messagesContainer = document.createElement('div');
                         messagesContainer.className = 'messages-container';
                         chatMessages.appendChild(messagesContainer);
                     }
                     
-                    // Получаем контейнер для сообщений
-                    const messagesContainer = chatMessages.querySelector('.messages-container');
+                    if (!messagesContainer) {
+                        messagesContainer = document.createElement('div');
+                        messagesContainer.className = 'messages-container';
+                        chatMessages.appendChild(messagesContainer);
+                    }
                     
                     // Создаем элемент сообщения
                     const message = document.createElement('div');
@@ -718,8 +915,10 @@ document.addEventListener('DOMContentLoaded', function() {
                     // Добавляем сообщение в контейнер
                     messagesContainer.appendChild(message);
                     
-                    // Очищаем поле ввода
+                    // Очищаем поле ввода и скрываем кнопку отправки
                     textarea.value = '';
+                    textarea.style.height = 'auto';
+                    sendButton.classList.remove('visible');
                     
                     // Прокручиваем чат вниз
                     chatMessages.scrollTop = chatMessages.scrollHeight;
@@ -727,18 +926,7 @@ document.addEventListener('DOMContentLoaded', function() {
                     // TODO: Здесь будет отправка сообщения на сервер
                     console.log(`Отправка сообщения пользователю ${user.name} (ID: ${user.id}):`, messageText);
                 }
-            };
-            
-            // Обработчики для отправки сообщения
-            sendButton.addEventListener('click', sendMessage);
-            
-            // Отправка по Enter (но Shift+Enter для новой строки)
-            textarea.addEventListener('keydown', function(e) {
-                if (e.key === 'Enter' && !e.shiftKey) {
-                    e.preventDefault();
-                    sendMessage();
-                }
-            });
+            }
             
             // Фокусируем поле ввода
             setTimeout(() => {

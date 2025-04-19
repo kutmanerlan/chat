@@ -245,8 +245,8 @@ body {
 
 /* Шапка чата в стиле Telegram */
 .chat-header {
-    height: 60px;
-    background-color: #212121; /* Темнее, как в Telegram */
+    height: 65px; /* Увеличенная высота заголовка */
+    background-color: #212121;
     display: flex;
     align-items: center;
     justify-content: space-between;
@@ -256,10 +256,71 @@ body {
     z-index: 10;
 }
 
+.chat-user-info {
+    display: flex;
+    align-items: center;
+    flex-grow: 1;
+}
+
+.chat-user-avatar {
+    width: 45px; /* Увеличенный размер аватара */
+    height: 45px; /* Увеличенный размер аватара */
+    border-radius: 50%;
+    background-color: #555;
+    margin-right: 12px;
+    overflow: hidden;
+    position: relative;
+    flex-shrink: 0;
+}
+
+.chat-user-avatar img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+}
+
+.chat-user-avatar .avatar-initials {
+    color: white;
+    font-size: 20px; /* Увеличенный размер шрифта */
+    width: 100%;
+    height: 100%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    position: absolute;
+    top: 0;
+    left: 0;
+}
+
+.chat-user-name {
+    color: white;
+    font-size: 17px; /* Увеличенный размер шрифта */
+    font-weight: 500;
+}
+
+/* Вертикальные три точки вместо горизонтальных */
+.chat-menu-btn {
+    width: 40px;
+    height: 40px;
+    background: transparent;
+    border: none;
+    color: #aaa;
+    border-radius: 50%;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.chat-menu-btn:hover {
+    background-color: rgba(255, 255, 255, 0.1);
+    color: white;
+}
+
 /* Область сообщений с фиксированными размерами и скроллингом */
 .chat-messages {
     flex-grow: 1;
-    height: calc(100vh - 120px); /* Вычитаем высоту header (60px) и input (60px) */
+    height: calc(100vh - 125px); /* Вычитаем высоту header (65px) и input (60px) */
     padding: 20px 16px;
     overflow-y: auto; /* Только вертикальная прокрутка */
     display: flex;
@@ -324,118 +385,30 @@ body {
 
 /* Поле ввода в стиле Telegram */
 .chat-input {
-    height: 60px;
+    min-height: 60px; /* Минимальная высота для поля ввода */
+    max-height: 180px; /* Максимальная высота при расширении */
     background-color: #212121;
     display: flex;
-    align-items: center;
-    padding: 0 16px;
+    align-items: flex-end; /* Выравнивание по нижнему краю */
+    padding: 10px 16px; /* Увеличенный отступ */
     gap: 12px;
     flex-shrink: 0;
     border-top: 1px solid #333;
     position: relative;
     z-index: 10;
+    overflow: hidden; /* Предотвращаем вылезание текста */
 }
 
-.chat-input textarea {
-    flex-grow: 1;
-    height: 40px;
-    max-height: 40px; /* Фиксированная высота поля ввода */
-    background-color: #333;
-    border: none;
-    border-radius: 20px;
-    padding: 10px 15px;
-    color: white;
-    resize: none;
-    outline: none;
-    font-family: inherit;
-    font-size: 15px;
-    line-height: 20px;
-    overflow-y: auto; /* Scroll если текст длинный */
-}
-
-/* Пустое сообщение в стиле Telegram */
-.no-messages {
-    color: #8e8e8e;
-    text-align: center;
-    margin: auto;
-    font-style: normal;
-    font-size: 15px;
-    height: 100%;
+/* Кнопки в поле ввода */
+.chat-input-buttons {
     display: flex;
-    align-items: center;
-    justify-content: center;
-    background-image: url('data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMTAwIiBoZWlnaHQ9IjEwMCIgdmlld0JveD0iMCAwIDI0IDI0IiBmaWxsPSJub25lIiB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciPgogIDxwYXRoIGQ9Ik0yMSA1YTEgMSAwIDAxLTEgMWgtMi40MmwtLjE1LS4yMkwxNi42MyA0LjVsLS43OS0xLjE0TDE1LjI1IDJoLTYuNWwtLjU5IDEuMzZMMTApUb3gg5c3ZnPg==');
-    background-repeat: no-repeat;
-    background-position: center 40%;
-    background-size: 100px 100px;
-    opacity: 0.7;
-    padding-top: 120px; /* Место для иконки сверху */
+    gap: 8px;
+    align-items: flex-end;
+    padding-bottom: 10px; /* Отступ снизу для выравнивания с полем ввода */
 }
 
-.main-content {
-    flex-grow: 1;
-    background-color: #0e0e0e; /* Немного темнее, как в Telegram */
-    display: flex;
-    flex-direction: column;
-    position: relative;
-    width: calc(100% - 320px); /* Гарантирует, что чат занимает все доступное пространство */
-}
-
-.chat-header {
-    height: 60px;
-    background-color: #1c1c1c;
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    padding: 0 16px;
-    border-bottom: 1px solid #333;
-    flex-shrink: 0;
-    z-index: 10;
-}
-
-.chat-user-info {
-    display: flex;
-    align-items: center;
-    flex-grow: 1;
-}
-
-.chat-user-avatar {
-    width: 40px;
-    height: 40px;
-    border-radius: 50%;
-    background-color: #555;
-    margin-right: 12px;
-    overflow: hidden;
-    position: relative;
-    flex-shrink: 0;
-}
-
-.chat-user-avatar img {
-    width: 100%;
-    height: 100%;
-    object-fit: cover;
-}
-
-.chat-user-avatar .avatar-initials {
-    color: white;
-    font-size: 16px;
-    width: 100%;
-    height: 100%;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    position: absolute;
-    top: 0;
-    left: 0;
-}
-
-.chat-user-name {
-    color: white;
-    font-size: 16px;
-    font-weight: 500;
-}
-
-.chat-menu-btn {
+/* Стиль для кнопки скрепки */
+.attachment-btn {
     width: 40px;
     height: 40px;
     background: transparent;
@@ -446,71 +419,113 @@ body {
     display: flex;
     align-items: center;
     justify-content: center;
+    flex-shrink: 0;
+    margin-right: -5px; /* Небольшая корректировка размещения */
 }
 
-.chat-menu-btn:hover {
+.attachment-btn:hover {
+    color: white;
     background-color: rgba(255, 255, 255, 0.1);
+}
+
+.chat-input textarea {
+    flex-grow: 1;
+    min-height: 40px;
+    max-height: 120px; /* Максимальная высота при вводе большого текста */
+    background-color: #333;
+    border: none;
+    border-radius: 20px;
+    padding: 11px 16px; /* Увеличенные отступы */
+    color: white;
+    resize: none;
+    outline: none;
+    font-family: inherit;
+    font-size: 15px;
+    line-height: 20px;
+    overflow-y: auto;
+}
+
+/* Стили для кнопки отправки */
+.chat-input .send-btn {
+    width: 40px;
+    height: 40px;
+    background-color: #2b5278; /* Цвет как в Telegram */
+    color: white;
+    border: none;
+    border-radius: 50%;
+    cursor: pointer;
+    display: none; /* По умолчанию скрыта */
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+    padding: 0;
+    margin: 0;
+    transition: transform 0.2s;
+}
+
+.chat-input .send-btn.visible {
+    display: flex; /* Показываем, когда она должна быть видна */
+}
+
+.chat-input .send-btn:active {
+    transform: scale(0.95); /* Эффект нажатия */
+}
+
+/* Пустое сообщение в стиле Telegram */
+.no-messages {
+    color: #8e8e8e;
+    text-align: center;
+    margin: auto;
+    font-style: normal;
+    font-size: 15px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    height: 100%;
+    opacity: 0.7;
+}
+
+/* Контейнер для прикрепления файлов */
+.attachment-options {
+    position: absolute;
+    bottom: 70px; /* Размещаем над полем ввода */
+    left: 16px;
+    background-color: #2a2a2a;
+    border-radius: 8px;
+    box-shadow: 0 2px 10px rgba(0, 0, 0, 0.3);
+    display: none;
+    padding: 10px;
+    z-index: 100;
+}
+
+.attachment-options.active {
+    display: block;
+    animation: fadeIn 0.2s ease-out;
+}
+
+.attachment-item {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 10px;
+    cursor: pointer;
+    border-radius: 6px;
     color: white;
 }
 
-/* Полностью обновленные стили для области сообщений */
-.chat-messages {
-    flex-grow: 1;
-    padding: 20px 16px;
-    overflow-y: auto;
-    display: flex;
-    flex-direction: column;
-    background-color: #0e0e0e;
-    gap: 8px;
-    scrollbar-width: thin;
-    scrollbar-color: #444 #222;
+.attachment-item:hover {
+    background-color: #333;
 }
 
-.chat-messages::-webkit-scrollbar {
-    width: 5px;
-}
-
-.chat-messages::-webkit-scrollbar-track {
-    background: #222;
-}
-
-.chat-messages::-webkit-scrollbar-thumb {
-    background: #444;
-    border-radius: 5px;
-}
-
-/* Пространство для правильного позиционирования сообщений */
-.messages-placeholder {
-    flex-grow: 1;
-}
-
-.message {
-    max-width: 85%;
-    padding: 8px 12px;
-    border-radius: 10px;
-    position: relative;
-    margin-bottom: 2px;
-    line-height: 1.4;
-    animation: fadeIn 0.2s ease-out;
+.attachment-item svg {
+    width: 24px;
+    height: 24px;
 }
 
 @keyframes fadeIn {
     from { opacity: 0; transform: translateY(10px); }
     to { opacity: 1; transform: translateY(0); }
-}
-
-.message-sent {
-    background-color: #2b5278; /* Цвет сообщений как в Telegram */
-    color: #fff;
-    align-self: flex-end;
-    border-radius: 10px 2px 10px 10px;
-}
-
-.message-received {
-    background-color: #222;
-    color: #fff;
-    align-self: flex-start;
-    border-radius: 2px 10px 10px 10px;
 }
 
 .message-content {
