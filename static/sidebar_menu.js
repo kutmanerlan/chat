@@ -147,6 +147,9 @@ document.addEventListener('DOMContentLoaded', function() {
         // Устанавливаем высоту по содержимому, но не более максимальной
         const newHeight = Math.min(300, Math.max(100, textarea.scrollHeight));
         textarea.style.height = newHeight + 'px';
+        
+        // Принудительно устанавливаем цвет текста
+        textarea.style.color = '#bbb';
     }
     
     // Обработчик изменения содержимого textarea
@@ -163,6 +166,21 @@ document.addEventListener('DOMContentLoaded', function() {
         // Обработчик для изменения размера после загрузки данных
         profileBioTextarea.addEventListener('change', function() {
             autoResizeTextarea(this);
+        });
+    }
+    
+    // Добавляем код для задания цвета сразу после загрузки страницы
+    const bioTextarea = document.getElementById('profileBio');
+    if (bioTextarea) {
+        bioTextarea.style.color = '#bbb';
+        
+        // Также добавляем обработчик события focus и blur для контроля цвета
+        bioTextarea.addEventListener('focus', function() {
+            this.style.color = '#ccc'; // Немного светлее при фокусе
+        });
+        
+        bioTextarea.addEventListener('blur', function() {
+            this.style.color = '#bbb'; // Вернуть обратно приглушенный цвет
         });
     }
     
