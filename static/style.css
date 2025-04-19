@@ -126,22 +126,25 @@ body {
 .top-bar {
     display: flex;
     align-items: center;
-    gap: 10px;
+    gap: 12px;
+    padding: 10px 0;
+    margin-bottom: 5px;
 }
 
 .menu-btn {
     display: flex;
     flex-direction: column;
-    justify-content: space-between;
+    justify-content: center;
     align-items: center;
-    width: 12px;
-    height: 10px;
+    width: 24px; /* Увеличенный размер с 12px до 24px */
+    height: 24px; /* Увеличенный размер с 10px до 24px */
     background-color: transparent;
     border: none;
     padding: 0;
     margin: 0;
     cursor: pointer;
     outline: none;
+    position: relative;
 }
 
 .menu-btn:focus,
@@ -156,18 +159,36 @@ body {
     height: 2px;
     background-color: white;
     border-radius: 1px;
+    position: absolute;
+}
+
+/* Позиционируем каждую линию отдельно для более точного соответствия макету */
+.menu-btn span:nth-child(1) {
+    top: 6px;
+    transform: translateY(-50%);
+}
+
+.menu-btn span:nth-child(2) {
+    top: 12px;
+    transform: translateY(-50%);
+}
+
+.menu-btn span:nth-child(3) {
+    top: 18px;
+    transform: translateY(-50%);
 }
 
 #searchInput {
     flex-grow: 1;
-    height: 32px;
-    padding: 0 12px;
+    height: 36px; /* Увеличенная высота с 32px до 36px */
+    padding: 0 15px; /* Увеличенный отступ для текста */
     border: none;
-    border-radius: 16px;
+    border-radius: 18px; /* Увеличенный радиус для более округлой формы */
     background-color: #100E0E;
     color: #fff;
-    font-size: 14px;
+    font-size: 15px; /* Слегка увеличенный размер шрифта */
     outline: none;
+    margin-right: 5px; /* Добавляем небольшой отступ справа */
 }
 
 #searchInput:focus {
