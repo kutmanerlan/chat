@@ -619,91 +619,34 @@ document.addEventListener('DOMContentLoaded', function() {
             dropdown.className = 'chat-dropdown-menu';
             dropdown.style.display = 'none';
             
-            // Проверяем, является ли пользователь контактом
-            fetch('/check_contact', {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json'
-                },
-                body: JSON.stringify({ contact_id: user.id })
-            })
-            .then(response => response.json())
-            .then(data => {
-                // Создаем элементы меню в зависимости от статуса контакта
-                if (data.is_contact) {
-                    // Если пользователь уже в контактах
-                    dropdown.innerHTML = `
-                        <div class="dropdown-item remove-contact" data-user-id="${user.id}">
-                            Удалить из контактов
-                        </div>
-                    `;
-                } else {
-                    // Если пользователь не в контактах
-                    dropdown.innerHTML = `
-                        <div class="dropdown-item add-contact" data-user-id="${user.id}">
-                            Добавить в контакты
-                        </div>
-                    `;
-                }
-                
-                // Обработчики для пунктов меню
-                dropdown.querySelectorAll('.dropdown-item').forEach(item => {
-                    item.addEventListener('click', function() {
-                        if (item.classList.contains('add-contact')) {
-                            addToContacts(user.id, user.name);
-                        } else if (item.classList.contains('remove-contact')) {
-                            removeFromContacts(user.id);
-                        }
-                        dropdown.style.display = 'none';
-                    });
-                });
-            })
-            .catch(error => {
-                console.error('Ошибка при проверке статуса контакта:', error);
-                dropdown.innerHTML = `
-                    <div class="dropdown-item add-contact" data-user-id="${user.id}">
-                        Добавить в контакты
-                    </div>
-                `;
-            });
-            
-            // Обработчик клика по кнопке меню
-            menuButton.addEventListener('click', function(e) {
-                e.stopPropagation();
-                dropdown.style.display = dropdown.style.display === 'none' ? 'block' : 'none';
-            });
-            
-            // Закрытие меню при клике вне его
-            document.addEventListener('click', function() {
-                dropdown.style.display = 'none';
-            });
-            
-            // Предотвращение закрытия меню при клике на само меню
-            dropdown.addEventListener('click', function(e) {
-                e.stopPropagation();
-            });
-            
-            // Добавляем элементы в шапку чата
-            chatHeader.appendChild(userInfo);
-            chatHeader.appendChild(menuButton);
-            chatHeader.appendChild(dropdown);
-            
-            // Создаем область сообщений - теперь без примеров сообщений
+            // Создаем область сообщений с фиксированной высотой
             const chatMessages = document.createElement('div');
             chatMessages.className = 'chat-messages';
             
-            // Добавляем сообщение об отсутствии сообщений
-            const noMessages = document.createElement('div');
-            noMessages.className = 'no-messages';
-            noMessages.textContent = 'Нет сообщений';
-            chatMessages.appendChild(noMessages);
+            // Проверка на наличие сообщений и добавление заглушки "Нет сообщений"
+            const hasMessages = false; // Заменить на реальную проверку, когда появится API для сообщений
             
-            // Создаем форму ввода сообщений (обновленный дизайн)
+            if (hasMessages) {
+                // Добавляем контейнер для сообщений, который позволит им прижаться к низу
+                const messagesContainer = document.createElement('div');
+                messagesContainer.className = 'messages-container';
+                chatMessages.appendChild(messagesContainer);
+                
+                // Здесь будут добавляться реальные сообщения
+            } else {
+                // Добавляем сообщение об отсутствии сообщений
+                const noMessages = document.createElement('div');
+                noMessages.className = 'no-messages';
+                noMessages.textContent = 'Нет сообщений';
+                chatMessages.appendChild(noMessages);
+            }
+            
+            // Создаем форму ввода сообщений
             const chatInput = document.createElement('div');
             chatInput.className = 'chat-input';
             chatInput.innerHTML = `
                 <div class="emoji-button">
-                    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#aaa" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                         <circle cx="12" cy="12" r="10"></circle>
                         <path d="M8 14s1.5 2 4 2 4-2 4-2"></path>
                         <line x1="9" y1="9" x2="9.01" y2="9"></line>
@@ -712,12 +655,20 @@ document.addEventListener('DOMContentLoaded', function() {
                 </div>
                 <textarea placeholder="Сообщение"></textarea>
                 <button class="send-btn">
-                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                         <line x1="22" y1="2" x2="11" y2="13"></line>
                         <polygon points="22 2 15 22 11 13 2 9 22 2"></polygon>
                     </svg>
                 </button>
             `;
+            
+            // Добавляем обработчики для выпадающего меню кнопки с тремя точками
+            // ...existing code for menu handlers...
+            
+            // Добавляем элементы в шапку чата
+            chatHeader.appendChild(userInfo);
+            chatHeader.appendChild(menuButton);
+            chatHeader.appendChild(dropdown);
             
             // Добавляем все элементы в область чата
             mainContent.appendChild(chatHeader);
@@ -735,10 +686,19 @@ document.addEventListener('DOMContentLoaded', function() {
             const sendMessage = () => {
                 const messageText = textarea.value.trim();
                 if (messageText) {
-                    // Очищаем сообщение "Нет сообщений" при первом сообщении
-                    if (chatMessages.querySelector('.no-messages')) {
-                        chatMessages.innerHTML = '';
+                    // Убираем сообщение "Нет сообщений" если оно есть
+                    const noMessages = chatMessages.querySelector('.no-messages');
+                    if (noMessages) {
+                        chatMessages.removeChild(noMessages);
+                        
+                        // Создаем контейнер для сообщений
+                        const messagesContainer = document.createElement('div');
+                        messagesContainer.className = 'messages-container';
+                        chatMessages.appendChild(messagesContainer);
                     }
+                    
+                    // Получаем контейнер для сообщений
+                    const messagesContainer = chatMessages.querySelector('.messages-container');
                     
                     // Создаем элемент сообщения
                     const message = document.createElement('div');
@@ -755,8 +715,8 @@ document.addEventListener('DOMContentLoaded', function() {
                         <div class="message-time">${hours}:${minutes}</div>
                     `;
                     
-                    // Добавляем сообщение в чат
-                    chatMessages.appendChild(message);
+                    // Добавляем сообщение в контейнер
+                    messagesContainer.appendChild(message);
                     
                     // Очищаем поле ввода
                     textarea.value = '';

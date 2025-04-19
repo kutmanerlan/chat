@@ -231,6 +231,147 @@ body {
     color: #aaa;
 }
 
+/* Основной стиль для главного контента - сделаем размер фиксированным */
+.main-content {
+    flex-grow: 1;
+    background-color: #0e0e0e; /* Темный фон как в Telegram */
+    display: flex;
+    flex-direction: column;
+    position: relative;
+    width: calc(100% - 320px); /* Фиксированная ширина, учитывающая боковую панель */
+    height: 100vh; /* Фиксированная высота на весь экран */
+    overflow: hidden; /* Предотвращаем общую прокрутку */
+}
+
+/* Шапка чата в стиле Telegram */
+.chat-header {
+    height: 60px;
+    background-color: #212121; /* Темнее, как в Telegram */
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 0 16px;
+    border-bottom: 1px solid #333;
+    flex-shrink: 0;
+    z-index: 10;
+}
+
+/* Область сообщений с фиксированными размерами и скроллингом */
+.chat-messages {
+    flex-grow: 1;
+    height: calc(100vh - 120px); /* Вычитаем высоту header (60px) и input (60px) */
+    padding: 20px 16px;
+    overflow-y: auto; /* Только вертикальная прокрутка */
+    display: flex;
+    flex-direction: column;
+    background-color: #0e0e0e;
+    background-image: url('data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAADIAAAAyCAYAAAAeP4ixAAAABmJLR0QA/wD/AP+gvaeTAAAACXBIWXMAAA7EAAAOxAGVKw4bAAAAB3RJTUUH4wQVFyYNKSB0JwAAAB1pVFh0Q29tbWVudAAAAAAAQ3JlYXRlZCB3aXRoIEdJTVBkLmUHAAABBUlEQVRo3u3ZQQ7CIBCF4Z+mXXgBL+D9b6Urz8EGkpLQdEQR6fOtTMgk/FmZUCmllP69Sh4cf6aUPuh3KgEmQjRXF2ByhAsgZoBxAxTbkZoBxgVQbcYzcAEkNHADJCzwBEhI4C3PS95AhBRgdP+bHiEFZCDdQwrIQrqGFDAAUg0pYBCkCjLKChjVGCsglYBUAFINyOQgaxBIsvx57SQpB3YnwwvQJCl91ktmZxewC9kJ7Ea+A9nxzG5gMxIBbEKiQNzPVnfQ6JBb3ZdGsFMRINXv/1EgbiBRIK4gkSBbPdVMN76KVnf5yQVERG7AuYGIiIjUmo/GRUTOAP8BFRERiQJ8AV9lQeHm30F2AAAAAElFTkSuQmCC'); /* Добавляем фоновый паттерн как в Telegram */
+    background-size: 50px 50px; /* Размер паттерна */
+    scrollbar-width: thin;
+    scrollbar-color: rgba(255, 255, 255, 0.2) transparent;
+}
+
+.chat-messages::-webkit-scrollbar {
+    width: 6px; /* Тонкий скроллбар как в Telegram */
+}
+
+.chat-messages::-webkit-scrollbar-track {
+    background: transparent;
+}
+
+.chat-messages::-webkit-scrollbar-thumb {
+    background: rgba(255, 255, 255, 0.2);
+    border-radius: 6px;
+}
+
+.chat-messages::-webkit-scrollbar-thumb:hover {
+    background: rgba(255, 255, 255, 0.3);
+}
+
+/* "Резиновый" контейнер для сообщений, который растягивается, оставляя внизу место */
+.messages-container {
+    margin-top: auto; /* Это прижмет сообщения к нижней части контейнера */
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    width: 100%;
+}
+
+/* Стили для сообщений в стиле Telegram */
+.message {
+    max-width: 80%;
+    padding: 8px 12px;
+    position: relative;
+    margin-bottom: 2px;
+    line-height: 1.4;
+    animation: fadeIn 0.2s ease-out;
+    box-shadow: 0 1px 2px rgba(0, 0, 0, 0.2);
+}
+
+.message-sent {
+    background-color: #2b5278; /* Синий цвет как в Telegram */
+    color: #fff;
+    align-self: flex-end;
+    border-radius: 12px 12px 2px 12px; /* Скругленные углы как в Telegram */
+}
+
+.message-received {
+    background-color: #1f1f1f; /* Серый цвет как в Telegram */
+    color: #fff;
+    align-self: flex-start;
+    border-radius: 12px 12px 12px 2px;
+}
+
+/* Поле ввода в стиле Telegram */
+.chat-input {
+    height: 60px;
+    background-color: #212121;
+    display: flex;
+    align-items: center;
+    padding: 0 16px;
+    gap: 12px;
+    flex-shrink: 0;
+    border-top: 1px solid #333;
+    position: relative;
+    z-index: 10;
+}
+
+.chat-input textarea {
+    flex-grow: 1;
+    height: 40px;
+    max-height: 40px; /* Фиксированная высота поля ввода */
+    background-color: #333;
+    border: none;
+    border-radius: 20px;
+    padding: 10px 15px;
+    color: white;
+    resize: none;
+    outline: none;
+    font-family: inherit;
+    font-size: 15px;
+    line-height: 20px;
+    overflow-y: auto; /* Scroll если текст длинный */
+}
+
+/* Пустое сообщение в стиле Telegram */
+.no-messages {
+    color: #8e8e8e;
+    text-align: center;
+    margin: auto;
+    font-style: normal;
+    font-size: 15px;
+    height: 100%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background-image: url('data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMTAwIiBoZWlnaHQ9IjEwMCIgdmlld0JveD0iMCAwIDI0IDI0IiBmaWxsPSJub25lIiB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciPgogIDxwYXRoIGQ9Ik0yMSA1YTEgMSAwIDAxLTEgMWgtMi40MmwtLjE1LS4yMkwxNi42MyA0LjVsLS43OS0xLjE0TDE1LjI1IDJoLTYuNWwtLjU5IDEuMzZMMTApUb3gg5c3ZnPg==');
+    background-repeat: no-repeat;
+    background-position: center 40%;
+    background-size: 100px 100px;
+    opacity: 0.7;
+    padding-top: 120px; /* Место для иконки сверху */
+}
+
 .main-content {
     flex-grow: 1;
     background-color: #0e0e0e; /* Немного темнее, как в Telegram */
