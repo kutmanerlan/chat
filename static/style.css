@@ -314,40 +314,44 @@ body {
     text-align: center; /* Центрируем текст подтверждения */
 }
 
+/* Полностью переработанные стили для кнопок */
 .modal-buttons {
     display: flex;
-    justify-content: center; /* Уже было центрировано */
-    gap: 30px; /* Оставляем прежний отступ */
+    justify-content: center;
+    align-items: center;
+    gap: 20px;
     margin-top: 20px;
 }
 
 .btn-primary, .btn-secondary {
-    background-color: transparent;
-    border: none;
-    padding: 10px 15px;
+    /* Общие стили для обеих кнопок */
+    display: inline-block;
+    width: 100px;  /* Фиксированная ширина */
+    padding: 8px 0;  /* Только вертикальный отступ */
+    text-align: center;
+    border-radius: 4px;
+    font-size: 14px;
     cursor: pointer;
-    font-size: 16px;
+    font-weight: normal;
     text-decoration: none;
-    transition: all 0.2s ease; /* Меняем transition с opacity на all для более плавных эффектов */
+    border: none;
+    transition: background-color 0.2s;
 }
 
 .btn-primary {
-    color: #e74c3c;
-    font-weight: 500;
+    background-color: #e74c3c; /* Красный цвет */
+    color: white;
 }
 
 .btn-primary:hover {
-    opacity: 1; /* Убираем изменение прозрачности */
-    color: #ff5a4c; /* Делаем текст более ярким при наведении */
-    text-decoration: underline; /* Добавляем подчеркивание */
-    transform: scale(1.05); /* Немного увеличиваем размер */
+    background-color: #c0392b; /* Темнее при наведении */
 }
 
 .btn-secondary {
-    color: #888;
+    background-color: #4d4d4d; /* Серый цвет */
+    color: white;
 }
 
 .btn-secondary:hover {
-    opacity: 1; /* Убираем изменение прозрачности */
-    color: #aaa; /* Делаем текст более светлым при наведении */
+    background-color: #404040; /* Темнее при наведении */
 }
