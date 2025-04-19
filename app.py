@@ -47,11 +47,13 @@ db.init_app(app)
 from sqlalchemy import inspect, text
 def create_tables():
     try:
+        logging.info("Начало проверки и обновления схемы базы данных")
         # Используем inspect для проверки существования таблицы
         inspector = inspect(db.engine)
         
         # Проверяем, существует ли таблица user
         if 'user' not in inspector.get_table_names():
+            logging.info("Таблица user не найдена. Создаем таблицы...")
             # Если таблицы нет, создаем её
             db.create_all()
             logging.info('Таблицы созданы')
@@ -64,20 +66,29 @@ def create_tables():
                 db.session.commit()
                 logging.info('Тестовый пользователь создан')
         else:
+            logging.info("Таблица user существует. Проверяем наличие колонки avatar_path...")
             # Если таблица существует, проверяем наличие новых колонок
             columns = [column['name'] for column in inspector.get_columns('user')]
             
             # Проверяем, есть ли колонка avatar_path
             if 'avatar_path' not in columns:
                 logging.info('Добавляем колонку avatar_path в таблицу user')
-                # Используем raw SQL для добавления колонки
-                with db.engine.connect() as connection:
-                    connection.execute(text("ALTER TABLE user ADD COLUMN avatar_path VARCHAR(255)"))
-                    connection.commit()
-                logging.info('Колонка avatar_path успешно добавлена')
+                try:
+                    # Используем raw SQL для добавления колонки (безопаснее через try/except)
+                    with db.engine.connect() as connection:
+                        connection.execute(text("ALTER TABLE user ADD COLUMN avatar_path VARCHAR(255)"))
+                        connection.commit()
+                    logging.info('Колонка avatar_path успешно добавлена')
+                except Exception as column_error:
+                    logging.error(f"Ошибка при добавлении колонки: {str(column_error)}")
+                    # Продолжаем работу даже если колонка не добавлена
+        
+        logging.info("Схема базы данных проверена и обновлена")
+        return True
     except Exception as e:
         db.session.rollback()
         logging.error(f'Ошибка при обновлении схемы базы данных: {str(e)}')
+        return False
 
 # Маршруты для автообновления PythonAnywhere
 @app.route('/update_server', methods=['POST'])
@@ -104,23 +115,30 @@ def get_current_user_info():
     if 'user_id' not in session:
         return jsonify({'error': 'Unauthorized'}), 401
     
-    # Запрашиваем актуальную информацию из базы данных
-    user = User.query.get(session['user_id'])
-    if not user:
-        return jsonify({'error': 'User not found'}), 404
-    
-    # Проверяем наличие атрибута avatar_path
-    avatar_path = None
-    if hasattr(user, 'avatar_path'):
-        avatar_path = user.avatar_path
-    
-    # Возвращаем актуальную информацию о пользователе
-    return jsonify({
-        'user_id': user.id,
-        'user_name': user.name,
-        'email': user.email,
-        'avatar_path': avatar_path
-    })
+    try:
+        # Запрашиваем актуальную информацию из базы данных
+        user = User.query.get(session['user_id'])
+        if not user:
+            return jsonify({'error': 'User not found'}), 404
+        
+        # Проверяем наличие атрибута avatar_path безопасным способом
+        avatar_path = None
+        try:
+            if hasattr(user, 'avatar_path') and user.avatar_path:
+                avatar_path = user.avatar_path
+        except Exception as avatar_error:
+            logging.warning(f"Ошибка при получении avatar_path: {str(avatar_error)}")
+        
+        # Возвращаем актуальную информацию о пользователе
+        return jsonify({
+            'user_id': user.id,
+            'user_name': user.name,
+            'email': user.email,
+            'avatar_path': avatar_path
+        })
+    except Exception as e:
+        logging.error(f"Ошибка в get_current_user_info: {str(e)}")
+        return jsonify({'error': 'Server error'}), 500
 
 # Главный маршрут
 @app.route('/')
@@ -483,56 +501,75 @@ def upload_avatar():
     if 'user_id' not in session:
         return jsonify({'success': False, 'error': 'Unauthorized'}), 401
     
-    # Проверяем, есть ли файл в запросе
-    if 'avatar' not in request.files:
-        return jsonify({'success': False, 'error': 'No file part'})
-    
-    file = request.files['avatar']
-    
-    # Если пользователь не выбрал файл
-    if file.filename == '':
-        return jsonify({'success': False, 'error': 'No selected file'})
-    
-    # Если файл есть и имеет допустимое расширение
-    if file and allowed_file(file.filename):
-        # Безопасно сохраняем имя файла
-        filename = secure_filename(file.filename)
-        # Добавляем user_id к имени файла для уникальности
-        filename = f"user_{session['user_id']}_{filename}"
+    try:
+        # Проверяем, есть ли файл в запросе
+        if 'avatar' not in request.files:
+            return jsonify({'success': False, 'error': 'No file part'})
         
-        # Путь для сохранения
-        filepath = os.path.join(app.config['UPLOAD_FOLDER'], filename)
+        file = request.files['avatar']
         
-        # Сохраняем файл
-        file.save(filepath)
+        # Если пользователь не выбрал файл
+        if file.filename == '':
+            return jsonify({'success': False, 'error': 'No selected file'})
         
-        # Получаем пользователя и обновляем путь к аватарке
-        user = User.query.get(session['user_id'])
-        if user:
-            # Проверяем, есть ли атрибут avatar_path
-            if not hasattr(user, 'avatar_path'):
-                logging.warning('Колонка avatar_path отсутствует в базе данных')
-                return jsonify({'success': False, 'error': 'Database schema outdated'})
-                
-            # Относительный путь для URL
-            relative_path = os.path.join('static', 'avatars', filename).replace('\\', '/')
-            user.avatar_path = relative_path
+        # Если файл есть и имеет допустимое расширение
+        if file and allowed_file(file.filename):
+            # Безопасно сохраняем имя файла
+            filename = secure_filename(file.filename)
+            # Добавляем user_id к имени файла для уникальности
+            filename = f"user_{session['user_id']}_{filename}"
             
+            # Создаем папку, если её нет
             try:
-                db.session.commit()
-                return jsonify({
-                    'success': True, 
-                    'avatar_path': relative_path,
-                    'message': 'Avatar uploaded successfully'
-                })
-            except Exception as e:
-                db.session.rollback()
-                logging.error(f"Error updating avatar: {str(e)}")
-                return jsonify({'success': False, 'error': 'Database error'})
+                if not os.path.exists(app.config['UPLOAD_FOLDER']):
+                    os.makedirs(app.config['UPLOAD_FOLDER'], exist_ok=True)
+                    logging.info(f"Создана папка для аватаров: {app.config['UPLOAD_FOLDER']}")
+            except Exception as mkdir_error:
+                logging.error(f"Ошибка при создании папки для аватаров: {str(mkdir_error)}")
+                return jsonify({'success': False, 'error': 'Upload directory error'})
+            
+            # Путь для сохранения
+            filepath = os.path.join(app.config['UPLOAD_FOLDER'], filename)
+            
+            # Сохраняем файл
+            try:
+                file.save(filepath)
+                logging.info(f"Файл сохранен: {filepath}")
+            except Exception as save_error:
+                logging.error(f"Ошибка при сохранении файла: {str(save_error)}")
+                return jsonify({'success': False, 'error': 'File save error'})
+            
+            # Получаем пользователя и обновляем путь к аватарке
+            user = User.query.get(session['user_id'])
+            if user:
+                try:
+                    # Проверяем, есть ли атрибут avatar_path
+                    if not hasattr(user, 'avatar_path'):
+                        logging.warning('Колонка avatar_path отсутствует в модели User')
+                        return jsonify({'success': False, 'error': 'Schema error'})
+                    
+                    # Относительный путь для URL
+                    relative_path = os.path.join('static', 'avatars', filename).replace('\\', '/')
+                    user.avatar_path = relative_path
+                    
+                    db.session.commit()
+                    logging.info(f"Обновлен avatar_path для пользователя {user.id}: {relative_path}")
+                    return jsonify({
+                        'success': True, 
+                        'avatar_path': relative_path,
+                        'message': 'Avatar uploaded successfully'
+                    })
+                except Exception as db_error:
+                    db.session.rollback()
+                    logging.error(f"Ошибка при обновлении в БД: {str(db_error)}")
+                    return jsonify({'success': False, 'error': 'Database error'})
+            
+            return jsonify({'success': False, 'error': 'User not found'})
         
-        return jsonify({'success': False, 'error': 'User not found'})
-    
-    return jsonify({'success': False, 'error': 'File type not allowed'})
+        return jsonify({'success': False, 'error': 'File type not allowed'})
+    except Exception as e:
+        logging.error(f"Неожиданная ошибка в upload_avatar: {str(e)}")
+        return jsonify({'success': False, 'error': 'Server error'})
 
 if __name__ == '__main__':
     # Инициализация базы данных в контексте приложения
@@ -546,15 +583,29 @@ else:
     # Для запуска через WSGI (PythonAnywhere)
     try:
         with app.app_context():
-            logging.basicConfig(filename='/tmp/flask_app_error.log', level=logging.DEBUG)
+            logging.basicConfig(
+                filename='/tmp/flask_app_error.log', 
+                level=logging.DEBUG,
+                format='%(asctime)s - %(levelname)s - %(message)s'
+            )
             logging.info("Запускаем приложение через WSGI")
             try:
-                # Всегда проверяем и обновляем схему базы данных
-                create_tables()
-                logging.info("Схема базы данных проверена и обновлена при необходимости")
+                # Защищенный вызов create_tables
+                create_tables_success = create_tables()
+                if create_tables_success:
+                    logging.info("Схема базы данных успешно обновлена")
+                else:
+                    logging.warning("Не удалось обновить схему базы данных, но приложение продолжит работу")
+                
+                # Проверка наличия папки для аватаров
+                if not os.path.exists(app.config['UPLOAD_FOLDER']):
+                    os.makedirs(app.config['UPLOAD_FOLDER'], exist_ok=True)
+                    logging.info(f"Создана папка для аватаров: {app.config['UPLOAD_FOLDER']}")
+                
                 logging.info("Приложение успешно запущено на PythonAnywhere")
             except Exception as e:
                 logging.error(f"Ошибка при запуске приложения: {str(e)}")
+                logging.error("Приложение может работать некорректно!")
     except Exception as e:
         import traceback
         with open('/tmp/flask_startup_error.log', 'w') as f:
