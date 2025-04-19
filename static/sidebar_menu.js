@@ -139,6 +139,33 @@ document.addEventListener('DOMContentLoaded', function() {
     // Запускаем обновление информации при загрузке страницы
     refreshUserInfo();
     
+    // Функция для автоматического изменения размера textarea
+    function autoResizeTextarea(textarea) {
+        // Сбрасываем высоту к минимальной, чтобы корректно определить новую высоту
+        textarea.style.height = 'auto';
+        
+        // Устанавливаем высоту по содержимому, но не более максимальной
+        const newHeight = Math.min(300, Math.max(100, textarea.scrollHeight));
+        textarea.style.height = newHeight + 'px';
+    }
+    
+    // Обработчик изменения содержимого textarea
+    const profileBioTextarea = document.getElementById('profileBio');
+    if (profileBioTextarea) {
+        // Инициализация при загрузке
+        autoResizeTextarea(profileBioTextarea);
+        
+        // Обработчик для изменения размера при вводе текста
+        profileBioTextarea.addEventListener('input', function() {
+            autoResizeTextarea(this);
+        });
+        
+        // Обработчик для изменения размера после загрузки данных
+        profileBioTextarea.addEventListener('change', function() {
+            autoResizeTextarea(this);
+        });
+    }
+    
     // Обработчик нажатия на аватарку для загрузки фотографии
     if (avatarPlaceholder) {
         avatarPlaceholder.addEventListener('click', function() {
