@@ -757,3 +757,99 @@ body {
     position: relative;
     flex-grow: 1;
 }
+
+/* Стили для списка контактов */
+.contacts-list {
+    flex-grow: 1;
+    overflow-y: auto;
+    padding: 5px 0;
+    scrollbar-width: thin;
+}
+
+.contacts-list::-webkit-scrollbar {
+    width: 4px;
+}
+
+.contacts-list::-webkit-scrollbar-track {
+    background: #1c1c1c;
+}
+
+.contacts-list::-webkit-scrollbar-thumb {
+    background: #444;
+    border-radius: 2px;
+}
+
+.contact-item {
+    display: flex;
+    align-items: center;
+    padding: 10px 15px;
+    cursor: pointer;
+    transition: background-color 0.2s;
+    border-radius: 5px;
+    margin: 2px 8px;
+}
+
+.contact-item:hover {
+    background-color: #2a2a2a;
+}
+
+.contact-item.active {
+    background-color: #333;
+}
+
+.contact-avatar {
+    width: 48px;
+    height: 48px;
+    border-radius: 50%;
+    background-color: #555;
+    margin-right: 12px;
+    overflow: hidden;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+}
+
+.contact-avatar img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+}
+
+.contact-avatar .avatar-initials {
+    color: white;
+    font-size: 20px;
+    font-weight: bold;
+}
+
+.contact-info {
+    flex-grow: 1;
+    min-width: 0;
+}
+
+.contact-name {
+    font-size: 15px;
+    color: white;
+    margin-bottom: 3px;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.contact-bio {
+    font-size: 13px;
+    color: #aaa;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.no-contacts-message {
+    padding: 20px;
+    text-align: center;
+    color: #777;
+    font-size: 14px;
+    font-style: italic;
+    margin-top: 20px;
+    display: none; /* По умолчанию скрыто, показываем при отсутствии контактов */
+}

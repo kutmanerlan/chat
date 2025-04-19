@@ -22,6 +22,13 @@ class User(db.Model):
     # Новое поле для хранения информации о пользователе
     bio = db.Column(db.String(500), nullable=True)
     
+    # Определение отношения для контактов
+    contacts = db.relationship('Contact', 
+                              foreign_keys='Contact.user_id',
+                              backref=db.backref('owner', lazy='joined'),
+                              lazy='dynamic',
+                              cascade='all, delete-orphan')
+    
     def set_password(self, password):
         self.password_hash = generate_password_hash(password)
         
@@ -41,3 +48,16 @@ class User(db.Model):
         if user and user.check_password(password):
             return user
         return None
+
+# Модель для хранения контактов пользователей
+class Contact(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    user_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
+    contact_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
+    added_at = db.Column(db.DateTime, default=datetime.utcnow)
+    
+    # Связь с пользователем-контактом
+    contact_user = db.relationship('User', foreign_keys=[contact_id], lazy='joined')
+    
+    # Индекс для быстрого поиска и уникальности
+    __table_args__ = (db.UniqueConstraint('user_id', 'contact_id', name='_user_contact_uc'),)

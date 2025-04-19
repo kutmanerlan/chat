@@ -503,14 +503,45 @@ document.addEventListener('DOMContentLoaded', function() {
         
         // Функция для начала чата с выбранным пользователем
         function startChatWithUser(userId, userName) {
-            console.log(`Начинаем чат с пользователем: ${userName} (ID: ${userId})`);
-            
-            // Здесь будет реализация создания чата с пользователем
-            // Это будет добавлено позже при реализации чатов
-            
-            // Пока что просто закрываем результаты поиска
-            searchResults.style.display = 'none';
-            searchInput.value = '';
+            // Добавляем пользователя в контакты
+            fetch('/add_contact', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({
+                    contact_id: userId
+                })
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    console.log(`Пользователь ${userName} добавлен в контакты`);
+                    
+                    // Перезагружаем список контактов
+                    loadContacts();
+                    
+                    // Закрываем результаты поиска
+                    const searchResults = document.querySelector('.search-results');
+                    if (searchResults) {
+                        searchResults.style.display = 'none';
+                    }
+                    
+                    // Очищаем поле поиска
+                    const searchInput = document.getElementById('searchInput');
+                    if (searchInput) {
+                        searchInput.value = '';
+                    }
+                    
+                    // Открываем чат с добавленным пользователем
+                    openChatWithContact(userId, userName);
+                } else {
+                    console.error('Ошибка при добавлении контакта:', data.error);
+                }
+            })
+            .catch(error => {
+                console.error('Ошибка при добавлении контакта:', error);
+            });
         }
         
         // Закрытие результатов при клике вне поля поиска
@@ -521,5 +552,108 @@ document.addEventListener('DOMContentLoaded', function() {
         });
     }
 
+    // Функция для загрузки и отображения контактов
+    function loadContacts() {
+        fetch('/get_contacts', {
+            method: 'GET',
+            headers: {
+                'Cache-Control': 'no-cache, no-store, must-revalidate',
+                'Pragma': 'no-cache',
+                'Expires': '0'
+            }
+        })
+        .then(response => {
+            if (!response.ok) {
+                throw new Error('Network response was not ok');
+            }
+            return response.json();
+        })
+        .then(data => {
+            const contactsList = document.getElementById('contactsList');
+            const noContactsMessage = document.querySelector('.no-contacts-message');
+            
+            // Очищаем текущий список контактов (кроме сообщения об отсутствии контактов)
+            Array.from(contactsList.children).forEach(child => {
+                if (!child.classList.contains('no-contacts-message')) {
+                    contactsList.removeChild(child);
+                }
+            });
+            
+            if (data.contacts && data.contacts.length > 0) {
+                // Показываем контакты и скрываем сообщение
+                noContactsMessage.style.display = 'none';
+                
+                // Сортируем контакты по имени
+                data.contacts.sort((a, b) => a.name.localeCompare(b.name));
+                
+                // Создаем элемент для каждого контакта
+                data.contacts.forEach(contact => {
+                    const contactItem = document.createElement('div');
+                    contactItem.className = 'contact-item';
+                    contactItem.dataset.contactId = contact.id;
+                    
+                    // Создаем аватар
+                    const contactAvatar = document.createElement('div');
+                    contactAvatar.className = 'contact-avatar';
+                    
+                    if (contact.avatar_path) {
+                        contactAvatar.innerHTML = `<img src="${contact.avatar_path}" alt="${contact.name}">`;
+                    } else {
+                        contactAvatar.innerHTML = `<div class="avatar-initials">${contact.name.charAt(0)}</div>`;
+                    }
+                    
+                    // Создаем блок информации о контакте
+                    const contactInfo = document.createElement('div');
+                    contactInfo.className = 'contact-info';
+                    
+                    const contactName = document.createElement('div');
+                    contactName.className = 'contact-name';
+                    contactName.textContent = contact.name;
+                    
+                    const contactBio = document.createElement('div');
+                    contactBio.className = 'contact-bio';
+                    contactBio.textContent = contact.bio || 'Нет информации';
+                    
+                    // Собираем элемент контакта
+                    contactInfo.appendChild(contactName);
+                    contactInfo.appendChild(contactBio);
+                    
+                    contactItem.appendChild(contactAvatar);
+                    contactItem.appendChild(contactInfo);
+                    
+                    // Добавляем обработчик клика
+                    contactItem.addEventListener('click', function() {
+                        // Открыть чат с контактом
+                        openChatWithContact(contact.id, contact.name);
+                        
+                        // Подсветить активный контакт
+                        document.querySelectorAll('.contact-item').forEach(item => {
+                            item.classList.remove('active');
+                        });
+                        contactItem.classList.add('active');
+                    });
+                    
+                    // Добавляем контакт в список
+                    contactsList.appendChild(contactItem);
+                });
+            } else {
+                // Если контактов нет, показываем сообщение
+                noContactsMessage.style.display = 'block';
+            }
+        })
+        .catch(error => {
+            console.error('Ошибка при загрузке контактов:', error);
+        });
+    }
+    
+    // Функция для открытия чата с контактом (будет реализована позже)
+    function openChatWithContact(contactId, contactName) {
+        console.log(`Открываем чат с пользователем: ${contactName} (ID: ${contactId})`);
+        // Здесь будет код для отображения чата
+    }
+    
+    // Загружаем контакты при загрузке страницы
+    loadContacts();
+    
     console.log('Обработчики событий установлены');
 });

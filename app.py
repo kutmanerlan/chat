@@ -41,7 +41,7 @@ else:
     app.config['SERVER_NAME'] = 'localhost:5000'
 
 # Инициализация базы данных
-from models.user import db, User
+from models.user import db, User, Contact
 db.init_app(app)
 
 # Функция для создания таблиц базы данных
@@ -96,6 +96,13 @@ def create_tables():
                 except Exception as column_error:
                     logging.error(f"Ошибка при добавлении колонки bio: {str(column_error)}")
         
+        # Проверяем, существует ли таблица contact
+        if 'contact' not in inspector.get_table_names():
+            logging.info("Таблица contact не найдена. Создаем...")
+            # Если таблица не существует, создаем её
+            db.create_all()
+            logging.info('Таблица contact создана')
+            
         logging.info("Схема базы данных проверена и обновлена")
         return True
     except Exception as e:
@@ -656,12 +663,107 @@ def update_profile():
             })
         except Exception as db_error:
             db.session.rollback()
-            logging.error(f"Ошибка при обновлении профиля в БД: {str(db_error)}")
+            logging.error(f"Ошибка при обновлении профиля в БД: {str(db_error)}")иска контактов пользователя
             return jsonify({'success': False, 'error': 'Ошибка базы данных'}), 500
             
-    except Exception as e:
+    except Exception as e: session:
         logging.error(f"Неожиданная ошибка в update_profile: {str(e)}")
         return jsonify({'success': False, 'error': 'Ошибка сервера'}), 500
+
+if __name__ == '__main__':
+    # Инициализация базы данных в контексте приложения   
+    with app.app_context():
+        create_tables()contacts_query = Contact.query.filter_by(user_id=user_id).join(
+    # Временно отключаем SERVER_NAME для локального запускаr
+    app.config['SERVER_NAME'] = None
+    # Устанавливаем host='0.0.0.0', чтобы приложение было доступно извне
+    app.run(debug=True, host='0.0.0.0')
+else:
+    # Для запуска через WSGI (PythonAnywhere)ontact_user = contact.contact_user
+    try:
+        with app.app_context():'id': contact_user.id,
+            logging.basicConfig(
+                filename='/tmp/flask_app_error.log',  if hasattr(contact_user, 'avatar_path') else None,
+                level=logging.DEBUG,f hasattr(contact_user, 'bio') else None,
+                format='%(asctime)s - %(levelname)s - %(message)s'
+            )
+            logging.info("Запускаем приложение через WSGI")
+            try:sonify({'contacts': contacts})
+                # Защищенный вызов create_tables
+                create_tables_success = create_tables()
+                if create_tables_success:
+                    logging.info("Схема базы данных успешно обновлена")
+                else:бавления пользователя в контакты
+                    logging.warning("Не удалось обновить схему базы данных, но приложение продолжит работу")
+                
+                # Проверка наличия папки для аватаров
+                if not os.path.exists(app.config['UPLOAD_FOLDER']):
+                    os.makedirs(app.config['UPLOAD_FOLDER'], exist_ok=True)
+                    logging.info(f"Создана папка для аватаров: {app.config['UPLOAD_FOLDER']}")
+                
+                logging.info("Приложение успешно запущено на PythonAnywhere")
+            except Exception as e:
+
+
+
+
+
+
+
+            f.write(traceback.format_exc())            f.write(f"Критическая ошибка: {str(e)}\n")        with open('/tmp/flask_startup_error.log', 'w') as f:        import traceback    except Exception as e:                logging.error("Приложение может работать некорректно!")                logging.error(f"Ошибка при запуске приложения: {str(e)}")        if not contact_id:
+            return jsonify({'error': 'Contact ID is required'}), 400
+        
+        # Проверяем, существует ли пользователь
+        contact_user = User.query.get(contact_id)
+        if not contact_user:
+            return jsonify({'error': 'User not found'}), 404
+        
+        # Проверяем, не пытается ли пользователь добавить сам себя
+        if int(contact_id) == session['user_id']:
+            return jsonify({'error': 'Cannot add yourself as a contact'}), 400
+        
+        # Проверяем, не добавлен ли уже этот контакт
+        existing_contact = Contact.query.filter_by(
+            user_id=session['user_id'],
+            contact_id=contact_id
+        ).first()
+        
+        if existing_contact:
+            # Контакт уже добавлен, возвращаем успех (идемпотентность)
+            return jsonify({
+                'success': True,
+                'message': 'Contact already exists',
+                'contact': {
+                    'id': contact_user.id,
+                    'name': contact_user.name,
+                    'avatar_path': contact_user.avatar_path if hasattr(contact_user, 'avatar_path') else None,
+                    'bio': contact_user.bio if hasattr(contact_user, 'bio') else None
+                }
+            })
+        
+        # Создаем новую запись контакта
+        new_contact = Contact(
+            user_id=session['user_id'],
+            contact_id=contact_id
+        )
+        
+        db.session.add(new_contact)
+        db.session.commit()
+        
+        return jsonify({
+            'success': True,
+            'message': 'Contact added successfully',
+            'contact': {
+                'id': contact_user.id,
+                'name': contact_user.name,
+                'avatar_path': contact_user.avatar_path if hasattr(contact_user, 'avatar_path') else None,
+                'bio': contact_user.bio if hasattr(contact_user, 'bio') else None
+            }
+        })
+    except Exception as e:
+        db.session.rollback()
+        logging.error(f"Ошибка при добавлении контакта: {str(e)}")
+        return jsonify({'error': 'Server error'}), 500
 
 if __name__ == '__main__':
     # Инициализация базы данных в контексте приложения
