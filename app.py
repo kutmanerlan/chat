@@ -635,7 +635,7 @@ if __name__ == '__main__':
     with app.app_context():
         create_tables()
     # Временно отключаем SERVER_NAME для локального запуска
-    app.config.pop('SERVER_NAME', None)
+    app.config['SERVER_NAME'] = None
     # Устанавливаем host='0.0.0.0', чтобы приложение было доступно извне
     app.run(debug=True, host='0.0.0.0')
 else:
