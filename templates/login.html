@@ -218,7 +218,7 @@
             passwordError.style.display = 'none';
             
             // Очищаем предыдущие сообщения
-            const flashContainer = document.querySelector('.flash-messages');
+            let flashContainer = document.querySelector('.flash-messages');
             if (flashContainer) {
                 flashContainer.innerHTML = '';
             }
@@ -264,19 +264,22 @@
                     window.location.href = data.redirect;
                 } else {
                     // Показываем ошибку
+                    // Если контейнер для сообщений не существует, создаем его
                     if (!flashContainer) {
-                        const newFlashContainer = document.createElement('div');
-                        newFlashContainer.className = 'flash-messages';
-                        this.parentNode.insertBefore(newFlashContainer, this);
+                        flashContainer = document.createElement('div');
+                        flashContainer.className = 'flash-messages';
+                        // Вставляем контейнер перед формой
+                        const loginForm = document.getElementById('loginForm');
+                        loginForm.parentNode.insertBefore(flashContainer, loginForm);
                     }
                     
+                    // Создаем элемент для сообщения об ошибке
                     const errorElement = document.createElement('p');
                     errorElement.className = 'error';
                     errorElement.textContent = data.message;
                     
-                    if (flashContainer) {
-                        flashContainer.appendChild(errorElement);
-                    }
+                    // Добавляем сообщение в контейнер
+                    flashContainer.appendChild(errorElement);
                     
                     // Если ошибка связана с паролем, показываем ссылку на сброс
                     if (data.message.toLowerCase().includes('пароль')) {
@@ -287,14 +290,25 @@
                     if (data.message.toLowerCase().includes('не найден')) {
                         const registerLink = document.createElement('p');
                         registerLink.innerHTML = '<a href="{{ url_for("register") }}" style="color: #3498db; text-decoration: underline;">Зарегистрироваться</a>';
-                        if (flashContainer) {
-                            flashContainer.appendChild(registerLink);
-                        }
+                        flashContainer.appendChild(registerLink);
                     }
                 }
             })
             .catch(error => {
                 console.error('Ошибка:', error);
+                // Показываем общее сообщение об ошибке при сбое запроса
+                let flashContainer = document.querySelector('.flash-messages');
+                if (!flashContainer) {
+                    flashContainer = document.createElement('div');
+                    flashContainer.className = 'flash-messages';
+                    const loginForm = document.getElementById('loginForm');
+                    loginForm.parentNode.insertBefore(flashContainer, loginForm);
+                }
+                
+                const errorElement = document.createElement('p');
+                errorElement.className = 'error';
+                errorElement.textContent = 'Произошла ошибка при отправке запроса. Попробуйте позже.';
+                flashContainer.appendChild(errorElement);
             });
         });
     </script>
