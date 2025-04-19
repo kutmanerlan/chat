@@ -255,12 +255,14 @@ body {
     border-bottom: 1px solid #333; /* Более заметная граница */
     flex-shrink: 0;
     z-index: 10;
+    box-sizing: border-box;
 }
 
 .chat-user-info {
     display: flex;
     align-items: center;
     flex-grow: 1;
+    height: 100%;
 }
 
 .chat-user-avatar {
@@ -312,6 +314,9 @@ body {
     align-items: center;
     justify-content: center;
     align-self: center; /* Добавляем для лучшего вертикального выравнивания */
+    margin-top: 0;
+    margin-bottom: 0;
+    padding: 0;
 }
 
 .chat-menu-btn:hover {
