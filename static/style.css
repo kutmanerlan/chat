@@ -256,15 +256,28 @@ body {
     flex-shrink: 0; /* Запрещаем уменьшение размера */
 }
 
+/* Стили для инициалов - центрируем их правильно */
 .avatar-initials {
     color: white;
-    font-size: 28px; /* Увеличиваем размер инициалов */
+    font-size: 28px;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    width: 100%;
+    height: 100%;
+    position: absolute;
+    top: 0;
+    left: 0;
 }
 
+/* Стили для изображения аватара - обеспечиваем правильное заполнение */
 .avatar-image {
     width: 100%;
     height: 100%;
     object-fit: cover;
+    position: absolute;
+    top: 0;
+    left: 0;
 }
 
 /* Увеличиваем область для информации */

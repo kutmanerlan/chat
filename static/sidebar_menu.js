@@ -73,45 +73,62 @@ document.addEventListener('DOMContentLoaded', function() {
                     profileBioInput.value = data.bio || '';
                 }
                 
-                // Обновляем аватар пользователя
+                // Обновляем аватар пользователя - полностью переписанный код
                 if (data.avatar_path) {
-                    // Если есть путь к аватару, показываем изображение
-                    const avatarInitials = document.getElementById('avatarInitials');
-                    if (avatarInitials) {
-                        // Заменяем инициалы на изображение
-                        const parent = avatarInitials.parentElement;
-                        avatarInitials.remove();
+                    // Убедимся, что у нас есть аватар-плейсхолдер
+                    const avatarPlaceholder = document.getElementById('avatarPlaceholder');
+                    
+                    if (avatarPlaceholder) {
+                        // Очищаем содержимое плейсхолдера
+                        avatarPlaceholder.innerHTML = '';
                         
+                        // Создаем новое изображение
                         const img = document.createElement('img');
                         img.src = data.avatar_path;
                         img.alt = data.user_name;
                         img.className = 'avatar-image';
-                        parent.prepend(img);
-                    }
-                    
-                    // Если изображение уже есть, обновляем его src
-                    const avatarImage = document.querySelector('.avatar-image');
-                    if (avatarImage) {
-                        avatarImage.src = data.avatar_path;
+                        
+                        // Добавляем изображение в плейсхолдер
+                        avatarPlaceholder.appendChild(img);
+                        
+                        // Добавляем иконку загрузки обратно
+                        const uploadIcon = document.createElement('div');
+                        uploadIcon.className = 'avatar-upload-icon';
+                        uploadIcon.innerHTML = `
+                            <svg width="24" height="24" viewBox="0 0 24 24" fill="none">
+                                <path d="M12 5V19" stroke="white" stroke-width="2" stroke-linecap="round"/>
+                                <path d="M5 12H19" stroke="white" stroke-width="2" stroke-linecap="round"/>
+                            </svg>
+                        `;
+                        avatarPlaceholder.appendChild(uploadIcon);
                     }
                 } else {
-                    // Если нет пути к аватару, показываем инициалы
-                    const avatarInitials = document.getElementById('avatarInitials');
-                    if (avatarInitials) {
-                        avatarInitials.textContent = data.user_name.charAt(0);
-                    } else {
-                        // Если нет элемента с инициалами, но есть изображение - меняем на инициалы
-                        const avatarImage = document.querySelector('.avatar-image');
-                        if (avatarImage) {
-                            const parent = avatarImage.parentElement;
-                            avatarImage.remove();
-                            
-                            const initialsDiv = document.createElement('div');
-                            initialsDiv.id = 'avatarInitials';
-                            initialsDiv.className = 'avatar-initials';
-                            initialsDiv.textContent = data.user_name.charAt(0);
-                            parent.prepend(initialsDiv);
-                        }
+                    // Если аватара нет, показываем инициалы
+                    const avatarPlaceholder = document.getElementById('avatarPlaceholder');
+                    
+                    if (avatarPlaceholder) {
+                        // Очищаем содержимое плейсхолдера
+                        avatarPlaceholder.innerHTML = '';
+                        
+                        // Создаем div с инициалами
+                        const initialsDiv = document.createElement('div');
+                        initialsDiv.id = 'avatarInitials';
+                        initialsDiv.className = 'avatar-initials';
+                        initialsDiv.textContent = data.user_name.charAt(0);
+                        
+                        // Добавляем инициалы в плейсхолдер
+                        avatarPlaceholder.appendChild(initialsDiv);
+                        
+                        // Добавляем иконку загрузки обратно
+                        const uploadIcon = document.createElement('div');
+                        uploadIcon.className = 'avatar-upload-icon';
+                        uploadIcon.innerHTML = `
+                            <svg width="24" height="24" viewBox="0 0 24 24" fill="none">
+                                <path d="M12 5V19" stroke="white" stroke-width="2" stroke-linecap="round"/>
+                                <path d="M5 12H19" stroke="white" stroke-width="2" stroke-linecap="round"/>
+                            </svg>
+                        `;
+                        avatarPlaceholder.appendChild(uploadIcon);
                     }
                 }
             }
