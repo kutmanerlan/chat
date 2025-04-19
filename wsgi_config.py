@@ -12,7 +12,7 @@ logging.basicConfig(
 try:
     logging.info("Запуск WSGI скрипта")
     
-g    # Путь к проекту на PythonAnywhere
+    # Путь к проекту на PythonAnywhere
     path = '/home/tymeer/chat'
     if path not in sys.path:
         sys.path.insert(0, path)  # Insert at beginning to ensure it takes precedence
