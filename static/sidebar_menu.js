@@ -688,16 +688,59 @@ document.addEventListener('DOMContentLoaded', function() {
             chatHeader.appendChild(menuButton);
             chatHeader.appendChild(dropdown);
             
-            // Создаем область сообщений
+            // Создаем область сообщений в новом дизайне
             const chatMessages = document.createElement('div');
             chatMessages.className = 'chat-messages';
-            chatMessages.innerHTML = '<div class="no-messages">Нет сообщений</div>';
             
-            // Создаем форму ввода сообщений
+            // Добавляем сообщения для примера как на скриншоте
+            const sentMessages = [
+                {
+                    text: "Lorem ipsum dolor sit amet. Qui eaque eaque est nisi corporis qui nihil facilis et facere placeat aut assumenda eveniet quo nostrum maxime.",
+                    time: "18:12",
+                    type: "sent"
+                },
+                {
+                    text: "Сообщение",
+                    time: "18:13",
+                    type: "sent"
+                }
+            ];
+            
+            // Добавляем пустое сообщение-плейсхолдер вверху для позиционирования текста
+            chatMessages.innerHTML = '<div class="messages-placeholder"></div>';
+            
+            // Добавляем сообщения из примера
+            sentMessages.forEach(msg => {
+                const messageEl = document.createElement('div');
+                messageEl.className = `message message-${msg.type}`;
+                messageEl.innerHTML = `
+                    <div class="message-content">${msg.text}</div>
+                    <div class="message-time">${msg.time}</div>
+                `;
+                chatMessages.appendChild(messageEl);
+            });
+            
+            // Добавляем надпись "Нет сообщений", если это новый чат
+            if (sentMessages.length === 0) {
+                const noMessages = document.createElement('div');
+                noMessages.className = 'no-messages';
+                noMessages.textContent = 'Нет сообщений';
+                chatMessages.appendChild(noMessages);
+            }
+            
+            // Создаем форму ввода сообщений (обновленный дизайн)
             const chatInput = document.createElement('div');
             chatInput.className = 'chat-input';
             chatInput.innerHTML = `
-                <textarea placeholder="Введите сообщение..."></textarea>
+                <div class="emoji-button">
+                    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#777" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <circle cx="12" cy="12" r="10"></circle>
+                        <path d="M8 14s1.5 2 4 2 4-2 4-2"></path>
+                        <line x1="9" y1="9" x2="9.01" y2="9"></line>
+                        <line x1="15" y1="9" x2="15.01" y2="9"></line>
+                    </svg>
+                </div>
+                <textarea placeholder="Сообщение"></textarea>
                 <button class="send-btn">
                     <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                         <line x1="22" y1="2" x2="11" y2="13"></line>
@@ -713,6 +756,12 @@ document.addEventListener('DOMContentLoaded', function() {
             
             // Показываем основную область
             mainContent.style.display = 'flex';
+            
+            // Фокусируем поле ввода
+            setTimeout(() => {
+                const textarea = chatInput.querySelector('textarea');
+                if (textarea) textarea.focus();
+            }, 0);
         }
         
         // Функция для добавления пользователя в контакты

@@ -309,6 +309,140 @@ body {
     color: white;
 }
 
+/* Обновленные стили для интерфейса чата */
+.chat-messages {
+    flex-grow: 1;
+    padding: 20px 15px;
+    overflow-y: auto;
+    display: flex;
+    flex-direction: column;
+    background-color: #121212;
+    gap: 10px;
+}
+
+.messages-placeholder {
+    flex-grow: 1;
+}
+
+.message {
+    max-width: 75%;
+    padding: 8px 12px;
+    border-radius: 10px;
+    position: relative;
+    margin-bottom: 5px;
+}
+
+.message-sent {
+    background-color: #333;
+    color: #fff;
+    align-self: flex-end;
+    border-radius: 10px 0 10px 10px;
+}
+
+.message-received {
+    background-color: #1c1c1c;
+    color: #fff;
+    align-self: flex-start;
+    border-radius: 0 10px 10px 10px;
+}
+
+.message-content {
+    font-size: 14px;
+    line-height: 1.4;
+    word-wrap: break-word;
+}
+
+.message-time {
+    color: #aaa;
+    font-size: 11px;
+    text-align: right;
+    margin-top: 4px;
+}
+
+.no-messages {
+    color: #666;
+    text-align: center;
+    margin-top: auto;
+    margin-bottom: auto;
+    font-style: italic;
+}
+
+.chat-input {
+    height: 60px;
+    background-color: #1c1c1c;
+    display: flex;
+    align-items: center;
+    padding: 0 15px;
+    flex-shrink: 0;
+    gap: 10px;
+}
+
+.emoji-button {
+    width: 32px;
+    height: 32px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+    border-radius: 50%;
+    cursor: pointer;
+}
+
+.emoji-button:hover {
+    background-color: #333;
+}
+
+.emoji-button svg {
+    width: 22px;
+    height: 22px;
+}
+
+.chat-input textarea {
+    flex-grow: 1;
+    height: 36px;
+    max-height: 100px;
+    background-color: #333;
+    border: none;
+    border-radius: 18px;
+    padding: 8px 15px;
+    color: white;
+    resize: none;
+    outline: none;
+    font-family: inherit;
+    font-size: 14px;
+    line-height: 20px; /* Для улучшения вертикального выравнивания */
+}
+
+.chat-input textarea::placeholder {
+    color: #888;
+}
+
+.chat-input .send-btn {
+    width: 36px;
+    height: 36px;
+    background-color: #333;
+    color: #aaa;
+    border: none;
+    border-radius: 50%;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+    padding: 0;
+    margin: 0;
+}
+
+.chat-input .send-btn:hover {
+    background-color: #444;
+    color: white;
+}
+
+.chat-input .send-btn svg {
+    width: 18px;
+    height: 18px;
+}
+
 .chat-messages {
     flex-grow: 1;
     padding: 20px;
