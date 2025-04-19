@@ -703,17 +703,17 @@ document.addEventListener('DOMContentLoaded', function() {
                 chatMessages.appendChild(noMessages);
             }
             
-            // ===== ОБНОВЛЕННАЯ РЕАЛИЗАЦИЯ ЧАТА С ОТСТУПАМИ =====
+            // ===== ОБНОВЛЕННАЯ РЕАЛИЗАЦИЯ ЧАТА С ПРОЗРАЧНЫМ ФОНОМ =====
             
-            // Создаем основной контейнер для ввода
+            // Создаем основной контейнер для ввода с прозрачным фоном
             const chatInput = document.createElement('div');
             chatInput.className = 'chat-input';
             
-            // Создаем wrapper для контента с отступами
+            // Создаем wrapper для контента с отступами и прозрачным фоном
             const chatInputWrapper = document.createElement('div');
             chatInputWrapper.className = 'chat-input-wrapper';
             
-            // Attachment button (paperclip)
+            // Attachment button (paperclip) с улучшенным выравниванием
             const attachmentBtn = document.createElement('button');
             attachmentBtn.className = 'attachment-btn';
             attachmentBtn.innerHTML = `

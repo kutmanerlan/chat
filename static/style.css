@@ -1852,13 +1852,12 @@ body {
 /* Обновленные стили для поля ввода чата с отступами по бокам */
 .chat-input {
     height: 68px;
-    background-color: #212121;
+    background-color: transparent; /* Меняем на прозрачный фон */
     display: flex;
     align-items: center;
-    padding: 0 16px; /* Базовые отступы контейнера */
-    gap: 12px;
+    padding: 0;
     flex-shrink: 0;
-    border-top: 1px solid #333;
+    border-top: 1px solid #333; /* Оставляем только верхнюю границу */
     position: relative;
     z-index: 10;
     box-sizing: border-box;
@@ -1872,13 +1871,94 @@ body {
     width: 100%;
     margin: 0 auto; /* Центрирование */
     padding: 0 50px; /* Отступы по бокам внутри контейнера */
+    background-color: transparent; /* Прозрачный фон */
 }
 
+/* Стили для кнопки скрепки, делаем её похожей на фото 2 */
+.attachment-btn {
+    width: 50px; /* Увеличиваем ширину для правильного выравнивания */
+    height: 50px;
+    background: transparent;
+    border: none;
+    color: #aaa;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 50%;
+    flex-shrink: 0;
+    transition: color 0.2s, background-color 0.2s;
+    padding: 0;
+    margin-right: 8px; /* Добавляем отступ справа */
+}
+
+/* Стиль для поля ввода сообщения */
 .chat-input textarea {
     flex-grow: 1;
-    height: 40px;
+    height: 42px; /* Немного увеличиваем высоту */
     max-height: 120px;
-    background-color: #333;
+    background-color: #333; /* Цвет фона только для самого textarea */
+    border: none;
+    border-radius: 22px;
+    padding: 11px 16px;
+    color: white;
+    resize: none;
+    outline: none;
+    font-family: inherit;
+    font-size: 15px;
+    line-height: 20px;
+    transition: background-color 0.2s, height 0.1s ease;
+}
+
+/* Обновленные стили для поля ввода чата с отступами по бокам */
+.chat-input {
+    height: 68px;
+    background-color: transparent; /* Меняем на прозрачный фон */
+    display: flex;
+    align-items: center;
+    padding: 0;
+    flex-shrink: 0;
+    border-top: 1px solid #333; /* Оставляем только верхнюю границу */
+    position: relative;
+    z-index: 10;
+    box-sizing: border-box;
+    width: 100%;
+}
+
+.chat-input-wrapper {
+    display: flex;
+    align-items: center;
+    max-width: 850px; /* Максимальная ширина для контента */
+    width: 100%;
+    margin: 0 auto; /* Центрирование */
+    padding: 0 50px; /* Отступы по бокам внутри контейнера */
+    background-color: transparent; /* Прозрачный фон */
+}
+
+/* Стили для кнопки скрепки, делаем её похожей на фото 2 */
+.attachment-btn {
+    width: 50px; /* Увеличиваем ширину для правильного выравнивания */
+    height: 50px;
+    background: transparent;
+    border: none;
+    color: #aaa;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 50%;
+    flex-shrink: 0;
+    transition: color 0.2s, background-color 0.2s;
+    padding: 0;
+    margin-right: 8px; /* Добавляем отступ справа */
+}
+
+/* Стиль для поля ввода сообщения */
+.chat-input textarea {
+    flex-grow: 1;
+    height: 42px; /* Немного увеличиваем высоту */
+    max-height: 120px;
+    background-color: #333; /* Цвет фона только для самого textarea */
     border: none;
     border-radius: 22px;
     padding: 11px 16px;
