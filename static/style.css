@@ -133,6 +133,24 @@ body {
     background-color: #1c1c1c; /* Убедимся, что цвет фона соответствует */
 }
 
+/* Добавляем стили для контейнера поиска */
+.search-container {
+    position: relative;
+    flex-grow: 1;
+    display: flex;
+    align-items: center;
+}
+
+/* Стили для иконки поиска */
+.search-icon {
+    position: absolute;
+    left: 12px;
+    top: 50%;
+    transform: translateY(-50%);
+    pointer-events: none; /* Чтобы иконка не блокировала клики по полю */
+    z-index: 1;
+}
+
 .menu-btn {
     display: flex;
     flex-direction: column;
@@ -186,7 +204,7 @@ body {
 #searchInput {
     flex-grow: 1;
     height: 36px; /* Высота как на фото 1 */
-    padding: 0 15px;
+    padding: 0 15px 0 38px; /* Увеличиваем левый отступ для иконки */
     border: none;
     border-radius: 18px;
     background-color: #100E0E;
@@ -194,6 +212,7 @@ body {
     font-size: 15px;
     outline: none;
     margin: 0;
+    width: 100%; /* Гарантируем, что поле займет все доступное пространство */
 }
 
 #searchInput:focus {
