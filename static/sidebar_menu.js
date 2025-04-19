@@ -768,10 +768,19 @@ document.addEventListener('DOMContentLoaded', function() {
                     sendButton.classList.remove('visible');
                 }
                 
-                // Автоизменение высоты textarea
-                this.style.height = 'auto';
-                const newHeight = Math.min(120, Math.max(40, this.scrollHeight));
+                // Автоизменение высоты textarea в пределах max-height
+                this.style.height = '40px'; // Сбрасываем высоту к минимальной
+                const maxHeight = 100; // Максимальная высота в пикселях (как в CSS)
+                const scrollHeight = this.scrollHeight;
+                const newHeight = Math.min(maxHeight, scrollHeight);
                 this.style.height = newHeight + 'px';
+                
+                // Если содержимое превышает высоту, активируем прокрутку
+                if (scrollHeight > maxHeight) {
+                    this.style.overflowY = 'auto';
+                } else {
+                    this.style.overflowY = 'hidden';
+                }
             });
             
             // Отправка сообщения по клику на кнопку
