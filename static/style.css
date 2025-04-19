@@ -1808,3 +1808,97 @@ body {
     width: 22px;
     height: 22px;
 }
+
+/* УДАЛЯЕМ ВСЕ СТАРЫЕ СТИЛИ ПОЛЕЙ ВВОДА chat-input, chat-input-container и т.д. */
+
+/* НОВЫЕ СТИЛИ ДЛЯ ПОЛЯ ВВОДА СООБЩЕНИЙ */
+.message-input-container {
+    width: 100%;
+    height: 68px;
+    border-top: 1px solid #333;
+    display: flex;
+    align-items: center;
+    padding: 0 16px;
+    box-sizing: border-box;
+    background-color: transparent; /* Полностью прозрачный фон */
+    position: relative;
+}
+
+.message-input-wrapper {
+    display: flex;
+    align-items: center;
+    width: 100%;
+    max-width: 1200px;
+    margin: 0 auto;
+}
+
+/* Стили для поля ввода */
+.message-input-field {
+    flex-grow: 1;
+    position: relative;
+    height: 40px;
+}
+
+.message-input-field textarea {
+    width: 100%;
+    height: 40px;
+    max-height: 120px;
+    padding: 10px 12px;
+    border-radius: 20px;
+    border: none;
+    background-color: #333;
+    color: #fff;
+    font-size: 15px;
+    line-height: 20px;
+    resize: none;
+    outline: none;
+    transition: height 0.1s ease;
+}
+
+.message-input-field textarea::placeholder {
+    color: #888;
+}
+
+/* Кнопка скрепки */
+.attachment-button {
+    width: 40px;
+    height: 40px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background-color: transparent;
+    border: none;
+    color: #aaa;
+    cursor: pointer;
+    border-radius: 50%;
+    margin-left: 8px;
+}
+
+.attachment-button:hover {
+    background-color: rgba(255, 255, 255, 0.1);
+    color: #fff;
+}
+
+/* Кнопка отправки сообщения */
+.send-button {
+    width: 40px;
+    height: 40px;
+    display: none; /* По умолчанию скрыта */
+    align-items: center;
+    justify-content: center;
+    background-color: #2b5278;
+    border: none;
+    color: #fff;
+    cursor: pointer;
+    border-radius: 50%;
+    margin-left: 8px;
+    transition: background-color 0.2s;
+}
+
+.send-button:hover {
+    background-color: #366497;
+}
+
+.send-button.visible {
+    display: flex;
+}

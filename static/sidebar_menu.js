@@ -703,96 +703,83 @@ document.addEventListener('DOMContentLoaded', function() {
                 chatMessages.appendChild(noMessages);
             }
             
-            // ===== ОБНОВЛЕННАЯ РЕАЛИЗАЦИЯ ЧАТА С ПРОЗРАЧНЫМ ФОНОМ =====
+            // ===== НОВОЕ ПОЛЕ ВВОДА СООБЩЕНИЙ =====
             
-            // Создаем основной контейнер для ввода с прозрачным фоном
-            const chatInput = document.createElement('div');
-            chatInput.className = 'chat-input';
-            // Убираем inline стили, если они были
-            chatInput.style = '';
+            // Главный контейнер для поля ввода
+            const messageInputContainer = document.createElement('div');
+            messageInputContainer.className = 'message-input-container';
             
-            const chatInputWrapper = document.createElement('div');
-            chatInputWrapper.className = 'chat-input-wrapper';
-            // Убираем inline стили, если они были
-            chatInputWrapper.style = '';
+            const messageInputWrapper = document.createElement('div');
+            messageInputWrapper.className = 'message-input-wrapper';
             
-            // Attachment button (paperclip) с улучшенным выравниванием
-            const attachmentBtn = document.createElement('button');
-            attachmentBtn.className = 'attachment-btn';
-            attachmentBtn.innerHTML = `
+            // Поле для ввода текста
+            const messageInputField = document.createElement('div');
+            messageInputField.className = 'message-input-field';
+            
+            const textarea = document.createElement('textarea');
+            textarea.placeholder = 'Сообщение';
+            textarea.rows = 1;
+            
+            // Кнопка для прикрепления файлов (скрепка)
+            const attachmentButton = document.createElement('button');
+            attachmentButton.className = 'attachment-button';
+            attachmentButton.innerHTML = `
                 <svg viewBox="0 0 24 24" width="24" height="24" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round">
                     <path d="M21.44 11.05l-9.19 9.19a6 6 0 0 1-8.49-8.49l9.19-9.19a4 4 0 0 1 5.66 5.66l-9.2 9.19a2 2 0 0 1-2.83-2.83l8.49-8.48"></path>
                 </svg>
             `;
             
-            // Message input field
-            const textarea = document.createElement('textarea');
-            textarea.placeholder = 'Сообщение';
-            textarea.rows = 1;
-            
-            // Send button
-            const sendBtn = document.createElement('button');
-            sendBtn.className = 'send-btn';
-            sendBtn.innerHTML = `
+            // Кнопка отправки сообщения
+            const sendButton = document.createElement('button');
+            sendButton.className = 'send-button';
+            sendButton.innerHTML = `
                 <svg viewBox="0 0 24 24" width="24" height="24" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round">
                     <line x1="22" y1="2" x2="11" y2="13"></line>
                     <polygon points="22 2 15 22 11 13 2 9 22 2"></polygon>
                 </svg>
             `;
             
-            // Add elements to chat input wrapper
-            chatInputWrapper.appendChild(attachmentBtn);
-            chatInputWrapper.appendChild(textarea);
-            chatInputWrapper.appendChild(sendBtn);
+            // Добавляем textarea в поле ввода
+            messageInputField.appendChild(textarea);
             
-            // Add wrapper to main container
-            chatInput.appendChild(chatInputWrapper);
+            // Собираем элементы в обертку
+            messageInputWrapper.appendChild(messageInputField);
+            messageInputWrapper.appendChild(attachmentButton);
+            messageInputWrapper.appendChild(sendButton);
             
-            // Create hidden file input
+            // Добавляем обертку в контейнер
+            messageInputContainer.appendChild(messageInputWrapper);
+            
+            // Скрытый input для выбора файлов
             const fileInput = document.createElement('input');
             fileInput.type = 'file';
             fileInput.multiple = true;
             fileInput.accept = 'image/*,video/*,.pdf,.doc,.docx,.xls,.xlsx,.zip,.rar';
-            fileInput.className = 'file-input';
-            
-            // Добавляем скрытый input в DOM
+            fileInput.style.display = 'none';
             document.body.appendChild(fileInput);
             
-            // ===== EVENT HANDLERS =====
+            // ===== ОБРАБОТЧИКИ СОБЫТИЙ =====
             
-            // Show/hide send button based on text input
+            // Показываем/скрываем кнопку отправки при вводе текста
             textarea.addEventListener('input', function() {
                 if (this.value.trim()) {
-                    sendBtn.classList.add('visible');
+                    sendButton.classList.add('visible');
                 } else {
-                    sendBtn.classList.remove('visible');
+                    sendButton.classList.remove('visible');
                 }
                 
-                // Auto-resize textarea
+                // Автоизменение высоты textarea
                 this.style.height = 'auto';
                 const newHeight = Math.min(120, Math.max(40, this.scrollHeight));
                 this.style.height = newHeight + 'px';
             });
             
-            // Сразу открываем системный диалог выбора файла при клике на скрепку
-            attachmentBtn.addEventListener('click', function() {
-                fileInput.click();
-            });
-            
-            // Handle file selection
-            fileInput.addEventListener('change', function() {
-                if (this.files && this.files.length > 0) {
-                    sendFileMessage(this.files, chatMessages, user);
-                    this.value = ''; // Reset input for selecting the same files again
-                }
-            });
-            
-            // Send button click handler
-            sendBtn.addEventListener('click', function() {
+            // Отправка сообщения по клику на кнопку
+            sendButton.addEventListener('click', function() {
                 sendTextMessage(textarea, chatMessages, user);
             });
             
-            // Enter key to send (without Shift)
+            // Отправка сообщения по нажатию Enter (без Shift)
             textarea.addEventListener('keydown', function(e) {
                 if (e.key === 'Enter' && !e.shiftKey) {
                     e.preventDefault();
@@ -800,19 +787,32 @@ document.addEventListener('DOMContentLoaded', function() {
                 }
             });
             
-            // Add elements to main content
+            // Открытие диалога выбора файла
+            attachmentButton.addEventListener('click', function() {
+                fileInput.click();
+            });
+            
+            // Обработка выбранных файлов
+            fileInput.addEventListener('change', function() {
+                if (this.files && this.files.length > 0) {
+                    sendFileMessage(this.files, chatMessages, user);
+                    this.value = ''; // Сбрасываем значение для повторного выбора
+                }
+            });
+            
+            // Добавляем элементы в интерфейс
             chatHeader.appendChild(userInfo);
             chatHeader.appendChild(menuButton);
             chatHeader.appendChild(dropdown);
             
             mainContent.appendChild(chatHeader);
             mainContent.appendChild(chatMessages);
-            mainContent.appendChild(chatInput);
+            mainContent.appendChild(messageInputContainer);
             
-            // Show main content
+            // Показываем содержимое
             mainContent.style.display = 'flex';
             
-            // Focus the textarea
+            // Фокус на поле ввода после отрисовки
             setTimeout(() => {
                 textarea.focus();
             }, 0);
