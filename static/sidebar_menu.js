@@ -14,6 +14,39 @@ document.addEventListener('DOMContentLoaded', function() {
     if (!sideMenu) console.error('Элемент sideMenu не найден');
     if (!overlay) console.error('Элемент overlay не найден');
     
+    // Принудительно обновляем информацию о пользователе при каждой загрузке страницы
+    // через асинхронный запрос к серверу
+    function refreshUserInfo() {
+        fetch('/get_current_user_info', {
+            method: 'GET',
+            headers: {
+                'Cache-Control': 'no-cache, no-store, must-revalidate',
+                'Pragma': 'no-cache',
+                'Expires': '0'
+            }
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.user_name) {
+                // Обновляем имя пользователя
+                const userNameElements = document.querySelectorAll('.user-info h3');
+                userNameElements.forEach(el => {
+                    el.textContent = data.user_name;
+                });
+                
+                // Обновляем инициалы в аватаре
+                const avatarInitials = document.querySelectorAll('.avatar-initials');
+                avatarInitials.forEach(el => {
+                    el.textContent = data.user_name.charAt(0);
+                });
+            }
+        })
+        .catch(error => console.error('Ошибка при получении информации о пользователе:', error));
+    }
+    
+    // Запускаем обновление информации при загрузке страницы
+    refreshUserInfo();
+    
     // Обработка клика по кнопке меню
     if (menuBtn) {
         menuBtn.addEventListener('click', function() {

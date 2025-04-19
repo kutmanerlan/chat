@@ -1,4 +1,4 @@
-from flask import Flask, json, request, render_template, redirect, url_for, flash, session, jsonify
+from flask import Flask, json, request, render_template, redirect, url_for, flash, session, jsonify, make_response, make_response
 import logging
 import os
 from werkzeug.security import generate_password_hash, check_password_hash
@@ -232,37 +232,37 @@ def logout():
     # Полностью очищаем всю сессию вместо удаления отдельных ключей
     session.clear()
     # Добавляем сообщение для пользователя
-    flash('Вы успешно вышли из аккаунта', 'info')
-    return redirect(url_for('login'))
-
-@app.route('/main')
+    flash('Вы успешно вышли из аккаунта', 'info')ляем cookies
+    return redirect(url_for('login'))n'))
+    # Установка cookie с уже истекшим сроком действия для его удаления
+@app.route('/main')okie('session', '', expires=0)
 def main():
-    if 'user_id' not in session:
-        return redirect(url_for('login'))
+    if 'user_id' not in session:льзователя
+        return redirect(url_for('login')) 'info')
     # Проверяем, существует ли пользователь в базе данных
     user = User.query.get(session['user_id'])
     if user is None:
         # Пользователь не найден в базе, очищаем сессию
-        session.clear()
+        session.clear() session:
         flash('Ваша сессия была завершена, так как пользователь не найден в базе данных', 'info')
         return redirect(url_for('login'))
-    return render_template('dashboard.html')
-
+    return render_template('dashboard.html')в базе данных
+    user = User.query.get(session['user_id'])
 # Добавим маршрут для проверки работоспособности
-@app.route('/ping')
-def ping():
-    return 'pong'
-
+@app.route('/ping')ель не найден в базе, очищаем сессию
+def ping():sion.clear()
+    return 'pong'ша сессия была завершена, так как пользователь не найден в базе данных', 'info')
+        return redirect(url_for('login'))
 @app.route('/profile')
-def profile():
-    if 'user_id' not in session:
+def profile():м данные пользователя в сессии для уверенности
+    if 'user_id' not in session:name
         return redirect(url_for('login'))
     user = User.query.get(session['user_id'])
-    if not user:
-        flash('Пользователь не найден', 'error')
-        return redirect(url_for('login'))
+    if not user:ake_response(render_template('dashboard.html'))
+        flash('Пользователь не найден', 'error')e, no-cache, must-revalidate, max-age=0'
+        return redirect(url_for('login'))e'
     return render_template('profile.html', user=user)
-
+    return response
 # Маршрут для запроса сброса пароля
 @app.route('/reset-password-request', methods=['GET', 'POST'])
 def reset_password_request():
@@ -271,150 +271,184 @@ def reset_password_request():
     
     # Выводим отладочную информацию при обработке запроса
     logging.info("Запрошена страница сброса пароля")
-    
+    if 'user_id' not in session:
     # Определяем, является ли запрос AJAX-запросом
     is_ajax = request.headers.get('X-Requested-With') == 'XMLHttpRequest'
-    
-    if request.method == 'POST':
+    if not user:
+    if request.method == 'POST':айден', 'error')
         email = request.form.get('email', '').strip()
         logging.info(f"Получен POST-запрос на сброс пароля для email: {email}")
         
-        if not email:
-            if is_ajax:
+        if not email: сброса пароля
+            if is_ajax:word-request', methods=['GET', 'POST'])
                 return jsonify({
                     'success': False,
                     'message': 'Пожалуйста, введите email'
                 })
-            else:
+            else:адочную информацию при обработке запроса
                 flash('Пожалуйста, введите email', 'error')
                 return render_template('reset_password_request.html')
-            
-        if not is_email_valid(email):
+            ляем, является ли запрос AJAX-запросом
+        if not is_email_valid(email):Requested-With') == 'XMLHttpRequest'
             if is_ajax:
                 return jsonify({
-                    'success': False,
-                    'message': 'Пожалуйста, введите корректный email'
+                    'success': False,il', '').strip()
+                    'message': 'Пожалуйста, введите корректный email' {email}")
                 })
-            else:
+            else:ail:
                 flash('Пожалуйста, введите корректный email', 'error')
                 return render_template('reset_password_request.html')
-        
-        user = User.query.filter_by(email=email).first()
-        
+                    'success': False,
+        user = User.query.filter_by(email=email).first()l'
+                })
         # Генерируем токен даже если пользователь не найден (для безопасности)
-        reset_token = generate_confirmation_token()
+        reset_token = generate_confirmation_token()'error')
         token_expiration = datetime.datetime.now() + datetime.timedelta(hours=1)
-        
-        if user:
+            
+        if user:s_email_valid(email):
             # Сохраняем токен в базе данных только для существующего пользователя
             user.confirmation_token = reset_token
             user.token_expiration = token_expiration
-            
-            try:
+                    'message': 'Пожалуйста, введите корректный email'
+            try:})
                 db.session.commit()
-                # Отправляем письмо с ссылкой на сброс пароля
+                # Отправляем письмо с ссылкой на сброс пароля 'error')
                 logging.info(f"Отправка письма для сброса пароля на {email}")
                 result = send_reset_password_email(email, reset_token)
-                
+                ser.query.filter_by(email=email).first()
                 if is_ajax:
-                    return jsonify({
-                        'success': True,
+                    return jsonify({ пользователь не найден (для безопасности)
+                        'success': True,ion_token()
                         'message': 'Инструкции по сбросу пароля отправлены на ваш email'
                     })
                 else:
-                    if result:
+                    if result:в базе данных только для существующего пользователя
                         logging.info(f"Письмо для сброса пароля успешно отправлено на {email}")
                         flash('Инструкции по сбросу пароля отправлены на ваш email', 'success')
                     else:
                         logging.error(f"Не удалось отправить письмо для сброса пароля на {email}")
                         flash('Произошла ошибка при отправке email. Пожалуйста, попробуйте позже.', 'error')
-            except Exception as e:
-                db.session.rollback()
-                logging.error(f"Ошибка при сбросе пароля: {str(e)}")
+            except Exception as e:о с ссылкой на сброс пароля
+                db.session.rollback()ка письма для сброса пароля на {email}")
+                logging.error(f"Ошибка при сбросе пароля: {str(e)}")n)
                 
                 if is_ajax:
                     return jsonify({
                         'success': False,
-                        'message': 'Произошла ошибка. Пожалуйста, попробуйте позже.'
+                        'message': 'Произошла ошибка. Пожалуйста, попробуйте позже.'ail'
                     })
                 else:
                     flash('Произошла ошибка. Пожалуйста, попробуйте позже.', 'error')
-        else:
-            # Для безопасности не сообщаем, существует ли пользователь
-            if is_ajax:
-                return jsonify({
-                    'success': True,
+        else:           logging.info(f"Письмо для сброса пароля успешно отправлено на {email}")
+            # Для безопасности не сообщаем, существует ли пользовательна ваш email', 'success')
+            if is_ajax:e:
+                return jsonify({error(f"Не удалось отправить письмо для сброса пароля на {email}")
+                    'success': True,ошла ошибка при отправке email. Пожалуйста, попробуйте позже.', 'error')
                     'message': 'Если указанный email зарегистрирован в системе, вы получите инструкции по сбросу пароля'
-                })
-            else:
+                }).session.rollback()
+            else:ogging.error(f"Ошибка при сбросе пароля: {str(e)}")
                 flash('Если указанный email зарегистрирован в системе, вы получите инструкции по сбросу пароля', 'info')
-        
-        if not is_ajax:
+                if is_ajax:
+        if not is_ajax:urn jsonify({
             return redirect(url_for('login'))
-    
+                        'message': 'Произошла ошибка. Пожалуйста, попробуйте позже.'
     # Только для GET запросов отдаем HTML-шаблон
     if request.method == 'GET':
-        logging.info("Отдаем шаблон reset_password_request.html")
+        logging.info("Отдаем шаблон reset_password_request.html")те позже.', 'error')
         return render_template('reset_password_request.html')
-    
+            # Для безопасности не сообщаем, существует ли пользователь
     # Для всех других случаев отдаем JSON-ответ для AJAX
-    return jsonify({
-        'success': True,
-        'message': 'Обработка запроса сброса пароля'
-    })
-
-# Маршрут для непосредственного сброса пароля
+    return jsonify({rn jsonify({
+        'success': True,cess': True,
+        'message': 'Обработка запроса сброса пароля' зарегистрирован в системе, вы получите инструкции по сбросу пароля'
+    })          })
+            else:
+# Маршрут для непосредственного сброса пароляарегистрирован в системе, вы получите инструкции по сбросу пароля', 'info')
 @app.route('/reset-password/<token>', methods=['GET', 'POST'])
 def reset_password(token):
-    if 'user_id' in session:
+    if 'user_id' in session:url_for('login'))
         return redirect(url_for('main'))
-    
-    # Проверка токена
+    # Только для GET запросов отдаем HTML-шаблон
+    # Проверка токена == 'GET':
     user = User.query.filter_by(confirmation_token=token).first()
     if not user or datetime.datetime.now() > user.token_expiration:
         flash('Ссылка для сброса пароля недействительна или срок её действия истек', 'error')
-        return redirect(url_for('login'))
-    
+        return redirect(url_for('login'))-ответ для AJAX
+    return jsonify({
     if request.method == 'POST':
         password = request.form.get('password', '').strip()
         confirm_password = request.form.get('confirm_password', '').strip()
         
-        if not password:
+        if not password:венного сброса пароля
             flash('Пожалуйста, введите новый пароль', 'error')
             return render_template('reset_password.html', token=token)
-        
+        user_id' in session:
         if password != confirm_password:
             flash('Пароли не совпадают', 'error')
             return render_template('reset_password.html', token=token)
-        
-        # Обновляем пароль
-        user.set_password(password)
-        user.confirmation_token = None
+         = User.query.filter_by(confirmation_token=token).first()
+        # Обновляем парольe.datetime.now() > user.token_expiration:
+        user.set_password(password)роля недействительна или срок её действия истек', 'error')
+        user.confirmation_token = None'))
         user.token_expiration = None
-        
-        try:
-            db.session.commit()
+        equest.method == 'POST':
+        try:word = request.form.get('password', '').strip()
+            db.session.commit()est.form.get('confirm_password', '').strip()
             flash('Ваш пароль успешно изменен. Теперь вы можете войти в систему.', 'success')
         except Exception as e:
-            db.session.rollback()
-            logging.error(f"Ошибка при обновлении пароля: {str(e)}")
+            db.session.rollback()едите новый пароль', 'error')
+            logging.error(f"Ошибка при обновлении пароля: {str(e)}")n)
             flash('Произошла ошибка при обновлении пароля.', 'error')
-        
-        return redirect(url_for('login'))
-    
+        if password != confirm_password:
+        return redirect(url_for('login'))'error')
+            return render_template('reset_password.html', token=token)
     return render_template('reset_password.html', token=token)
-
-if __name__ == '__main__':
+        # Обновляем пароль
+if __name__ == '__main__':ния информации о текущем пользователеpassword)
     # Инициализация базы данных в контексте приложения
-    with app.app_context():
-        create_tables()
+    with app.app_context()::on = None
+        create_tables() session:
     # Временно отключаем SERVER_NAME для локального запуска
     app.config.pop('SERVER_NAME', None)
-    # Устанавливаем host='0.0.0.0', чтобы приложение было доступно извне
-    app.run(debug=True, host='0.0.0.0')
-else:
-    # Для запуска через WSGI (PythonAnywhere)
-    try:
+    # Устанавливаем host='0.0.0.0', чтобы приложение было доступно извнеs')
+    app.run(debug=True, host='0.0.0.0')_id'])
+else:f not user:       db.session.rollback()
+    # Для запуска через WSGI (PythonAnywhere)und'}), 404ении пароля: {str(e)}")
+    try:flash('Произошла ошибка при обновлении пароля.', 'error')
+        with app.app_context():ормацию о пользователе
+            logging.basicConfig(filename='/tmp/flask_app_error.log', level=logging.DEBUG)
+            logging.info("Запускаем приложение через WSGI")
+            try:me': user.name,r_template('reset_password.html', token=token)
+                # Проверяем существование таблиц и создаем если нужно
+                if not db.engine.dialect.has_table(db.engine, 'user'):
+                    create_tables()
+                logging.info("Приложение успешно запущено на PythonAnywhere")
+            except Exception as e:контексте приложения
+                logging.error(f"Ошибка при запуске приложения: {str(e)}")
+    except Exception as e:ME', None)
+        import traceback SERVER_NAME для локального запуска='0.0.0.0', чтобы приложение было доступно извне
+        with open('/tmp/flask_startup_error.log', 'w') as f:
+            f.write(f"Критическая ошибка: {str(e)}\n")ыло доступно извне
+            f.write(traceback.format_exc())
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+            f.write(traceback.format_exc())            f.write(f"Критическая ошибка: {str(e)}\n")        with open('/tmp/flask_startup_error.log', 'w') as f:        import traceback    except Exception as e:                logging.error(f"Ошибка при запуске приложения: {str(e)}")            except Exception as e:                logging.info("Приложение успешно запущено на PythonAnywhere")                    create_tables()                if not db.engine.dialect.has_table(db.engine, 'user'):                # Проверяем существование таблиц и создаем если нужно            try:            logging.info("Запускаем приложение через WSGI")            logging.basicConfig(filename='/tmp/flask_app_error.log', level=logging.DEBUG)        with app.app_context():    try:    # Для запуска через WSGI (PythonAnywhere)else:    try:
         with app.app_context():
             logging.basicConfig(filename='/tmp/flask_app_error.log', level=logging.DEBUG)
             logging.info("Запускаем приложение через WSGI")
