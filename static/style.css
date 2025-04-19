@@ -241,17 +241,18 @@ body {
     width: calc(100% - 320px); /* Фиксированная ширина, учитывающая боковую панель */
     height: 100vh; /* Фиксированная высота на весь экран */
     overflow: hidden; /* Предотвращаем общую прокрутку */
+    border-left: 1px solid #333; /* Добавляем четкую границу между блоками */
 }
 
 /* Шапка чата в стиле Telegram */
 .chat-header {
-    height: 65px; /* Увеличенная высота заголовка */
-    background-color: #212121;
+    height: 60px; /* Изменяем высоту заголовка */
+    background-color: #212121; /* Цвет как на фото 1 */
     display: flex;
     align-items: center;
     justify-content: space-between;
     padding: 0 16px;
-    border-bottom: 1px solid #333;
+    border-bottom: 1px solid #333; /* Более заметная граница */
     flex-shrink: 0;
     z-index: 10;
 }
@@ -320,14 +321,13 @@ body {
 /* Область сообщений с фиксированными размерами и скроллингом */
 .chat-messages {
     flex-grow: 1;
-    height: calc(100vh - 125px); /* Вычитаем высоту header (65px) и input (60px) */
+    height: calc(100vh - 128px); /* Вычитаем высоту header (60px) и input (68px) */
     padding: 20px 16px;
     overflow-y: auto; /* Только вертикальная прокрутка */
     display: flex;
     flex-direction: column;
-    background-color: #0e0e0e;
-    background-image: url('data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAADIAAAAyCAYAAAAeP4ixAAAABmJLR0QA/wD/AP+gvaeTAAAACXBIWXMAAA7EAAAOxAGVKw4bAAAAB3RJTUUH4wQVFyYNKSB0JwAAAB1pVFh0Q29tbWVudAAAAAAAQ3JlYXRlZCB3aXRoIEdJTVBkLmUHAAABBUlEQVRo3u3ZQQ7CIBCF4Z+mXXgBL+D9b6Urz8EGkpLQdEQR6fOtTMgk/FmZUCmllP69Sh4cf6aUPuh3KgEmQjRXF2ByhAsgZoBxAxTbkZoBxgVQbcYzcAEkNHADJCzwBEhI4C3PS95AhBRgdP+bHiEFZCDdQwrIQrqGFDAAUg0pYBCkCjLKChjVGCsglYBUAFINyOQgaxBIsvx57SQpB3YnwwvQJCl91ktmZxewC9kJ7Ea+A9nxzG5gMxIBbEKiQNzPVnfQ6JBb3ZdGsFMRINXv/1EgbiBRIK4gkSBbPdVMN76KVnf5yQVERG7AuYGIiIjUmo/GRUTOAP8BFRERiQJ8AV9lQeHm30F2AAAAAElFTkSuQmCC'); /* Добавляем фоновый паттерн как в Telegram */
-    background-size: 50px 50px; /* Размер паттерна */
+    background-color: #0f0f0f; /* Темный фон как на фото */
+    background-image: none; /* Убираем паттерн */
     scrollbar-width: thin;
     scrollbar-color: rgba(255, 255, 255, 0.2) transparent;
 }
@@ -361,10 +361,11 @@ body {
 /* Стили для сообщений в стиле Telegram */
 .message {
     max-width: 80%;
-    padding: 8px 12px;
+    padding: 10px 12px;
     position: relative;
-    margin-bottom: 2px;
+    margin-bottom: 4px;
     line-height: 1.4;
+    border-radius: 8px; /* Более округлые сообщения */
     animation: fadeIn 0.2s ease-out;
     box-shadow: 0 1px 2px rgba(0, 0, 0, 0.2);
 }
@@ -373,26 +374,28 @@ body {
     background-color: #2b5278; /* Синий цвет как в Telegram */
     color: #fff;
     align-self: flex-end;
-    border-radius: 12px 12px 2px 12px; /* Скругленные углы как в Telegram */
+    border-radius: 8px 8px 2px 8px; /* Скругленные углы как в Telegram */
 }
 
 .message-received {
-    background-color: #1f1f1f; /* Серый цвет как в Telegram */
+    background-color: #333333; /* Цвет как на фото */
     color: #fff;
     align-self: flex-start;
-    border-radius: 12px 12px 12px 2px;
+    border-radius: 8px 8px 8px 2px;
 }
 
 /* Поле ввода в стиле Telegram */
 .chat-input {
-    min-height: 68px;
-    background-color: #17212b;
-    padding: 8px 16px;
-    position: relative;
-    z-index: 10;
-    border-top: 1px solid #232e3c;
+    height: 68px; /* Фиксированная высота поля ввода */
+    background-color: #212121; /* Цвет как на фото */
     display: flex;
     align-items: center;
+    padding: 0 16px;
+    gap: 12px;
+    flex-shrink: 0;
+    border-top: 1px solid #333; /* Добавляем заметную границу */
+    position: relative;
+    z-index: 10;
 }
 
 .input-container {
@@ -431,61 +434,61 @@ body {
 
 .chat-input textarea {
     flex-grow: 1;
-    background: transparent;
-    border: none;
-    color: #fff;
-    font-size: 15px;
-    font-family: inherit;
-    resize: none;
-    padding: 14px 5px;
-    height: 20px;
+    height: 40px;
     max-height: 120px;
+    background-color: #333;
+    border: none;
+    border-radius: 22px; /* Более округлый */
+    padding: 11px 16px; /* Увеличенные отступы */
+    color: white;
+    resize: none;
+    outline: none;
+    font-family: inherit;
+    font-size: 15px;
     line-height: 20px;
-    min-width: 40px;
+    transition: background-color 0.2s, height 0.1s ease;
+}
+
+.chat-input textarea:focus {
+    background-color: #3a3a3a;
 }
 
 .chat-input textarea::placeholder {
     color: #768c9e;
 }
 
-.chat-input textarea:focus {
-    outline: none;
-}
-
-.send-btn {
+.chat-input .send-btn {
     width: 44px;
     height: 44px;
+    background-color: #2b5278; /* Цвет как у сообщений */
+    color: white;
+    border: none;
     border-radius: 50%;
-    background-color: #5288c1;
+    cursor: pointer;
     display: none;
     align-items: center;
     justify-content: center;
-    border: none;
-    cursor: pointer;
-    color: white;
     flex-shrink: 0;
     padding: 0;
     margin-left: 8px;
-    transition: background-color 0.2s;
+    transition: background-color 0.2s, transform 0.1s;
 }
 
-.send-btn.visible {
+.chat-input .send-btn.visible {
     display: flex;
 }
 
-.send-btn:hover {
-    background-color: #6c9fd0;
+.chat-input .send-btn:hover {
+    background-color: #366497; /* Немного светлее при наведении */
 }
 
-.send-btn:active {
+.chat-input .send-btn:active {
     transform: scale(0.95);
 }
 
-.send-btn svg {
-    width: 20px;
-    height: 20px;
-    stroke-width: 2;
-    transform: translateX(1px);
+.chat-input .send-btn svg {
+    width: 22px;
+    height: 22px;
 }
 
 /* Улучшенные стили для поля ввода сообщений */

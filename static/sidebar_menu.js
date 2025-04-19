@@ -738,30 +738,6 @@ document.addEventListener('DOMContentLoaded', function() {
             chatInput.appendChild(textarea);
             chatInput.appendChild(sendBtn);
             
-            // Create attachment modal
-            const attachmentModal = document.createElement('div');
-            attachmentModal.className = 'attachment-modal';
-            
-            attachmentModal.innerHTML = `
-                <div class="attachment-modal-content">
-                    <div class="attachment-modal-header">
-                        <div class="attachment-modal-title">Выберите файл</div>
-                        <button class="attachment-modal-close">
-                            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                                <line x1="18" y1="6" x2="6" y2="18"></line>
-                                <line x1="6" y1="6" x2="18" y2="18"></line>
-                            </svg>
-                        </button>
-                    </div>
-                    <div class="attachment-modal-body">
-                        <div class="attachment-grid">
-                            <!-- Files will be displayed here -->
-                        </div>
-                        <button class="show-all-files-btn">Выбрать из файлов</button>
-                    </div>
-                </div>
-            `;
-            
             // Create hidden file input
             const fileInput = document.createElement('input');
             fileInput.type = 'file';
@@ -769,8 +745,7 @@ document.addEventListener('DOMContentLoaded', function() {
             fileInput.accept = 'image/*,video/*,.pdf,.doc,.docx,.xls,.xlsx,.zip,.rar';
             fileInput.className = 'file-input';
             
-            // Add attachment modal and file input to body
-            document.body.appendChild(attachmentModal);
+            // Добавляем скрытый input в DOM
             document.body.appendChild(fileInput);
             
             // ===== EVENT HANDLERS =====
@@ -789,29 +764,9 @@ document.addEventListener('DOMContentLoaded', function() {
                 this.style.height = newHeight + 'px';
             });
             
-            // Open attachment modal when clicking the paperclip
+            // Сразу открываем системный диалог выбора файла при клике на скрепку
             attachmentBtn.addEventListener('click', function() {
-                attachmentModal.classList.add('active');
-            });
-            
-            // Close attachment modal
-            const closeModalBtn = attachmentModal.querySelector('.attachment-modal-close');
-            closeModalBtn.addEventListener('click', function() {
-                attachmentModal.classList.remove('active');
-            });
-            
-            // Close modal when clicking outside
-            attachmentModal.addEventListener('click', function(e) {
-                if (e.target === this) {
-                    this.classList.remove('active');
-                }
-            });
-            
-            // "Choose from files" button
-            const showAllFilesBtn = attachmentModal.querySelector('.show-all-files-btn');
-            showAllFilesBtn.addEventListener('click', function() {
                 fileInput.click();
-                attachmentModal.classList.remove('active');
             });
             
             // Handle file selection
