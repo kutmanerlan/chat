@@ -127,7 +127,7 @@ body {
     display: flex;
     align-items: center;
     gap: 12px;
-    padding: 10px 0;
+    padding: 20px 0 10px 0; /* Увеличиваем верхний отступ с 10px до 20px */
     margin-bottom: 5px;
 }
 
@@ -145,12 +145,15 @@ body {
     cursor: pointer;
     outline: none;
     position: relative;
+    transition: none; /* Убираем анимацию при наведении */
 }
 
 .menu-btn:focus,
-.menu-btn:active {
+.menu-btn:active,
+.menu-btn:hover { /* Добавляем hover для отмены эффекта подсветки */
     outline: none;
     box-shadow: none;
+    background-color: transparent; /* Принудительно убираем фон при наведении */
 }
 
 .menu-btn span {
