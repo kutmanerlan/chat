@@ -313,39 +313,34 @@ body {
 
 .modal-buttons {
     display: flex;
-    justify-content: space-between; /* Распределяем кнопки по ширине */
-    gap: 10px; /* Уменьшаем отступ между кнопками */
-    margin-top: 20px; /* Уменьшаем верхний отступ */
+    justify-content: center; /* Центрируем по горизонтали */
+    gap: 30px; /* Увеличиваем расстояние между кнопками */
+    margin-top: 20px;
 }
 
 .btn-primary, .btn-secondary {
-    padding: 10px 0; /* Только вертикальный отступ */
-    border-radius: 6px;
-    cursor: pointer;
+    background-color: transparent; /* Прозрачный фон */
     border: none;
-    font-size: 14px;
-    width: 48%; /* Каждая кнопка занимает примерно половину пространства */
-    text-align: center;
-    font-weight: normal;
-    transition: background-color 0.2s;
+    padding: 10px 15px;
+    cursor: pointer;
+    font-size: 16px; /* Увеличиваем размер шрифта */
+    text-decoration: none;
+    transition: opacity 0.2s;
 }
 
 .btn-primary {
-    background-color: #e74c3c; /* Яркий красный цвет для кнопки "Выйти" */
-    color: white;
-    text-decoration: none;
-    display: inline-block;
+    color: #e74c3c; /* Красный текст */
+    font-weight: 500; /* Полужирный текст */
 }
 
 .btn-primary:hover {
-    background-color: #d44637; /* Немного темнее при наведении */
+    opacity: 0.8; /* Затемнение при наведении */
 }
 
 .btn-secondary {
-    background-color: #4d4d4d; /* Серый цвет для кнопки "Отмена" */
-    color: white;
+    color: #888; /* Серый текст */
 }
 
 .btn-secondary:hover {
-    background-color: #5a5a5a; /* Немного светлее при наведении */
+    opacity: 0.8; /* Затемнение при наведении */
 }
