@@ -470,7 +470,7 @@ body {
     resize: none; /* Убираем возможность растягивать поле вручную */
     overflow-y: auto; /* Добавляем скролл при необходимости */
     box-sizing: border-box;
-    color: white;
+    color: #bbb; /* Меняем с белого на приглушенный светло-серый цвет */
     font-size: 14px;
     width: 100%;
     padding: 10px;
