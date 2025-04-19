@@ -318,17 +318,15 @@ body {
 .edit-profile-header {
     display: flex;
     align-items: center;
-    justify-content: center; /* Центрируем заголовок по горизонтали */
     padding: 10px 0;
     margin-bottom: 20px;
     border-bottom: 1px solid #333;
-    position: relative; /* Для позиционирования кнопки назад */
 }
 
 .header-title-wrapper {
     display: flex;
     align-items: center;
-    justify-content: center;
+    width: 100%; /* Занимаем всю ширину */
 }
 
 .back-btn {
@@ -343,8 +341,7 @@ body {
     justify-content: center;
     width: 28px;
     height: 28px;
-    position: absolute; /* Позиционируем кнопку абсолютно */
-    left: 0; /* Размещаем кнопку слева */
+    margin-right: 10px; /* Отступ от кнопки до заголовка */
 }
 
 .back-btn:hover {
@@ -361,7 +358,8 @@ body {
     margin: 0;
     color: white;
     font-size: 18px;
-    text-align: center; /* Центрируем текст заголовка */
+    flex-grow: 1; /* Растягиваем чтобы занимать доступное пространство */
+    text-align: center; /* Центрируем текст */
 }
 
 .edit-profile-content {
