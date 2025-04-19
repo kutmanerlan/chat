@@ -44,6 +44,28 @@
             margin-top: 5px;
             display: none;
         }
+        
+        .password-input-container {
+            position: relative;
+        }
+        
+        .toggle-password {
+            position: absolute;
+            right: 10px;
+            top: 50%;
+            transform: translateY(-50%);
+            background: none;
+            border: none;
+            cursor: pointer;
+            color: #6b6b6b;
+            font-size: 16px;
+            padding: 0;
+            width: 24px;
+            height: 24px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
     </style>
 </head>
 <body>
@@ -75,7 +97,10 @@
             
             <div class="input-group">
                 <label for="password">Пароль</label>
-                <input type="password" id="password" name="password" placeholder="Пароль" required>
+                <div class="password-input-container">
+                    <input type="password" id="password" name="password" placeholder="Пароль" required>
+                    <button type="button" class="toggle-password" data-target="password">👁️</button>
+                </div>
                 <div class="field-error" id="passwordError">Пароль должен содержать минимум 6 символов</div>
             </div>
             
@@ -91,6 +116,22 @@
     </div>
     
     <script>
+        // Функция для переключения видимости пароля
+        document.querySelectorAll('.toggle-password').forEach(button => {
+            button.addEventListener('click', function() {
+                const targetId = this.getAttribute('data-target');
+                const passwordInput = document.getElementById(targetId);
+                
+                if (passwordInput.type === 'password') {
+                    passwordInput.type = 'text';
+                    this.textContent = '🔒'; // Закрытый глаз
+                } else {
+                    passwordInput.type = 'password';
+                    this.textContent = '👁️'; // Открытый глаз
+                }
+            });
+        });
+        
         // Клиентская валидация
         document.getElementById('registerForm').addEventListener('submit', function(e) {
             let isValid = true;

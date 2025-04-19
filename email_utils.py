@@ -104,6 +104,94 @@ def send_confirmation_email(user_email, token):
         
         return False
 
+def send_reset_password_email(user_email, token):
+    """Отправка письма с ссылкой на сброс пароля"""
+    
+    # Gmail SMTP настройки
+    SMTP_SERVER = "smtp.gmail.com"
+    SMTP_PORT = 587
+    SENDER_EMAIL = "erlan310706@gmail.com"  # Замените на ваш реальный Gmail
+    SENDER_PASSWORD = "srtf zqdd qkzb diaz"  # 16-символьный пароль приложения
+    USE_SSL = False  # Для Gmail с портом 587 используем TLS, а не SSL
+    
+    # Настройка логирования для отладки
+    logging.info(f"Попытка отправки email для сброса пароля на адрес: {user_email}")
+    
+    # Настройка сообщения
+    message = MIMEMultipart("alternative")
+    message["Subject"] = "Сброс пароля"
+    message["From"] = SENDER_EMAIL
+    message["To"] = user_email
+    
+    # Определяем, находимся ли мы на PythonAnywhere
+    is_pythonanywhere = 'PYTHONANYWHERE_DOMAIN' in os.environ or 'PYTHONANYWHERE_HOST' in os.environ
+    
+    # Создаем ссылку для сброса пароля
+    if is_pythonanywhere:
+        # На PythonAnywhere используем абсолютную ссылку
+        base_url = "https://tymeer.pythonanywhere.com"
+        reset_url = f"{base_url}/reset-password/{token}"
+    else:
+        # Локально используем url_for
+        reset_url = url_for('reset_password', token=token, _external=True)
+    
+    # Формируем тело письма
+    text = f"""
+    Здравствуйте!
+    
+    Вы получили это письмо, потому что был запрошен сброс пароля для вашего аккаунта.
+    
+    Для сброса пароля перейдите по ссылке:
+    {reset_url}
+    
+    Если вы не запрашивали сброс пароля, проигнорируйте это сообщение.
+    
+    С уважением,
+    Команда сайта
+    """
+    
+    html = f"""
+    <html>
+    <body>
+        <p>Здравствуйте!</p>
+        <p>Вы получили это письмо, потому что был запрошен сброс пароля для вашего аккаунта.</p>
+        <p>Для сброса пароля нажмите на следующую ссылку:</p>
+        <p><a href="{reset_url}">Сбросить пароль</a></p>
+        <p>Если вы не запрашивали сброс пароля, проигнорируйте это сообщение.</p>
+        <p>С уважением,<br>Команда сайта</p>
+    </body>
+    </html>
+    """
+    
+    # Добавляем текстовую и HTML-версии в сообщение
+    part1 = MIMEText(text, "plain")
+    part2 = MIMEText(html, "html")
+    message.attach(part1)
+    message.attach(part2)
+    
+    try:
+        logging.info(f"Подключение к SMTP-серверу: {SMTP_SERVER}:{SMTP_PORT}")
+        
+        # Используем правильный способ подключения в зависимости от настроек
+        if USE_SSL:
+            server = smtplib.SMTP_SSL(SMTP_SERVER, SMTP_PORT)
+        else:
+            server = smtplib.SMTP(SMTP_SERVER, SMTP_PORT)
+            server.starttls()
+        
+        logging.info("Аутентификация на SMTP-сервере")
+        server.login(SENDER_EMAIL, SENDER_PASSWORD)
+        
+        logging.info("Отправка сообщения")
+        server.sendmail(SENDER_EMAIL, user_email, message.as_string())
+        server.quit()
+        
+        logging.info("Email для сброса пароля успешно отправлен")
+        return True
+    except Exception as e:
+        logging.error(f"Ошибка отправки email для сброса пароля: {str(e)}")
+        return False
+
 def is_email_valid(email):
     """Простая проверка формата email"""
     pattern = r"^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$"

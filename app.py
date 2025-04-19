@@ -3,7 +3,7 @@ from flask_sqlalchemy import SQLAlchemy
 import logging
 import os
 from werkzeug.security import generate_password_hash, check_password_hash
-from email_utils import generate_confirmation_token, send_confirmation_email, is_email_valid
+from email_utils import generate_confirmation_token, send_confirmation_email, is_email_valid, send_reset_password_email
 import datetime
 
 # Try to import git, but continue if it's not available
@@ -97,49 +97,23 @@ def hello_world():
 @app.route('/login', methods=['GET', 'POST'])
 def login():
     if request.method == 'POST':
-        # Проверка на наличие полей
-        if 'email' not in request.form or 'password' not in request.form:
-            flash('Пожалуйста, заполните все поля', 'error')
-            return render_template('login.html')
-            
-        email = request.form['email'].strip()
-        password = request.form['password'].strip()
-        
-        # Проверка на пустые поля
-        if not email:
-            flash('Email не может быть пустым', 'error')
-            return render_template('login.html')
-        
-        if not password:
-            flash('Пароль не может быть пустым', 'error')
-            return render_template('login.html')
-        
-        # Проверка формата email
-        if not is_email_valid(email):
-            flash('Введен некорректный формат email', 'error')
-            return render_template('login.html')
-        
-        # Проверка существования пользователя
+        email = request.form['email']
+        password = request.form['password']
         user = User.query.filter_by(email=email).first()
         if not user:
-            flash('Пользователь с таким email не найден. Возможно, вы еще не зарегистрированы?', 'error')
-            return render_template('login.html')
-        
-        # Проверка подтверждения email
+            flash('Пользователь с таким email не найден', 'error')
+            return redirect(url_for('login'))
         if not user.email_confirmed:
-            flash('Пожалуйста, подтвердите ваш email перед входом в систему. Проверьте свою почту.', 'error')
-            return render_template('login.html')
-        
-        # Проверка правильности пароля
-        if not user.check_password(password):
-            flash('Неверный пароль. Пожалуйста, попробуйте снова.', 'error')
-            return render_template('login.html')
-        
-        # Успешная авторизация
-        session['user_id'] = user.id
-        session['user_name'] = user.name
-        return redirect(url_for('main'))
-        
+            flash('Пожалуйста, подтвердите ваш email перед входом в систему', 'error')
+            return redirect(url_for('login'))
+        # Исправление: используем правильный метод проверки пароля
+        if user.check_password(password):
+            # Успешная авторизация
+            session['user_id'] = user.id
+            session['user_name'] = user.name  # Добавляем имя в сессию
+            return redirect(url_for('main'))
+        else:
+            flash('Неверный пароль', 'error')
     return render_template('login.html')
 
 @app.route('/register', methods=['GET', 'POST'])
@@ -229,7 +203,7 @@ def main():
         session.clear()
         flash('Ваша сессия была завершена, так как пользователь не найден в базе данных', 'info')
         return redirect(url_for('login'))
-    return render_template('dashboard.html')
+    return render_template('main.html')
 
 # Добавим маршрут для проверки работоспособности
 @app.route('/ping')
@@ -245,6 +219,95 @@ def profile():
         flash('Пользователь не найден', 'error')
         return redirect(url_for('login'))
     return render_template('profile.html', user=user)
+
+# Маршрут для запроса сброса пароля
+@app.route('/reset-password-request', methods=['GET', 'POST'])
+def reset_password_request():
+    if 'user_id' in session:
+        return redirect(url_for('main'))
+    
+    if request.method == 'POST':
+        email = request.form.get('email', '').strip()
+        
+        if not email:
+            flash('Пожалуйста, введите email', 'error')
+            return render_template('reset_password_request.html')
+            
+        if not is_email_valid(email):
+            flash('Пожалуйста, введите корректный email', 'error')
+            return render_template('reset_password_request.html')
+        
+        user = User.query.filter_by(email=email).first()
+        if not user:
+            # Для безопасности не сообщаем, существует ли пользователь
+            flash('Если указанный email зарегистрирован в системе, вы получите инструкции по сбросу пароля', 'info')
+            return redirect(url_for('login'))
+        
+        # Генерация токена для сброса пароля
+        reset_token = generate_confirmation_token()
+        token_expiration = datetime.datetime.now() + datetime.timedelta(hours=1)
+        
+        # Сохраняем токен в базе данных
+        user.confirmation_token = reset_token
+        user.token_expiration = token_expiration
+        
+        try:
+            db.session.commit()
+            # Отправляем письмо с ссылкой на сброс пароля
+            result = send_reset_password_email(email, reset_token)
+            if result:
+                flash('Инструкции по сбросу пароля отправлены на ваш email', 'success')
+            else:
+                flash('Произошла ошибка при отправке email. Пожалуйста, попробуйте позже.', 'error')
+        except Exception as e:
+            db.session.rollback()
+            logging.error(f"Ошибка при сбросе пароля: {str(e)}")
+            flash('Произошла ошибка. Пожалуйста, попробуйте позже.', 'error')
+        
+        return redirect(url_for('login'))
+    
+    return render_template('reset_password_request.html')
+
+# Маршрут для непосредственного сброса пароля
+@app.route('/reset-password/<token>', methods=['GET', 'POST'])
+def reset_password(token):
+    if 'user_id' in session:
+        return redirect(url_for('main'))
+    
+    # Проверка токена
+    user = User.query.filter_by(confirmation_token=token).first()
+    if not user or datetime.datetime.now() > user.token_expiration:
+        flash('Ссылка для сброса пароля недействительна или срок её действия истек', 'error')
+        return redirect(url_for('login'))
+    
+    if request.method == 'POST':
+        password = request.form.get('password', '').strip()
+        confirm_password = request.form.get('confirm_password', '').strip()
+        
+        if not password:
+            flash('Пожалуйста, введите новый пароль', 'error')
+            return render_template('reset_password.html', token=token)
+        
+        if password != confirm_password:
+            flash('Пароли не совпадают', 'error')
+            return render_template('reset_password.html', token=token)
+        
+        # Обновляем пароль
+        user.set_password(password)
+        user.confirmation_token = None
+        user.token_expiration = None
+        
+        try:
+            db.session.commit()
+            flash('Ваш пароль успешно изменен. Теперь вы можете войти в систему.', 'success')
+        except Exception as e:
+            db.session.rollback()
+            logging.error(f"Ошибка при обновлении пароля: {str(e)}")
+            flash('Произошла ошибка при обновлении пароля.', 'error')
+        
+        return redirect(url_for('login'))
+    
+    return render_template('reset_password.html', token=token)
 
 if __name__ == '__main__':
     # Инициализация базы данных в контексте приложения
