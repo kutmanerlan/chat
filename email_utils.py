@@ -110,35 +110,32 @@ def send_reset_password_email(user_email, token):
     # Gmail SMTP настройки
     SMTP_SERVER = "smtp.gmail.com"
     SMTP_PORT = 587
-    SENDER_EMAIL = "erlan310706@gmail.com"  # Замените на ваш реальный Gmail
-    SENDER_PASSWORD = "srtf zqdd qkzb diaz"  # 16-символьный пароль приложения
-    USE_SSL = False  # Для Gmail с портом 587 используем TLS, а не SSL
+    SENDER_EMAIL = "erlan310706@gmail.com"  # Убедитесь, что это правильный email
+    SENDER_PASSWORD = "srtf zqdd qkzb diaz"  # Проверьте, что это актуальный пароль приложения
     
-    # Настройка логирования для отладки с повышенной детализацией
-    logging.info(f"===============================================")
-    logging.info(f"Начало отправки email для сброса пароля на адрес: {user_email}")
-    logging.info(f"Токен: {token}")
+    # Улучшенное логирование
+    logging.info(f"===== ОТПРАВКА EMAIL ДЛЯ СБРОСА ПАРОЛЯ =====")
+    logging.info(f"Получатель: {user_email}")
+    logging.info(f"SMTP сервер: {SMTP_SERVER}:{SMTP_PORT}")
     
     # Настройка сообщения
     message = MIMEMultipart("alternative")
-    message["Subject"] = "Сброс пароля"
+    message["Subject"] = "Сброс пароля для вашего аккаунта"
     message["From"] = SENDER_EMAIL
     message["To"] = user_email
     
     # Определяем, находимся ли мы на PythonAnywhere
     is_pythonanywhere = 'PYTHONANYWHERE_DOMAIN' in os.environ or 'PYTHONANYWHERE_HOST' in os.environ
-    logging.info(f"Запуск на PythonAnywhere: {is_pythonanywhere}")
+    logging.info(f"На PythonAnywhere: {is_pythonanywhere}")
     
     # Создаем ссылку для сброса пароля
     if is_pythonanywhere:
-        # На PythonAnywhere используем абсолютную ссылку
         base_url = "https://tymeer.pythonanywhere.com"
         reset_url = f"{base_url}/reset-password/{token}"
-        logging.info(f"URL для сброса на PythonAnywhere: {reset_url}")
     else:
-        # Локально создаем URL вручную, т.к. url_for может не работать в этом контексте
         reset_url = f"http://localhost:5000/reset-password/{token}"
-        logging.info(f"URL для сброса локально: {reset_url}")
+    
+    logging.info(f"URL для сброса: {reset_url}")
     
     # Формируем тело письма
     text = f"""
@@ -146,8 +143,7 @@ def send_reset_password_email(user_email, token):
     
     Вы получили это письмо, потому что был запрошен сброс пароля для вашего аккаунта.
     
-    Для сброса пароля перейдите по ссылке:
-    {reset_url}
+    Для сброса пароля перейдите по ссылке: {reset_url}
     
     Если вы не запрашивали сброс пароля, проигнорируйте это сообщение.
     
@@ -175,29 +171,40 @@ def send_reset_password_email(user_email, token):
     message.attach(part2)
     
     try:
-        logging.info(f"Подключение к SMTP-серверу: {SMTP_SERVER}:{SMTP_PORT}")
+        logging.info("Попытка подключения к SMTP-серверу...")
+        server = smtplib.SMTP(SMTP_SERVER, SMTP_PORT)
+        server.set_debuglevel(1)  # Включаем подробное логирование SMTP
+        server.ehlo()
+        server.starttls()
+        server.ehlo()
         
-        # Используем правильный способ подключения в зависимости от настроек
-        if USE_SSL:
-            server = smtplib.SMTP_SSL(SMTP_SERVER, SMTP_PORT)
-        else:
-            server = smtplib.SMTP(SMTP_SERVER, SMTP_PORT)
-            server.starttls()
-        
-        logging.info("Аутентификация на SMTP-сервере")
+        logging.info("Аутентификация на SMTP-сервере...")
         server.login(SENDER_EMAIL, SENDER_PASSWORD)
         
-        logging.info("Отправка сообщения")
+        logging.info(f"Отправка сообщения на {user_email}...")
         server.sendmail(SENDER_EMAIL, user_email, message.as_string())
         server.quit()
         
-        logging.info("Email для сброса пароля успешно отправлен")
-        logging.info(f"===============================================")
+        logging.info("Email успешно отправлен!")
         return True
     except Exception as e:
-        logging.error(f"Ошибка отправки email для сброса пароля: {str(e)}")
-        logging.error(f"Детали ошибки: {repr(e)}")
-        logging.info(f"===============================================")
+        logging.error(f"ОШИБКА при отправке email: {str(e)}")
+        logging.error(f"Тип исключения: {type(e).__name__}")
+        logging.error(f"Детали исключения: {repr(e)}")
+        
+        # Попробуем альтернативный метод отправки
+        try:
+            logging.info("Пробуем альтернативный метод отправки через SSL...")
+            server_ssl = smtplib.SMTP_SSL(SMTP_SERVER, 465)
+            server_ssl.login(SENDER_EMAIL, SENDER_PASSWORD)
+            server_ssl.sendmail(SENDER_EMAIL, user_email, message.as_string())
+            server_ssl.quit()
+            
+            logging.info("Email успешно отправлен через SSL!")
+            return True
+        except Exception as e2:
+            logging.error(f"ОШИБКА при отправке через SSL: {str(e2)}")
+            
         return False
 
 def is_email_valid(email):
