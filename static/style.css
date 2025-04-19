@@ -385,18 +385,16 @@ body {
 
 /* Поле ввода в стиле Telegram */
 .chat-input {
-    min-height: 60px; /* Минимальная высота для поля ввода */
-    max-height: 180px; /* Максимальная высота при расширении */
+    height: 68px; /* Увеличенная высота */
     background-color: #212121;
     display: flex;
-    align-items: flex-end; /* Выравнивание по нижнему краю */
-    padding: 10px 16px; /* Увеличенный отступ */
+    align-items: center;
+    padding: 0 16px;
     gap: 12px;
     flex-shrink: 0;
     border-top: 1px solid #333;
     position: relative;
     z-index: 10;
-    overflow: hidden; /* Предотвращаем вылезание текста */
 }
 
 /* Кнопки в поле ввода */
@@ -409,8 +407,8 @@ body {
 
 /* Стиль для кнопки скрепки */
 .attachment-btn {
-    width: 40px;
-    height: 40px;
+    width: 44px;
+    height: 44px;
     background: transparent;
     border: none;
     color: #aaa;
@@ -420,11 +418,10 @@ body {
     align-items: center;
     justify-content: center;
     flex-shrink: 0;
-    margin-right: -5px; /* Небольшая корректировка размещения */
+    transition: background-color 0.2s;
 }
 
 .attachment-btn:hover {
-    color: white;
     background-color: rgba(255, 255, 255, 0.1);
 }
 
@@ -434,7 +431,7 @@ body {
     max-height: 120px; /* Максимальная высота при вводе большого текста */
     background-color: #333;
     border: none;
-    border-radius: 20px;
+    border-radius: 22px; /* Более округлый */
     padding: 11px 16px; /* Увеличенные отступы */
     color: white;
     resize: none;
@@ -443,12 +440,21 @@ body {
     font-size: 15px;
     line-height: 20px;
     overflow-y: auto;
+    transition: height 0.1s ease;
+}
+
+.chat-input textarea:focus {
+    background-color: #3a3a3a;
+}
+
+.chat-input textarea::placeholder {
+    color: #888;
 }
 
 /* Стили для кнопки отправки */
 .chat-input .send-btn {
-    width: 40px;
-    height: 40px;
+    width: 44px;
+    height: 44px;
     background-color: #2b5278; /* Цвет как в Telegram */
     color: white;
     border: none;
@@ -460,7 +466,7 @@ body {
     flex-shrink: 0;
     padding: 0;
     margin: 0;
-    transition: transform 0.2s;
+    transition: transform 0.1s;
 }
 
 .chat-input .send-btn.visible {
@@ -469,6 +475,19 @@ body {
 
 .chat-input .send-btn:active {
     transform: scale(0.95); /* Эффект нажатия */
+}
+
+.chat-input .send-btn:hover {
+    background-color: #366497;
+}
+
+.chat-input .send-btn:active {
+    transform: scale(0.95);
+}
+
+.chat-input .send-btn svg {
+    width: 22px;
+    height: 22px;
 }
 
 /* Пустое сообщение в стиле Telegram */
@@ -554,8 +573,8 @@ body {
 
 /* Улучшенные стили для поля ввода сообщений */
 .chat-input {
-    height: 60px;
-    background-color: #1c1c1c;
+    height: 68px; /* Увеличенная высота */
+    background-color: #212121;
     display: flex;
     align-items: center;
     padding: 0 16px;
@@ -595,8 +614,8 @@ body {
     max-height: 120px;
     background-color: #333;
     border: none;
-    border-radius: 20px;
-    padding: 10px 15px;
+    border-radius: 22px; /* Более округлый */
+    padding: 11px 16px; /* Увеличенные отступы */
     color: white;
     resize: none;
     outline: none;
@@ -611,12 +630,12 @@ body {
 }
 
 .chat-input textarea::placeholder {
-    color: #aaa;
+    color: #888;
 }
 
 .chat-input .send-btn {
-    width: 40px;
-    height: 40px;
+    width: 44px;
+    height: 44px;
     background-color: #2b5278; /* Цвет как у сообщений */
     color: white;
     border: none;
@@ -640,8 +659,8 @@ body {
 }
 
 .chat-input .send-btn svg {
-    width: 20px;
-    height: 20px;
+    width: 22px;
+    height: 22px;
 }
 
 /* Стили для выпадающего меню в чате */
@@ -691,12 +710,16 @@ body {
 }
 
 .chat-input {
-    height: 60px;
-    background-color: #1c1c1c;
+    height: 68px; /* Увеличенная высота */
+    background-color: #212121;
     display: flex;
     align-items: center;
-    padding: 0 15px;
+    padding: 0 16px;
+    gap: 12px;
     flex-shrink: 0;
+    border-top: 1px solid #333;
+    position: relative;
+    z-index: 10;
 }
 
 .chat-input textarea {
@@ -704,13 +727,15 @@ body {
     height: 40px;
     background-color: #333;
     border: none;
-    border-radius: 20px;
-    padding: 10px 15px;
+    border-radius: 22px; /* Более округлый */
+    padding: 11px 16px; /* Увеличенные отступы */
     color: white;
     resize: none;
     outline: none;
     font-family: inherit;
-    font-size: 14px;
+    font-size: 15px;
+    line-height: 20px;
+    transition: height 0.1s ease;
 }
 
 .chat-input textarea::placeholder {
@@ -718,8 +743,8 @@ body {
 }
 
 .chat-input .send-btn {
-    width: 40px;
-    height: 40px;
+    width: 44px;
+    height: 44px;
     margin-left: 10px;
     background-color: #333;
     color: #aaa;
@@ -737,8 +762,8 @@ body {
 }
 
 .chat-input .send-btn svg {
-    width: 20px;
-    height: 20px;
+    width: 22px;
+    height: 22px;
 }
 
 /* Стили для выпадающего меню в чате */
@@ -1394,4 +1419,148 @@ body {
     font-style: italic;
     margin-top: 20px;
     display: none; /* По умолчанию скрыто, показываем при отсутствии контактов */
+}
+
+/* Модальное окно для выбора файлов */
+.attachment-modal {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    background-color: rgba(0, 0, 0, 0.6);
+    z-index: 1100;
+    opacity: 0;
+    visibility: hidden;
+    transition: opacity 0.2s;
+}
+
+.attachment-modal.active {
+    opacity: 1;
+    visibility: visible;
+}
+
+.attachment-modal-content {
+    width: 500px;
+    background-color: #212121;
+    border-radius: 10px;
+    overflow: hidden;
+    box-shadow: 0 5px 25px rgba(0, 0, 0, 0.5);
+    animation: fadeInUp 0.3s forwards;
+}
+
+@keyframes fadeInUp {
+    from { opacity: 0; transform: translateY(20px); }
+    to { opacity: 1; transform: translateY(0); }
+}
+
+/* Заголовок модального окна */
+.attachment-modal-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 12px 16px;
+    border-bottom: 1px solid #333;
+}
+
+.attachment-modal-title {
+    color: white;
+    font-size: 16px;
+    font-weight: 500;
+}
+
+.attachment-modal-close {
+    background: none;
+    border: none;
+    color: #888;
+    cursor: pointer;
+    width: 32px;
+    height: 32px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: background-color 0.2s;
+}
+
+.attachment-modal-close:hover {
+    background-color: rgba(255, 255, 255, 0.1);
+    color: white;
+}
+
+/* Тело модального окна */
+.attachment-modal-body {
+    padding: 20px;
+    max-height: 70vh;
+    overflow-y: auto;
+}
+
+/* Сетка для предпросмотра файлов */
+.attachment-grid {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 10px;
+}
+
+.attachment-item {
+    aspect-ratio: 1/1; /* Квадратное соотношение */
+    position: relative;
+    border-radius: 8px;
+    overflow: hidden;
+    cursor: pointer;
+    background-color: #2a2a2a;
+}
+
+.attachment-item img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+}
+
+.attachment-item-name {
+    position: absolute;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    padding: 8px;
+    background-color: rgba(0, 0, 0, 0.6);
+    color: white;
+    font-size: 12px;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+/* Кнопка "Показать все файлы" */
+.show-all-files-btn {
+    display: block;
+    width: 100%;
+    padding: 12px;
+    margin-top: 16px;
+    background-color: #333;
+    color: white;
+    border: none;
+    border-radius: 6px;
+    text-align: center;
+    cursor: pointer;
+    transition: background-color 0.2s;
+}
+
+.show-all-files-btn:hover {
+    background-color: #444;
+}
+
+/* Скрытый input для файлов */
+.file-input {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    padding: 0;
+    margin: -1px;
+    overflow: hidden;
+    clip: rect(0, 0, 0, 0);
+    border: 0;
 }
