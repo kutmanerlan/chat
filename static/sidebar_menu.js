@@ -703,11 +703,15 @@ document.addEventListener('DOMContentLoaded', function() {
                 chatMessages.appendChild(noMessages);
             }
             
-            // ===== COMPLETELY NEW CHAT INPUT IMPLEMENTATION =====
+            // ===== ОБНОВЛЕННАЯ РЕАЛИЗАЦИЯ ЧАТА С ОТСТУПАМИ =====
             
-            // Create main input container
+            // Создаем основной контейнер для ввода
             const chatInput = document.createElement('div');
             chatInput.className = 'chat-input';
+            
+            // Создаем wrapper для контента с отступами
+            const chatInputWrapper = document.createElement('div');
+            chatInputWrapper.className = 'chat-input-wrapper';
             
             // Attachment button (paperclip)
             const attachmentBtn = document.createElement('button');
@@ -733,10 +737,13 @@ document.addEventListener('DOMContentLoaded', function() {
                 </svg>
             `;
             
-            // Add elements to chat input
-            chatInput.appendChild(attachmentBtn);
-            chatInput.appendChild(textarea);
-            chatInput.appendChild(sendBtn);
+            // Add elements to chat input wrapper
+            chatInputWrapper.appendChild(attachmentBtn);
+            chatInputWrapper.appendChild(textarea);
+            chatInputWrapper.appendChild(sendBtn);
+            
+            // Add wrapper to main container
+            chatInput.appendChild(chatInputWrapper);
             
             // Create hidden file input
             const fileInput = document.createElement('input');

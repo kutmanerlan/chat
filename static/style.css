@@ -1848,3 +1848,45 @@ body {
     clip: rect(0, 0, 0, 0);
     border: 0;
 }
+
+/* Обновленные стили для поля ввода чата с отступами по бокам */
+.chat-input {
+    height: 68px;
+    background-color: #212121;
+    display: flex;
+    align-items: center;
+    padding: 0 16px; /* Базовые отступы контейнера */
+    gap: 12px;
+    flex-shrink: 0;
+    border-top: 1px solid #333;
+    position: relative;
+    z-index: 10;
+    box-sizing: border-box;
+    width: 100%;
+}
+
+.chat-input-wrapper {
+    display: flex;
+    align-items: center;
+    max-width: 850px; /* Максимальная ширина для контента */
+    width: 100%;
+    margin: 0 auto; /* Центрирование */
+    padding: 0 50px; /* Отступы по бокам внутри контейнера */
+}
+
+.chat-input textarea {
+    flex-grow: 1;
+    height: 40px;
+    max-height: 120px;
+    background-color: #333;
+    border: none;
+    border-radius: 22px;
+    padding: 11px 16px;
+    color: white;
+    resize: none;
+    outline: none;
+    font-family: inherit;
+    font-size: 15px;
+    line-height: 20px;
+    transition: background-color 0.2s, height 0.1s ease;
+}
