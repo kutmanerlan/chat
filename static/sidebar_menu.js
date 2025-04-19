@@ -189,20 +189,23 @@ document.addEventListener('DOMContentLoaded', function() {
     
     // Обработка клика по кнопке меню
     if (menuBtn) {
-        menuBtn.addEventListener('click', function() {
+        menuBtn.addEventListener('click', function(e) {
             console.log('Клик по кнопке меню');
             sideMenu.classList.toggle('active');
             overlay.classList.toggle('active');
+            e.stopPropagation(); // Предотвращаем всплытие события
         });
     }
 
     // Закрытие меню при клике на подложку
     if (overlay) {
-        overlay.addEventListener('click', function() {
+        overlay.addEventListener('click', function(e) {
             console.log('Клик по подложке');
             sideMenu.classList.remove('active');
+            editProfileSidebar.classList.remove('active'); // Также закрываем панель редактирования
             if (logoutModal) logoutModal.classList.remove('active');
             this.classList.remove('active');
+            e.stopPropagation(); // Предотвращаем всплытие события
         });
     }
     
@@ -298,5 +301,32 @@ document.addEventListener('DOMContentLoaded', function() {
         });
     }
     
+    // Предотвращаем закрытие меню при клике внутри самого меню
+    if (sideMenu) {
+        sideMenu.addEventListener('click', function(e) {
+            e.stopPropagation(); // Предотвращаем всплытие события
+        });
+    }
+
+    // Предотвращаем закрытие панели редактирования при клике внутри нее
+    if (editProfileSidebar) {
+        editProfileSidebar.addEventListener('click', function(e) {
+            e.stopPropagation(); // Предотвращаем всплытие события
+        });
+    }
+
+    // Добавляем обработчик клика на body для закрытия меню
+    document.body.addEventListener('click', function() {
+        if (sideMenu && sideMenu.classList.contains('active')) {
+            sideMenu.classList.remove('active');
+            overlay.classList.remove('active');
+        }
+        
+        if (editProfileSidebar && editProfileSidebar.classList.contains('active')) {
+            editProfileSidebar.classList.remove('active');
+            overlay.classList.remove('active');
+        }
+    });
+
     console.log('Обработчики событий установлены');
 });
