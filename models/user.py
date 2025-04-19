@@ -16,11 +16,20 @@ class User(db.Model):
     confirmation_token = db.Column(db.String(100), nullable=True)
     token_expiration = db.Column(db.DateTime, nullable=True)
     
+    # Добавляем поле для хранения пути к аватарке
+    avatar_path = db.Column(db.String(255), nullable=True)
+    
     def set_password(self, password):
         self.password_hash = generate_password_hash(password)
         
     def check_password(self, password):
         return check_password_hash(self.password_hash, password)
+    
+    # Метод для получения URL аватарки или стандартного аватара
+    def get_avatar(self):
+        if self.avatar_path:
+            return self.avatar_path
+        return None  # Вернется стандартный аватар с инициалами
     
     # Метод для авторизации пользователя
     @classmethod

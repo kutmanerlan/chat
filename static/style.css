@@ -222,11 +222,39 @@ body {
     align-items: center;
     justify-content: center;
     margin-right: 15px;
+    position: relative;
+    cursor: pointer;
+    overflow: hidden; /* Чтобы изображение не выходило за пределы круга */
 }
 
 .avatar-initials {
     color: white;
     font-size: 24px;
+}
+
+.avatar-image {
+    width: 100%;
+    height: 100%;
+    object-fit: cover; /* Чтобы изображение заполняло всю область */
+}
+
+/* Стили для иконки загрузки фото, которая появляется при наведении */
+.avatar-upload-icon {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background-color: rgba(0, 0, 0, 0.5);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    opacity: 0;
+    transition: opacity 0.3s ease;
+}
+
+.avatar-placeholder:hover .avatar-upload-icon {
+    opacity: 1;
 }
 
 .user-info h3 {

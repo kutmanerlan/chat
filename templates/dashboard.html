@@ -26,10 +26,25 @@
   <!-- Выдвижное боковое меню -->
   <div class="side-menu" id="sideMenu">
     <div class="user-profile">
-      <div class="avatar-placeholder">
-        <!-- Placeholder для аватарки -->
-        <div class="avatar-initials">{{ session.get('user_name', 'U')[0] }}</div>
+      <div class="avatar-placeholder" id="avatarPlaceholder">
+        <!-- Если есть аватарка - показываем, если нет - инициалы -->
+        {% if session.get('avatar_path') %}
+          <img src="{{ url_for(session.get('avatar_path')) }}" alt="{{ session.get('user_name', 'User') }}" class="avatar-image">
+        {% else %}
+          <div class="avatar-initials" id="avatarInitials">{{ session.get('user_name', 'U')[0] }}</div>
+        {% endif %}
+        
+        <!-- Иконка для загрузки фото -->
+        <div class="avatar-upload-icon">
+          <svg width="24" height="24" viewBox="0 0 24 24" fill="none">
+            <path d="M12 5V19" stroke="white" stroke-width="2" stroke-linecap="round"/>
+            <path d="M5 12H19" stroke="white" stroke-width="2" stroke-linecap="round"/>
+          </svg>
+        </div>
       </div>
+      <!-- Скрытый input для выбора файла -->
+      <input type="file" id="avatarInput" accept="image/*" style="display: none;">
+      
       <div class="user-info">
         <h3>{{ session.get('user_name', 'User') }}</h3>
         <p class="user-status">Ваша информация</p>

@@ -100,7 +100,8 @@ def get_current_user_info():
     return jsonify({
         'user_id': user.id,
         'user_name': user.name,
-        'email': user.email
+        'email': user.email,
+        'avatar_path': user.avatar_path if user.avatar_path else None
     })
 
 # Главный маршрут
@@ -437,6 +438,74 @@ def reset_password(token):
         return redirect(url_for('login'))
     
     return render_template('reset_password.html', token=token)
+
+# Импортируем необходимые библиотеки для работы с файлами
+from werkzeug.utils import secure_filename
+
+# Добавляем конфигурацию для загрузки файлов
+UPLOAD_FOLDER = os.path.join(basedir, 'static', 'avatars')
+ALLOWED_EXTENSIONS = {'png', 'jpg', 'jpeg', 'gif'}
+app.config['UPLOAD_FOLDER'] = UPLOAD_FOLDER
+
+# Создаем папку для загрузок, если её нет
+os.makedirs(app.config['UPLOAD_FOLDER'], exist_ok=True)
+
+# Функция для проверки разрешенных расширений файлов
+def allowed_file(filename):
+    return '.' in filename and \
+           filename.rsplit('.', 1)[1].lower() in ALLOWED_EXTENSIONS
+
+# Маршрут для загрузки аватарки
+@app.route('/upload_avatar', methods=['POST'])
+def upload_avatar():
+    if 'user_id' not in session:
+        return jsonify({'success': False, 'error': 'Unauthorized'}), 401
+    
+    # Проверяем, есть ли файл в запросе
+    if 'avatar' not in request.files:
+        return jsonify({'success': False, 'error': 'No file part'})
+    
+    file = request.files['avatar']
+    
+    # Если пользователь не выбрал файл
+    if file.filename == '':
+        return jsonify({'success': False, 'error': 'No selected file'})
+    
+    # Если файл есть и имеет допустимое расширение
+    if file and allowed_file(file.filename):
+        # Безопасно сохраняем имя файла
+        filename = secure_filename(file.filename)
+        # Добавляем user_id к имени файла для уникальности
+        filename = f"user_{session['user_id']}_{filename}"
+        
+        # Путь для сохранения
+        filepath = os.path.join(app.config['UPLOAD_FOLDER'], filename)
+        
+        # Сохраняем файл
+        file.save(filepath)
+        
+        # Получаем пользователя и обновляем путь к аватарке
+        user = User.query.get(session['user_id'])
+        if user:
+            # Относительный путь для URL
+            relative_path = os.path.join('static', 'avatars', filename).replace('\\', '/')
+            user.avatar_path = relative_path
+            
+            try:
+                db.session.commit()
+                return jsonify({
+                    'success': True, 
+                    'avatar_path': relative_path,
+                    'message': 'Avatar uploaded successfully'
+                })
+            except Exception as e:
+                db.session.rollback()
+                logging.error(f"Error updating avatar: {str(e)}")
+                return jsonify({'success': False, 'error': 'Database error'})
+        
+        return jsonify({'success': False, 'error': 'User not found'})
+    
+    return jsonify({'success': False, 'error': 'File type not allowed'})
 
 if __name__ == '__main__':
     # Инициализация базы данных в контексте приложения

@@ -9,10 +9,16 @@ document.addEventListener('DOMContentLoaded', function() {
     const logoutModal = document.getElementById('logoutModal');
     const cancelLogout = document.getElementById('cancelLogout');
     
+    // Элементы для работы с аватаром
+    const avatarPlaceholder = document.getElementById('avatarPlaceholder');
+    const avatarInput = document.getElementById('avatarInput');
+    
     // Проверяем, что все элементы найдены
     if (!menuBtn) console.error('Элемент menuBtn не найден');
     if (!sideMenu) console.error('Элемент sideMenu не найден');
     if (!overlay) console.error('Элемент overlay не найден');
+    if (!avatarPlaceholder) console.error('Элемент avatarPlaceholder не найден');
+    if (!avatarInput) console.error('Элемент avatarInput не найден');
     
     // Принудительно обновляем информацию о пользователе при каждой загрузке страницы
     // через асинхронный запрос к серверу
@@ -34,11 +40,47 @@ document.addEventListener('DOMContentLoaded', function() {
                     el.textContent = data.user_name;
                 });
                 
-                // Обновляем инициалы в аватаре
-                const avatarInitials = document.querySelectorAll('.avatar-initials');
-                avatarInitials.forEach(el => {
-                    el.textContent = data.user_name.charAt(0);
-                });
+                // Обновляем аватар пользователя
+                if (data.avatar_path) {
+                    // Если есть путь к аватару, показываем изображение
+                    const avatarInitials = document.getElementById('avatarInitials');
+                    if (avatarInitials) {
+                        // Заменяем инициалы на изображение
+                        const parent = avatarInitials.parentElement;
+                        avatarInitials.remove();
+                        
+                        const img = document.createElement('img');
+                        img.src = data.avatar_path;
+                        img.alt = data.user_name;
+                        img.className = 'avatar-image';
+                        parent.prepend(img);
+                    }
+                    
+                    // Если изображение уже есть, обновляем его src
+                    const avatarImage = document.querySelector('.avatar-image');
+                    if (avatarImage) {
+                        avatarImage.src = data.avatar_path;
+                    }
+                } else {
+                    // Если нет пути к аватару, показываем инициалы
+                    const avatarInitials = document.getElementById('avatarInitials');
+                    if (avatarInitials) {
+                        avatarInitials.textContent = data.user_name.charAt(0);
+                    } else {
+                        // Если нет элемента с инициалами, но есть изображение - меняем на инициалы
+                        const avatarImage = document.querySelector('.avatar-image');
+                        if (avatarImage) {
+                            const parent = avatarImage.parentElement;
+                            avatarImage.remove();
+                            
+                            const initialsDiv = document.createElement('div');
+                            initialsDiv.id = 'avatarInitials';
+                            initialsDiv.className = 'avatar-initials';
+                            initialsDiv.textContent = data.user_name.charAt(0);
+                            parent.prepend(initialsDiv);
+                        }
+                    }
+                }
             }
         })
         .catch(error => console.error('Ошибка при получении информации о пользователе:', error));
@@ -46,6 +88,54 @@ document.addEventListener('DOMContentLoaded', function() {
     
     // Запускаем обновление информации при загрузке страницы
     refreshUserInfo();
+    
+    // Обработчик нажатия на аватарку для загрузки фотографии
+    if (avatarPlaceholder) {
+        avatarPlaceholder.addEventListener('click', function() {
+            if (avatarInput) {
+                avatarInput.click();
+            }
+        });
+    }
+    
+    // Обработчик выбора файла для загрузки аватара
+    if (avatarInput) {
+        avatarInput.addEventListener('change', function() {
+            if (this.files && this.files[0]) {
+                const file = this.files[0];
+                
+                // Проверяем размер файла (макс. 5 МБ)
+                if (file.size > 5 * 1024 * 1024) {
+                    alert('Файл слишком большой. Максимальный размер 5 МБ');
+                    return;
+                }
+                
+                // Создаем объект FormData для отправки файла
+                const formData = new FormData();
+                formData.append('avatar', file);
+                
+                // Отправляем файл на сервер
+                fetch('/upload_avatar', {
+                    method: 'POST',
+                    body: formData
+                })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.success) {
+                        // Обновляем аватар на странице
+                        refreshUserInfo();
+                    } else {
+                        console.error('Ошибка загрузки аватара:', data.error);
+                        alert('Произошла ошибка при загрузке аватара. Попробуйте снова.');
+                    }
+                })
+                .catch(error => {
+                    console.error('Ошибка при загрузке аватара:', error);
+                    alert('Произошла ошибка при загрузке аватара. Проверьте соединение с сервером.');
+                });
+            }
+        });
+    }
     
     // Обработка клика по кнопке меню
     if (menuBtn) {
