@@ -663,54 +663,54 @@ def update_profile():
             })
         except Exception as db_error:
             db.session.rollback()
-            logging.error(f"Ошибка при обновлении профиля в БД: {str(db_error)}")иска контактов пользователя
+            logging.error(f"Ошибка при обновлении профиля в БД: {str(db_error)}")
             return jsonify({'success': False, 'error': 'Ошибка базы данных'}), 500
             
-    except Exception as e: session:
+    except Exception as e:
         logging.error(f"Неожиданная ошибка в update_profile: {str(e)}")
         return jsonify({'success': False, 'error': 'Ошибка сервера'}), 500
 
-if __name__ == '__main__':
-    # Инициализация базы данных в контексте приложения   
-    with app.app_context():
-        create_tables()contacts_query = Contact.query.filter_by(user_id=user_id).join(
-    # Временно отключаем SERVER_NAME для локального запускаr
-    app.config['SERVER_NAME'] = None
-    # Устанавливаем host='0.0.0.0', чтобы приложение было доступно извне
-    app.run(debug=True, host='0.0.0.0')
-else:
-    # Для запуска через WSGI (PythonAnywhere)ontact_user = contact.contact_user
+# Маршрут для получения списка контактов пользователя
+@app.route('/get_contacts')
+def get_contacts():
+    if 'user_id' not in session:
+        return jsonify({'error': 'Unauthorized'}), 401
+    
     try:
-        with app.app_context():'id': contact_user.id,
-            logging.basicConfig(
-                filename='/tmp/flask_app_error.log',  if hasattr(contact_user, 'avatar_path') else None,
-                level=logging.DEBUG,f hasattr(contact_user, 'bio') else None,
-                format='%(asctime)s - %(levelname)s - %(message)s'
-            )
-            logging.info("Запускаем приложение через WSGI")
-            try:sonify({'contacts': contacts})
-                # Защищенный вызов create_tables
-                create_tables_success = create_tables()
-                if create_tables_success:
-                    logging.info("Схема базы данных успешно обновлена")
-                else:бавления пользователя в контакты
-                    logging.warning("Не удалось обновить схему базы данных, но приложение продолжит работу")
-                
-                # Проверка наличия папки для аватаров
-                if not os.path.exists(app.config['UPLOAD_FOLDER']):
-                    os.makedirs(app.config['UPLOAD_FOLDER'], exist_ok=True)
-                    logging.info(f"Создана папка для аватаров: {app.config['UPLOAD_FOLDER']}")
-                
-                logging.info("Приложение успешно запущено на PythonAnywhere")
-            except Exception as e:
+        user_id = session['user_id']
+        
+        # Запрашиваем контакты пользователя
+        contacts_query = Contact.query.filter_by(user_id=user_id).join(
+            Contact.contact_user
+        ).order_by(User.name)
+        
+        contacts = []
+        for contact in contacts_query.all():
+            contact_user = contact.contact_user
+            contacts.append({
+                'id': contact_user.id,
+                'name': contact_user.name,
+                'avatar_path': contact_user.avatar_path if hasattr(contact_user, 'avatar_path') else None,
+                'bio': contact_user.bio if hasattr(contact_user, 'bio') else None,
+                'added_at': contact.added_at.isoformat()
+            })
+        
+        return jsonify({'contacts': contacts})
+    except Exception as e:
+        logging.error(f"Ошибка при получении контактов: {str(e)}")
+        return jsonify({'error': 'Server error'}), 500
 
-
-
-
-
-
-
-            f.write(traceback.format_exc())            f.write(f"Критическая ошибка: {str(e)}\n")        with open('/tmp/flask_startup_error.log', 'w') as f:        import traceback    except Exception as e:                logging.error("Приложение может работать некорректно!")                logging.error(f"Ошибка при запуске приложения: {str(e)}")        if not contact_id:
+# Маршрут для добавления пользователя в контакты
+@app.route('/add_contact', methods=['POST'])
+def add_contact():
+    if 'user_id' not in session:
+        return jsonify({'error': 'Unauthorized'}), 401
+    
+    try:
+        data = request.get_json()
+        contact_id = data.get('contact_id')
+        
+        if not contact_id:
             return jsonify({'error': 'Contact ID is required'}), 400
         
         # Проверяем, существует ли пользователь
