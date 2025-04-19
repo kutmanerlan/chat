@@ -468,7 +468,9 @@ body {
     min-height: 100px;
     height: 150px; /* Фиксированная высота */
     resize: none; /* Запрещаем изменение размера вручную */
-    overflow-y: auto; /* Добавляем вертикальную прокрутку */
+    overflow-y: auto; /* Сохраняем вертикальную прокрутку */
+    scrollbar-width: none; /* Для Firefox */
+    -ms-overflow-style: none; /* Для IE и Edge */
     box-sizing: border-box;
     color: #aaa; /* Светло-серый цвет текста, более приглушенный */
     font-size: 14px;
@@ -477,6 +479,13 @@ body {
     background-color: #2c2c2c;
     border: 1px solid #444;
     border-radius: 4px;
+}
+
+/* Скрываем полосу прокрутки для WebKit-браузеров (Chrome, Safari, новый Edge) */
+.edit-field textarea::-webkit-scrollbar {
+    width: 0;
+    height: 0;
+    display: none;
 }
 
 /* Также изменяем placeholder цвет для textarea */
