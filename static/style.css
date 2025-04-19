@@ -297,6 +297,7 @@ body {
     width: 90%;
     max-width: 400px;
     box-shadow: 0 5px 15px rgba(0, 0, 0, 0.5);
+    text-align: center; /* Центрируем весь текст в модальном окне */
 }
 
 .modal-content h3 {
@@ -304,43 +305,49 @@ body {
     color: #fff;
     font-size: 18px;
     margin-bottom: 15px;
+    text-align: center; /* Центрируем заголовок */
 }
 
 .modal-content p {
     color: #ccc;
     margin-bottom: 20px;
+    text-align: center; /* Центрируем текст подтверждения */
 }
 
 .modal-buttons {
     display: flex;
-    justify-content: center; /* Центрируем по горизонтали */
-    gap: 30px; /* Увеличиваем расстояние между кнопками */
+    justify-content: center; /* Уже было центрировано */
+    gap: 30px; /* Оставляем прежний отступ */
     margin-top: 20px;
 }
 
 .btn-primary, .btn-secondary {
-    background-color: transparent; /* Прозрачный фон */
+    background-color: transparent;
     border: none;
     padding: 10px 15px;
     cursor: pointer;
-    font-size: 16px; /* Увеличиваем размер шрифта */
+    font-size: 16px;
     text-decoration: none;
-    transition: opacity 0.2s;
+    transition: all 0.2s ease; /* Меняем transition с opacity на all для более плавных эффектов */
 }
 
 .btn-primary {
-    color: #e74c3c; /* Красный текст */
-    font-weight: 500; /* Полужирный текст */
+    color: #e74c3c;
+    font-weight: 500;
 }
 
 .btn-primary:hover {
-    opacity: 0.8; /* Затемнение при наведении */
+    opacity: 1; /* Убираем изменение прозрачности */
+    color: #ff5a4c; /* Делаем текст более ярким при наведении */
+    text-decoration: underline; /* Добавляем подчеркивание */
+    transform: scale(1.05); /* Немного увеличиваем размер */
 }
 
 .btn-secondary {
-    color: #888; /* Серый текст */
+    color: #888;
 }
 
 .btn-secondary:hover {
-    opacity: 0.8; /* Затемнение при наведении */
+    opacity: 1; /* Убираем изменение прозрачности */
+    color: #aaa; /* Делаем текст более светлым при наведении */
 }
