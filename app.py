@@ -89,7 +89,7 @@ def webhook():
 @app.route('/')
 def hello_world():
     if 'user_id' in session:
-        return redirect(url_for('dashboard'))
+        return redirect(url_for('main'))  # Исправлено с 'dashboard' на 'main'
     return redirect(url_for('login'))
 
 # Остальные маршруты
