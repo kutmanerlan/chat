@@ -318,24 +318,33 @@ body {
 .edit-profile-header {
     display: flex;
     align-items: center;
+    justify-content: center; /* Центрируем заголовок по горизонтали */
     padding: 10px 0;
     margin-bottom: 20px;
     border-bottom: 1px solid #333;
+    position: relative; /* Для позиционирования кнопки назад */
+}
+
+.header-title-wrapper {
+    display: flex;
+    align-items: center;
+    justify-content: center;
 }
 
 .back-btn {
     background: transparent;
     border: none;
     color: #aaa;
-    padding: 5px; /* Уменьшено с 8px до 5px */
-    margin-right: 10px;
+    padding: 5px;
     cursor: pointer;
     border-radius: 50%;
     display: flex;
     align-items: center;
     justify-content: center;
-    width: 28px; /* Добавлена фиксированная ширина */
-    height: 28px; /* Добавлена фиксированная высота */
+    width: 28px;
+    height: 28px;
+    position: absolute; /* Позиционируем кнопку абсолютно */
+    left: 0; /* Размещаем кнопку слева */
 }
 
 .back-btn:hover {
@@ -344,7 +353,7 @@ body {
 }
 
 .back-btn svg {
-    width: 16px; /* Ограничиваем размер иконки */
+    width: 16px;
     height: 16px;
 }
 
@@ -352,6 +361,7 @@ body {
     margin: 0;
     color: white;
     font-size: 18px;
+    text-align: center; /* Центрируем текст заголовка */
 }
 
 .edit-profile-content {
