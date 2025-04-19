@@ -194,6 +194,94 @@ def search_users():
         logging.error(f"Ошибка при поиске пользователей: {str(e)}")
         return jsonify({'error': 'Server error'}), 500
 
+# Маршрут для получения информации о пользователе
+@app.route('/get_user_info')
+def get_user_info():
+    if 'user_id' not in session:
+        return jsonify({'error': 'Unauthorized'}), 401
+    
+    user_id = request.args.get('user_id')
+    if not user_id:
+        return jsonify({'error': 'User ID is required'}), 400
+    
+    try:
+        user = User.query.get(user_id)
+        if not user:
+            return jsonify({'error': 'User not found'}), 404
+            
+        return jsonify({
+            'id': user.id,
+            'name': user.name,
+            'avatar_path': user.avatar_path if hasattr(user, 'avatar_path') else None,
+            'bio': user.bio if hasattr(user, 'bio') else None
+        })
+    except Exception as e:
+        logging.error(f"Ошибка при получении информации о пользователе: {str(e)}")
+        return jsonify({'error': 'Server error'}), 500
+
+# Маршрут для проверки, является ли пользователь контактом
+@app.route('/check_contact', methods=['POST'])
+def check_contact():
+    if 'user_id' not in session:
+        return jsonify({'error': 'Unauthorized'}), 401
+    
+    try:
+        data = request.get_json()
+        contact_id = data.get('contact_id')
+        
+        if not contact_id:
+            return jsonify({'error': 'Contact ID is required'}), 400
+        
+        # Проверяем, добавлен ли пользователь уже в контакты
+        existing_contact = Contact.query.filter_by(
+            user_id=session['user_id'],
+            contact_id=contact_id
+        ).first()
+        
+        return jsonify({
+            'is_contact': existing_contact is not None
+        })
+    except Exception as e:
+        logging.error(f"Ошибка при проверке контакта: {str(e)}")
+        return jsonify({'error': 'Server error'}), 500
+
+# Маршрут для удаления пользователя из контактов
+@app.route('/remove_contact', methods=['POST'])
+def remove_contact():
+    if 'user_id' not in session:
+        return jsonify({'error': 'Unauthorized'}), 401
+    
+    try:
+        data = request.get_json()
+        contact_id = data.get('contact_id')
+        
+        if not contact_id:
+            return jsonify({'error': 'Contact ID is required'}), 400
+        
+        # Проверяем, существует ли пользователь
+        contact_user = User.query.get(contact_id)
+        if not contact_user:
+            return jsonify({'error': 'User not found'}), 404
+        
+        # Удаляем контакт если он существует
+        contact = Contact.query.filter_by(
+            user_id=session['user_id'],
+            contact_id=contact_id
+        ).first()
+        
+        if contact:
+            db.session.delete(contact)
+            db.session.commit()
+        
+        return jsonify({
+            'success': True,
+            'message': 'Contact removed successfully'
+        })
+    except Exception as e:
+        db.session.rollback()
+        logging.error(f"Ошибка при удалении контакта: {str(e)}")
+        return jsonify({'error': 'Server error'}), 500
+
 # Главный маршрут
 @app.route('/')
 def hello_world():

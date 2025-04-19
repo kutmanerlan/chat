@@ -503,7 +503,220 @@ document.addEventListener('DOMContentLoaded', function() {
         
         // Функция для начала чата с выбранным пользователем
         function startChatWithUser(userId, userName) {
-            // Добавляем пользователя в контакты
+            console.log(`Открываем чат с пользователем: ${userName} (ID: ${userId})`);
+            
+            // Закрываем результаты поиска
+            const searchResults = document.querySelector('.search-results');
+            if (searchResults) {
+                searchResults.style.display = 'none';
+            }
+            
+            // Очищаем поле поиска
+            const searchInput = document.getElementById('searchInput');
+            if (searchInput) {
+                searchInput.value = '';
+            }
+            
+            // Открываем чат с пользователем без добавления в контакты
+            openChat(userId, userName);
+        }
+        
+        // Функция для начала чата с выбранным пользователем
+        function startChatWithUser(userId, userName) {
+            console.log(`Открываем чат с пользователем: ${userName} (ID: ${userId})`);
+            
+            // Закрываем результаты поиска
+            const searchResults = document.querySelector('.search-results');
+            if (searchResults) {
+                searchResults.style.display = 'none';
+            }
+            
+            // Очищаем поле поиска
+            const searchInput = document.getElementById('searchInput');
+            if (searchInput) {
+                searchInput.value = '';
+            }
+            
+            // Открываем чат с пользователем без добавления в контакты
+            openChat(userId, userName);
+        }
+        
+        // Функция для открытия чата с контактом (будет реализована позже)
+        function openChatWithContact(contactId, contactName) {
+            console.log(`Открываем чат с контактом: ${contactName} (ID: ${contactId})`);
+            
+            // Используем ту же функцию для открытия чата
+            openChat(contactId, contactName);
+        }
+        
+        // Общая функция для открытия чата
+        function openChat(userId, userName) {
+            // Получаем данные о пользователе
+            fetch(`/get_user_info?user_id=${userId}`, {
+                method: 'GET',
+                headers: {
+                    'Content-Type': 'application/json'
+                }
+            })
+            .then(response => response.json())
+            .then(userData => {
+                // Создаем или обновляем область чата
+                createChatInterface(userData);
+            })
+            .catch(error => {
+                console.error('Ошибка при получении информации о пользователе:', error);
+            });
+        }
+        
+        // Функция для создания интерфейса чата
+        function createChatInterface(user) {
+            const mainContent = document.querySelector('.main-content');
+            if (!mainContent) return;
+            
+            // Очищаем главный контент
+            mainContent.innerHTML = '';
+            
+            // Создаем шапку чата
+            const chatHeader = document.createElement('div');
+            chatHeader.className = 'chat-header';
+            
+            // Информация о пользователе
+            const userInfo = document.createElement('div');
+            userInfo.className = 'chat-user-info';
+            
+            // Аватар пользователя
+            const userAvatar = document.createElement('div');
+            userAvatar.className = 'chat-user-avatar';
+            
+            if (user.avatar_path) {
+                userAvatar.innerHTML = `<img src="${user.avatar_path}" alt="${user.name}">`;
+            } else {
+                userAvatar.innerHTML = `<div class="avatar-initials">${user.name.charAt(0)}</div>`;
+            }
+            
+            // Имя пользователя
+            const userName = document.createElement('div');
+            userName.className = 'chat-user-name';
+            userName.textContent = user.name;
+            
+            // Добавляем элементы в информацию о пользователе
+            userInfo.appendChild(userAvatar);
+            userInfo.appendChild(userName);
+            
+            // Кнопка с тремя точками (меню)
+            const menuButton = document.createElement('button');
+            menuButton.className = 'chat-menu-btn';
+            menuButton.innerHTML = `
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <circle cx="12" cy="12" r="1"></circle>
+                    <circle cx="19" cy="12" r="1"></circle>
+                    <circle cx="5" cy="12" r="1"></circle>
+                </svg>
+            `;
+            
+            // Создаем выпадающее меню
+            const dropdown = document.createElement('div');
+            dropdown.className = 'chat-dropdown-menu';
+            dropdown.style.display = 'none';
+            
+            // Проверяем, является ли пользователь контактом
+            fetch('/check_contact', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({ contact_id: user.id })
+            })
+            .then(response => response.json())
+            .then(data => {
+                // Создаем элементы меню в зависимости от статуса контакта
+                if (data.is_contact) {
+                    // Если пользователь уже в контактах
+                    dropdown.innerHTML = `
+                        <div class="dropdown-item remove-contact" data-user-id="${user.id}">
+                            Удалить из контактов
+                        </div>
+                    `;
+                } else {
+                    // Если пользователь не в контактах
+                    dropdown.innerHTML = `
+                        <div class="dropdown-item add-contact" data-user-id="${user.id}">
+                            Добавить в контакты
+                        </div>
+                    `;
+                }
+                
+                // Обработчики для пунктов меню
+                dropdown.querySelectorAll('.dropdown-item').forEach(item => {
+                    item.addEventListener('click', function() {
+                        if (item.classList.contains('add-contact')) {
+                            addToContacts(user.id, user.name);
+                        } else if (item.classList.contains('remove-contact')) {
+                            removeFromContacts(user.id);
+                        }
+                        dropdown.style.display = 'none';
+                    });
+                });
+            })
+            .catch(error => {
+                console.error('Ошибка при проверке статуса контакта:', error);
+                dropdown.innerHTML = `
+                    <div class="dropdown-item add-contact" data-user-id="${user.id}">
+                        Добавить в контакты
+                    </div>
+                `;
+            });
+            
+            // Обработчик клика по кнопке меню
+            menuButton.addEventListener('click', function(e) {
+                e.stopPropagation();
+                dropdown.style.display = dropdown.style.display === 'none' ? 'block' : 'none';
+            });
+            
+            // Закрытие меню при клике вне его
+            document.addEventListener('click', function() {
+                dropdown.style.display = 'none';
+            });
+            
+            // Предотвращение закрытия меню при клике на само меню
+            dropdown.addEventListener('click', function(e) {
+                e.stopPropagation();
+            });
+            
+            // Добавляем элементы в шапку чата
+            chatHeader.appendChild(userInfo);
+            chatHeader.appendChild(menuButton);
+            chatHeader.appendChild(dropdown);
+            
+            // Создаем область сообщений
+            const chatMessages = document.createElement('div');
+            chatMessages.className = 'chat-messages';
+            chatMessages.innerHTML = '<div class="no-messages">Нет сообщений</div>';
+            
+            // Создаем форму ввода сообщений
+            const chatInput = document.createElement('div');
+            chatInput.className = 'chat-input';
+            chatInput.innerHTML = `
+                <textarea placeholder="Введите сообщение..."></textarea>
+                <button class="send-btn">
+                    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <line x1="22" y1="2" x2="11" y2="13"></line>
+                        <polygon points="22 2 15 22 11 13 2 9 22 2"></polygon>
+                    </svg>
+                </button>
+            `;
+            
+            // Добавляем все элементы в область чата
+            mainContent.appendChild(chatHeader);
+            mainContent.appendChild(chatMessages);
+            mainContent.appendChild(chatInput);
+            
+            // Показываем основную область
+            mainContent.style.display = 'flex';
+        }
+        
+        // Функция для добавления пользователя в контакты
+        function addToContacts(userId, userName) {
             fetch('/add_contact', {
                 method: 'POST',
                 headers: {
@@ -521,26 +734,70 @@ document.addEventListener('DOMContentLoaded', function() {
                     // Перезагружаем список контактов
                     loadContacts();
                     
-                    // Закрываем результаты поиска
-                    const searchResults = document.querySelector('.search-results');
-                    if (searchResults) {
-                        searchResults.style.display = 'none';
+                    // Обновляем меню в интерфейсе чата
+                    const dropdown = document.querySelector('.chat-dropdown-menu');
+                    if (dropdown) {
+                        dropdown.innerHTML = `
+                            <div class="dropdown-item remove-contact" data-user-id="${userId}">
+                                Удалить из контактов
+                            </div>
+                        `;
+                        
+                        // Обновляем обработчик события
+                        dropdown.querySelector('.remove-contact').addEventListener('click', function() {
+                            removeFromContacts(userId);
+                            dropdown.style.display = 'none';
+                        });
                     }
-                    
-                    // Очищаем поле поиска
-                    const searchInput = document.getElementById('searchInput');
-                    if (searchInput) {
-                        searchInput.value = '';
-                    }
-                    
-                    // Открываем чат с добавленным пользователем
-                    openChatWithContact(userId, userName);
                 } else {
                     console.error('Ошибка при добавлении контакта:', data.error);
                 }
             })
             .catch(error => {
                 console.error('Ошибка при добавлении контакта:', error);
+            });
+        }
+        
+        // Функция для удаления пользователя из контактов
+        function removeFromContacts(userId) {
+            fetch('/remove_contact', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({
+                    contact_id: userId
+                })
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    console.log(`Пользователь удален из контактов`);
+                    
+                    // Перезагружаем список контактов
+                    loadContacts();
+                    
+                    // Обновляем меню в интерфейсе чата
+                    const dropdown = document.querySelector('.chat-dropdown-menu');
+                    if (dropdown) {
+                        dropdown.innerHTML = `
+                            <div class="dropdown-item add-contact" data-user-id="${userId}">
+                                Добавить в контакты
+                            </div>
+                        `;
+                        
+                        // Обновляем обработчик события
+                        dropdown.querySelector('.add-contact').addEventListener('click', function() {
+                            addToContacts(userId, document.querySelector('.chat-user-name').textContent);
+                            dropdown.style.display = 'none';
+                        });
+                    }
+                } else {
+                    console.error('Ошибка при удалении контакта:', data.error);
+                }
+            })
+            .catch(error => {
+                console.error('Ошибка при удалении контакта:', error);
             });
         }
         
