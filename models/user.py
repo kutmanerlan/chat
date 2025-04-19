@@ -19,6 +19,9 @@ class User(db.Model):
     # Добавляем поле для хранения пути к аватарке
     avatar_path = db.Column(db.String(255), nullable=True)
     
+    # Новое поле для хранения информации о пользователе
+    bio = db.Column(db.String(500), nullable=True)
+    
     def set_password(self, password):
         self.password_hash = generate_password_hash(password)
         

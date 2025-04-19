@@ -205,12 +205,38 @@ body {
 }
 
 /* Стили для профиля пользователя */
-.user-profile {
+.user-profile-header {
     display: flex;
+    justify-content: space-between;
     align-items: center;
     padding: 10px 0;
     margin-bottom: 20px;
     border-bottom: 1px solid #333;
+}
+
+.user-profile {
+    display: flex;
+    align-items: center;
+}
+
+.edit-profile-btn {
+    width: 34px;
+    height: 34px;
+    padding: 0;
+    margin: 0;
+    background: transparent;
+    border: none;
+    cursor: pointer;
+    color: #aaa;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 50%;
+}
+
+.edit-profile-btn:hover {
+    color: white;
+    background-color: #333;
 }
 
 .avatar-placeholder {
@@ -267,6 +293,106 @@ body {
     margin: 5px 0 0 0;
     color: #aaa;
     font-size: 13px;
+}
+
+/* Стили для боковой панели редактирования профиля */
+.edit-profile-sidebar {
+    position: fixed;
+    top: 0;
+    left: -320px;
+    width: 320px;
+    height: 100vh;
+    background-color: #1c1c1c;
+    z-index: 1000;
+    transition: left 0.3s ease;
+    display: flex;
+    flex-direction: column;
+    padding: 15px;
+    box-sizing: border-box;
+}
+
+.edit-profile-sidebar.active {
+    left: 0;
+}
+
+.edit-profile-header {
+    display: flex;
+    align-items: center;
+    padding: 10px 0;
+    margin-bottom: 20px;
+    border-bottom: 1px solid #333;
+}
+
+.back-btn {
+    background: transparent;
+    border: none;
+    color: #aaa;
+    padding: 8px;
+    margin-right: 10px;
+    cursor: pointer;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.back-btn:hover {
+    color: white;
+    background-color: #333;
+}
+
+.edit-profile-header h3 {
+    margin: 0;
+    color: white;
+    font-size: 18px;
+}
+
+.edit-profile-content {
+    padding: 15px 0;
+}
+
+.edit-field {
+    margin-bottom: 20px;
+}
+
+.edit-field label {
+    display: block;
+    margin-bottom: 8px;
+    color: #aaa;
+    font-size: 14px;
+}
+
+.edit-field input,
+.edit-field textarea {
+    width: 100%;
+    padding: 10px;
+    background-color: #2c2c2c;
+    border: 1px solid #444;
+    border-radius: 4px;
+    color: white;
+    font-size: 14px;
+    box-sizing: border-box;
+}
+
+.edit-field textarea {
+    min-height: 100px;
+    resize: vertical;
+}
+
+.save-profile-btn {
+    padding: 10px 20px;
+    background-color: #6b6b6b;
+    color: white;
+    border: none;
+    border-radius: 4px;
+    font-size: 14px;
+    cursor: pointer;
+    width: 100%;
+    margin-top: 15px;
+}
+
+.save-profile-btn:hover {
+    background-color: #5a5a5a;
 }
 
 /* Стили для пунктов меню */

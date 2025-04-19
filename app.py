@@ -83,6 +83,18 @@ def create_tables():
                 except Exception as column_error:
                     logging.error(f"Ошибка при добавлении колонки: {str(column_error)}")
                     # Продолжаем работу даже если колонка не добавлена
+            
+            # Проверяем, есть ли колонка bio
+            if 'bio' not in columns:
+                logging.info('Добавляем колонку bio в таблицу user')
+                try:
+                    # Используем raw SQL для добавления колонки
+                    with db.engine.connect() as connection:
+                        connection.execute(text("ALTER TABLE user ADD COLUMN bio VARCHAR(500)"))
+                        connection.commit()
+                    logging.info('Колонка bio успешно добавлена')
+                except Exception as column_error:
+                    logging.error(f"Ошибка при добавлении колонки bio: {str(column_error)}")
         
         logging.info("Схема базы данных проверена и обновлена")
         return True
@@ -135,7 +147,8 @@ def get_current_user_info():
             'user_id': user.id,
             'user_name': user.name,
             'email': user.email,
-            'avatar_path': avatar_path
+            'avatar_path': avatar_path,
+            'bio': user.bio if hasattr(user, 'bio') else None
         })
     except Exception as e:
         logging.error(f"Ошибка в get_current_user_info: {str(e)}")
@@ -571,6 +584,51 @@ def upload_avatar():
     except Exception as e:
         logging.error(f"Неожиданная ошибка в upload_avatar: {str(e)}")
         return jsonify({'success': False, 'error': 'Server error'})
+
+# Добавляем маршрут для обновления информации о пользователе
+@app.route('/update_profile', methods=['POST'])
+def update_profile():
+    if 'user_id' not in session:
+        return jsonify({'success': False, 'error': 'Unauthorized'}), 401
+    
+    try:
+        # Получаем данные из формы
+        name = request.form.get('name', '').strip()
+        bio = request.form.get('bio', '').strip()
+        
+        # Проверяем корректность данных
+        if not name:
+            return jsonify({'success': False, 'error': 'Имя не может быть пустым'}), 400
+        
+        # Получаем пользователя из БД
+        user = User.query.get(session['user_id'])
+        if not user:
+            return jsonify({'success': False, 'error': 'Пользователь не найден'}), 404
+        
+        # Обновляем данные
+        user.name = name
+        user.bio = bio
+        
+        # Сохраняем в БД
+        try:
+            db.session.commit()
+            
+            # Обновляем данные в сессии
+            session['user_name'] = user.name
+            
+            return jsonify({
+                'success': True,
+                'user_name': user.name,
+                'bio': user.bio or 'Нет информации'
+            })
+        except Exception as db_error:
+            db.session.rollback()
+            logging.error(f"Ошибка при обновлении профиля в БД: {str(db_error)}")
+            return jsonify({'success': False, 'error': 'Ошибка базы данных'}), 500
+            
+    except Exception as e:
+        logging.error(f"Неожиданная ошибка в update_profile: {str(e)}")
+        return jsonify({'success': False, 'error': 'Ошибка сервера'}), 500
 
 if __name__ == '__main__':
     # Инициализация базы данных в контексте приложения

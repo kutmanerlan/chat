@@ -13,12 +13,22 @@ document.addEventListener('DOMContentLoaded', function() {
     const avatarPlaceholder = document.getElementById('avatarPlaceholder');
     const avatarInput = document.getElementById('avatarInput');
     
+    // Элементы для редактирования профиля
+    const editProfileBtn = document.getElementById('editProfileBtn');
+    const editProfileSidebar = document.getElementById('editProfileSidebar');
+    const backToMainMenu = document.getElementById('backToMainMenu');
+    const editProfileForm = document.getElementById('editProfileForm');
+    
     // Проверяем, что все элементы найдены
     if (!menuBtn) console.error('Элемент menuBtn не найден');
     if (!sideMenu) console.error('Элемент sideMenu не найден');
     if (!overlay) console.error('Элемент overlay не найден');
     if (!avatarPlaceholder) console.error('Элемент avatarPlaceholder не найден');
     if (!avatarInput) console.error('Элемент avatarInput не найден');
+    if (!editProfileBtn) console.error('Элемент editProfileBtn не найден');
+    if (!editProfileSidebar) console.error('Элемент editProfileSidebar не найден');
+    if (!backToMainMenu) console.error('Элемент backToMainMenu не найден');
+    if (!editProfileForm) console.error('Элемент editProfileForm не найден');
     
     // Принудительно обновляем информацию о пользователе при каждой загрузке страницы
     // через асинхронный запрос к серверу
@@ -44,6 +54,24 @@ document.addEventListener('DOMContentLoaded', function() {
                 userNameElements.forEach(el => {
                     el.textContent = data.user_name;
                 });
+                
+                // Обновляем информацию о пользователе
+                const userStatusElements = document.querySelectorAll('.user-status');
+                userStatusElements.forEach(el => {
+                    el.textContent = data.bio || 'Нет информации';
+                });
+                
+                // Также обновляем информацию в форме редактирования
+                const profileNameInput = document.getElementById('profileName');
+                const profileBioInput = document.getElementById('profileBio');
+                
+                if (profileNameInput) {
+                    profileNameInput.value = data.user_name;
+                }
+                
+                if (profileBioInput) {
+                    profileBioInput.value = data.bio || '';
+                }
                 
                 // Обновляем аватар пользователя
                 if (data.avatar_path) {
@@ -195,6 +223,63 @@ document.addEventListener('DOMContentLoaded', function() {
             }
         }
     });
+    
+    // Показать панель редактирования профиля
+    if (editProfileBtn) {
+        editProfileBtn.addEventListener('click', function() {
+            sideMenu.classList.remove('active'); // Скрываем основное меню
+            editProfileSidebar.classList.add('active'); // Показываем панель редактирования
+            overlay.classList.add('active'); // Оставляем подложку активной
+        });
+    }
+    
+    // Вернуться к основному меню
+    if (backToMainMenu) {
+        backToMainMenu.addEventListener('click', function() {
+            editProfileSidebar.classList.remove('active'); // Скрываем панель редактирования
+            sideMenu.classList.add('active'); // Показываем основное меню
+        });
+    }
+    
+    // Обработка формы редактирования профиля
+    if (editProfileForm) {
+        editProfileForm.addEventListener('submit', function(e) {
+            e.preventDefault();
+            
+            const formData = new FormData(this);
+            
+            fetch('/update_profile', {
+                method: 'POST',
+                body: formData
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    // Обновляем информацию о пользователе на странице
+                    const userNameElements = document.querySelectorAll('.user-info h3');
+                    userNameElements.forEach(el => {
+                        el.textContent = data.user_name;
+                    });
+                    
+                    const userStatusElements = document.querySelectorAll('.user-status');
+                    userStatusElements.forEach(el => {
+                        el.textContent = data.bio || 'Нет информации';
+                    });
+                    
+                    // Закрываем панель редактирования
+                    editProfileSidebar.classList.remove('active');
+                    overlay.classList.remove('active');
+                } else {
+                    console.error('Ошибка при обновлении профиля:', data.error);
+                    alert('Произошла ошибка при обновлении профиля. Попробуйте снова.');
+                }
+            })
+            .catch(error => {
+                console.error('Ошибка при отправке данных профиля:', error);
+                alert('Произошла ошибка при обновлении профиля. Проверьте соединение с сервером.');
+            });
+        });
+    }
     
     console.log('Обработчики событий установлены');
 });
