@@ -52,12 +52,12 @@ input::placeholder {
 
 button {
     width: 100%;
-    padding: 12px;
+    padding: 10px; /* Reduced from 12px */
     background-color: #6b6b6b; /* цвет кнопки */
     color: #f4f4f4; /* текст на кнопке */
     border: none;
     border-radius: 4px;
-    font-size: 16px;
+    font-size: 14px; /* Reduced from 16px */
     cursor: pointer;
     margin-bottom: 15px;
 }
@@ -319,12 +319,12 @@ body {
 }
 
 .btn-primary, .btn-secondary {
-    padding: 12px 24px; /* Значительно увеличиваем размер кнопок */
-    border-radius: 6px; /* Увеличиваем скругление */
+    padding: 8px 16px; /* Reduced from 12px 24px */
+    border-radius: 4px; /* Reduced from 6px to match other buttons */
     cursor: pointer;
     border: none;
-    font-size: 16px; /* Увеличиваем размер шрифта */
-    min-width: 140px; /* Делаем кнопки шире */
+    font-size: 14px; /* Reduced from 16px */
+    min-width: 100px; /* Reduced from 140px */
     text-align: center;
     font-weight: 500;
     transition: background-color 0.3s; /* Добавляем плавное изменение цвета при наведении */
