@@ -1,5 +1,4 @@
-from flask import Flask, json, request, render_template, redirect, url_for, flash, session
-from flask_sqlalchemy import SQLAlchemy
+from flask import Flask, json, request, render_template, redirect, url_for, flash, session, jsonify
 import logging
 import os
 from werkzeug.security import generate_password_hash, check_password_hash
@@ -93,8 +92,7 @@ def hello_world():
         return redirect(url_for('dashboard'))
     return redirect(url_for('login'))
 
-// ...existing code...
-
+# Остальные маршруты
 @app.route('/login', methods=['GET', 'POST'])
 def login():
     if request.method == 'POST':
