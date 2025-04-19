@@ -708,10 +708,13 @@ document.addEventListener('DOMContentLoaded', function() {
             // Создаем основной контейнер для ввода с прозрачным фоном
             const chatInput = document.createElement('div');
             chatInput.className = 'chat-input';
+            // Убираем inline стили, если они были
+            chatInput.style = '';
             
-            // Создаем wrapper для контента с отступами и прозрачным фоном
             const chatInputWrapper = document.createElement('div');
             chatInputWrapper.className = 'chat-input-wrapper';
+            // Убираем inline стили, если они были
+            chatInputWrapper.style = '';
             
             // Attachment button (paperclip) с улучшенным выравниванием
             const attachmentBtn = document.createElement('button');

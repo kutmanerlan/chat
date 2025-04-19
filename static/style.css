@@ -1485,146 +1485,35 @@ body {
     border: 0;
 }
 
-/* Полностью обновленные стили для поля ввода */
+/* Полностью обновлённые стили для поля ввода чата с прозрачным фоном */
 .chat-input {
-    min-height: 48px;
-    background-color: #17212b;
-    padding: 8px 16px;
+    height: 68px;
+    background-color: transparent !important; /* Принудительно прозрачный фон */
+    display: flex;
+    align-items: center;
+    padding: 0;
+    flex-shrink: 0;
+    border-top: 1px solid #333; /* Оставляем только верхнюю границу */
     position: relative;
     z-index: 10;
-    border-top: 1px solid #232e3c;
+    box-sizing: border-box;
+    width: 100%;
 }
 
-.input-container {
+.chat-input-wrapper {
     display: flex;
     align-items: center;
-    background-color: #242f3d;
-    border-radius: 24px;
-    padding: 0 8px;
-    min-height: 48px;
-    position: relative;
+    max-width: 850px; /* Максимальная ширина для контента */
+    width: 100%;
+    margin: 0 auto; /* Центрирование */
+    padding: 0 50px; /* Отступы по бокам внутри контейнера */
+    background-color: transparent !important; /* Принудительно прозрачный фон */
 }
 
+/* Стили для кнопки скрепки */
 .attachment-btn {
-    width: 40px;
-    height: 40px;
-    background: transparent;
-    border: none;
-    color: #768c9e;
-    cursor: pointer;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    transition: color 0.2s;
-    flex-shrink: 0;
-    padding: 0;
-}
-
-.attachment-btn:hover {
-    color: #a8bac8;
-}
-
-.attachment-btn svg {
-    width: 24px;
-    height: 24px;
-    stroke-width: 1.5;
-}
-
-.chat-input textarea {
-    flex-grow: 1;
-    background: transparent;
-    border: none;
-    color: #fff;
-    font-size: 15px;
-    font-family: inherit;
-    resize: none;
-    padding: 14px 5px;
-    height: 20px;
-    max-height: 120px;
-    line-height: 20px;
-    min-width: 40px;
-}
-
-.chat-input textarea::placeholder {
-    color: #768c9e;
-}
-
-.chat-input textarea:focus {
-    outline: none;
-}
-
-.send-btn {
-    width: 40px;
-    height: 40px;
-    border-radius: 50%;
-    background-color: #5288c1;
-    display: none;
-    align-items: center;
-    justify-content: center;
-    border: none;
-    cursor: pointer;
-    color: white;
-    flex-shrink: 0;
-    padding: 0;
-    margin-left: 8px;
-    transition: background-color 0.2s;
-}
-
-.send-btn.visible {
-    display: flex;
-}
-
-.send-btn:hover {
-    background-color: #6c9fd0;
-}
-
-.send-btn svg {
-    width: 20px;
-    height: 20px;
-    stroke-width: 2;
-    transform: translateX(1px); /* Небольшое смещение для центрирования */
-}
-
-/* Completely redesigned chat input styles */
-.chat-input {
-    height: 68px; /* Fixed height for the input area */
-    background-color: #212121;
-    display: flex;
-    align-items: center;
-    padding: 0 16px;
-    gap: 12px;
-    flex-shrink: 0;
-    border-top: 1px solid #333;
-    position: relative;
-    z-index: 10;
-}
-
-.emoji-button {
-    width: 40px;
-    height: 40px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    flex-shrink: 0;
-    border-radius: 50%;
-    cursor: pointer;
-    color: #aaa;
-    transition: background-color 0.2s, color 0.2s;
-}
-
-.emoji-button:hover {
-    background-color: rgba(255, 255, 255, 0.1);
-    color: white;
-}
-
-.emoji-button svg {
-    width: 24px;
-    height: 24px;
-}
-
-.attachment-btn {
-    width: 40px;
-    height: 40px;
+    width: 50px;
+    height: 50px;
     background: transparent;
     border: none;
     color: #aaa;
@@ -1635,26 +1524,19 @@ body {
     border-radius: 50%;
     flex-shrink: 0;
     transition: color 0.2s, background-color 0.2s;
+    padding: 0;
+    margin-right: 8px;
 }
 
-.attachment-btn:hover {
-    background-color: rgba(255, 255, 255, 0.1);
-    color: white;
-}
-
-.attachment-btn svg {
-    width: 24px;
-    height: 24px;
-}
-
+/* Стиль для поля ввода сообщения - только оно имеет фоновый цвет */
 .chat-input textarea {
     flex-grow: 1;
-    height: 40px;
+    height: 42px;
     max-height: 120px;
-    background-color: #333;
+    background-color: #333; /* Фон только для текстового поля */
     border: none;
-    border-radius: 22px; /* More rounded */
-    padding: 11px 16px; /* Increased padding */
+    border-radius: 22px;
+    padding: 11px 16px;
     color: white;
     resize: none;
     outline: none;
@@ -1662,191 +1544,6 @@ body {
     font-size: 15px;
     line-height: 20px;
     transition: background-color 0.2s, height 0.1s ease;
-}
-
-.chat-input textarea:focus {
-    background-color: #3a3a3a;
-}
-
-.chat-input textarea::placeholder {
-    color: #888;
-}
-
-.chat-input .send-btn {
-    width: 44px;
-    height: 44px;
-    margin-left: 8px;
-    background-color: #2b5278; /* Color matching sent messages */
-    color: white;
-    border: none;
-    border-radius: 50%;
-    cursor: pointer;
-    display: none; /* Hidden by default, shown when there's text */
-    align-items: center;
-    justify-content: center;
-    flex-shrink: 0;
-    transition: background-color 0.2s, transform 0.1s;
-}
-
-.chat-input .send-btn.visible {
-    display: flex;
-}
-
-.chat-input .send-btn:hover {
-    background-color: #366497; /* Slightly lighter on hover */
-}
-
-.chat-input .send-btn:active {
-    transform: scale(0.95);
-}
-
-.chat-input .send-btn svg {
-    width: 22px;
-    height: 22px;
-}
-
-/* Attachment modal styling */
-.attachment-modal {
-    position: fixed;
-    top: 0;
-    left: 0;
-    width: 100%;
-    height: 100%;
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    background-color: rgba(0, 0, 0, 0.6);
-    z-index: 1100;
-    opacity: 0;
-    visibility: hidden;
-    transition: opacity 0.2s, visibility 0.2s;
-}
-
-.attachment-modal.active {
-    opacity: 1;
-    visibility: visible;
-}
-
-.attachment-modal-content {
-    width: 90%;
-    max-width: 500px;
-    background-color: #212121;
-    border-radius: 10px;
-    overflow: hidden;
-    box-shadow: 0 5px 25px rgba(0, 0, 0, 0.5);
-    animation: fadeInUp 0.3s forwards;
-}
-
-@keyframes fadeInUp {
-    from { opacity: 0; transform: translateY(20px); }
-    to { opacity: 1; transform: translateY(0); }
-}
-
-.attachment-modal-header {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    padding: 16px;
-    border-bottom: 1px solid #333;
-}
-
-.attachment-modal-title {
-    color: white;
-    font-size: 16px;
-    font-weight: 500;
-}
-
-.attachment-modal-close {
-    background: none;
-    border: none;
-    color: #888;
-    cursor: pointer;
-    width: 32px;
-    height: 32px;
-    border-radius: 50%;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    transition: background-color 0.2s;
-}
-
-.attachment-modal-close:hover {
-    background-color: rgba(255, 255, 255, 0.1);
-    color: white;
-}
-
-.attachment-modal-body {
-    padding: 20px;
-    max-height: 70vh;
-    overflow-y: auto;
-}
-
-.attachment-grid {
-    display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(100px, 1fr));
-    gap: 10px;
-}
-
-.attachment-item {
-    aspect-ratio: 1/1;
-    position: relative;
-    border-radius: 8px;
-    overflow: hidden;
-    cursor: pointer;
-    background-color: #2a2a2a;
-}
-
-.attachment-item:hover {
-    background-color: #333;
-}
-
-.attachment-item img {
-    width: 100%;
-    height: 100%;
-    object-fit: cover;
-}
-
-.attachment-item-name {
-    position: absolute;
-    bottom: 0;
-    left: 0;
-    right: 0;
-    padding: 8px;
-    background-color: rgba(0, 0, 0, 0.6);
-    color: white;
-    font-size: 12px;
-    white-space: nowrap;
-    overflow: hidden;
-    text-overflow: ellipsis;
-}
-
-.show-all-files-btn {
-    display: block;
-    width: 100%;
-    padding: 12px;
-    margin-top: 16px;
-    background-color: #333;
-    color: white;
-    border: none;
-    border-radius: 6px;
-    text-align: center;
-    cursor: pointer;
-    transition: background-color 0.2s;
-}
-
-.show-all-files-btn:hover {
-    background-color: #444;
-}
-
-.file-input {
-    position: absolute;
-    width: 1px;
-    height: 1px;
-    padding: 0;
-    margin: -1px;
-    overflow: hidden;
-    clip: rect(0, 0, 0, 0);
-    border: 0;
 }
 
 /* Обновленные стили для поля ввода чата с отступами по бокам */
