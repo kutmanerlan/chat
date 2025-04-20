@@ -1218,6 +1218,7 @@ button:hover {
     align-items: center !important;
     width: 100% !important;
     position: relative !important;
+    padding-left: 5px !important; /* Add left padding to fix alignment */
 }
 
 .side-menu .avatar-placeholder {
@@ -1228,54 +1229,17 @@ button:hover {
     margin-right: 15px !important;
     position: relative !important;
     flex-shrink: 0 !important;
+    display: flex !important; /* Ensure flex display */
+    align-items: center !important; /* Center vertically */
+    justify-content: center !important; /* Center horizontally */
 }
 
-/* Контейнер для имени и статуса - сбрасываем все позиционирование */
-.side-menu .user-info {
-    display: flex !important;
-    flex-direction: column !important;
-    height: auto !important; /* Автоматическая высота */
-    padding: 0 !important;
-    margin: 0 !important;
-    position: static !important; /* Отменяем relative позиционирование */
-}
-
-/* Имя пользователя - делаем выше относительно аватара */
-.side-menu .user-info h3 {
-    margin: 0 !important;
-    padding: 0 !important;
-    color: white !important;
-    font-size: 18px !important;
-    font-weight: 500 !important;
-    white-space: nowrap !important;
-    overflow: hidden !important;
-    text-overflow: ellipsis !important;
-    line-height: 1.2 !important;
-    position: relative !important;
-    top: 5px !important; /* Increased from -12px to -14px to position higher */
-    margin-bottom: 18px !important; /* Добавляем отступ до статуса */
-}
-
-/* Статус пользователя */
-.side-menu .user-status {
-    margin: 0 !important;
-    padding: 0 !important;
-    color: #888 !important;
-    font-size: 13px !important;
-    position: relative !important; 
-    top: -10px !important; /* Increased from -8px to -10px to maintain proper spacing */
+/* Make sure images inside avatar are properly centered */
+.side-menu .avatar-placeholder img {
     width: 100% !important;
-    white-space: nowrap !important;
-    overflow: hidden !important;
-    text-overflow: ellipsis !important;
-    display: block !important;
-    visibility: visible !important;
-}
-
-/* Удаляем псевдоэлемент, который мог бы мешать */
-.side-menu .user-info::after {
-    display: none !important;
-    content: none !important;
+    height: 100% !important;
+    object-fit: cover !important;
+    display: block !important; /* Ensure block display */
 }
 
 /* Ensure consistency for avatar-image class used throughout the app */
