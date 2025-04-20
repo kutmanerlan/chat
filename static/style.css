@@ -942,7 +942,7 @@ button:hover {
     padding: 8px 8px; /* Reduced left padding from 14px to 8px */
     margin-left: 0;
     position: absolute;
-    bottom: 1px; /* Changed from 5px to 10px to move lower */
+    bottom: -5px; /* Changed from 5px to 10px to move lower */
     left: 1px; /* Changed from 0 to 5px to add a bit of left margin */
     align-items: center;
     justify-content: flex-start;
