@@ -939,9 +939,9 @@ def get_messages():
         ).all()
         
         for msg in unread_messages:
-            msg.is_read = True  # Make sure this line is present
+            msg.is_read = True  # Set message as read
         
-        db.session.commit()
+        db.session.commit()  # Make sure changes are committed
         
         # Convert messages to dictionaries
         message_list = [msg.to_dict() for msg in messages]
@@ -953,6 +953,7 @@ def get_messages():
     except Exception as e:
         logging.error(f"Error retrieving messages: {str(e)}")
         logging.exception(e)  # Add stack trace for better debugging
+        db.session.rollback()  # Rollback on error
         return jsonify({'success': False, 'error': str(e)}), 500
 
 # Route for getting recent conversations (users you've messaged with)
