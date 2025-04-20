@@ -2907,3 +2907,65 @@ body {
 .chat-header .chat-user-avatar {
     margin-top: 7px; /* Небольшой отступ сверху для аватарки */
 }
+
+/* Возвращаем имя пользователя в боковой панели на прежнюю высоту */
+.side-menu .user-profile {
+    display: flex;
+    align-items: center;
+    width: 100%;
+    padding-top: 0; /* Убираем верхний отступ */
+    margin-bottom: 10px;
+}
+
+.side-menu .user-info {
+    flex-grow: 1;
+    min-width: 0;
+    padding-right: 5px;
+    display: flex;
+    flex-direction: column;
+    justify-content: center; /* Центрируем содержимое по вертикали */
+}
+
+.side-menu .user-info h3 {
+    margin: 0;
+    color: white;
+    font-size: 18px;
+    font-weight: 500;
+    margin-bottom: 0; /* Возвращаем к исходному значению, было 5px */
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+/* Сохраняем позиционирование статуса в боковой панели */
+.side-menu .user-status {
+    display: block !important;
+    color: #888;
+    font-size: 14px;
+    margin-top: 5px; /* Добавляем отступ сверху вместо отступа снизу у имени */
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    max-width: 100%;
+    visibility: visible !important;
+    position: static !important;
+    height: auto !important;
+    width: auto !important;
+    opacity: 1 !important;
+}
+
+/* Сохраняем изменения для чата (имя пользователя выше) */
+.chat-user-name {
+    transform: translateY(-70%);
+    top: 50%;
+}
+
+.chat-header .chat-user-info {
+    padding-top: 0;
+    align-items: flex-start;
+    padding-bottom: 0;
+}
+
+.chat-header .chat-user-avatar {
+    margin-top: 7px;
+}
