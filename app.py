@@ -1069,4 +1069,3 @@ else:
         with open('/tmp/flask_startup_error.log', 'w') as f:
             f.write(f"Критическая ошибка: {str(e)}\n")
             f.write(traceback.format_exc())
-``` 
