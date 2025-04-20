@@ -2478,3 +2478,104 @@ body {
     opacity: 0.8;
     font-weight: 300;  /* Добавляем легкий вес шрифта для лучшей читаемости */
 }
+
+/* Новые стили для чата с абсолютным позиционированием */
+.chat-header {
+    position: relative;
+    height: 60px;
+    background-color: #212121;
+    display: flex;
+    align-items: center;
+    padding: 0 16px;
+    border-bottom: 1px solid #333;
+    box-sizing: border-box;
+}
+
+.chat-user-info {
+    display: inline-block;
+    position: relative;
+    width: auto;
+    max-width: calc(100% - 60px);
+    height: 45px;
+    margin: 0;
+    padding: 0;
+}
+
+.chat-user-avatar {
+    position: absolute;
+    left: 0;
+    top: 0;
+    width: 45px;
+    height: 45px;
+    border-radius: 50%;
+    background-color: #555;
+    overflow: hidden;
+}
+
+.chat-user-avatar img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+}
+
+.chat-user-avatar .avatar-initials {
+    width: 100%;
+    height: 100%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: white;
+    font-size: 20px;
+}
+
+.chat-user-name {
+    position: absolute;
+    left: 57px; /* 45px (аватар) + 12px (отступ) */
+    top: 50%;
+    transform: translateY(-50%);
+    font-size: 17px;
+    font-weight: 500;
+    color: white;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    max-width: calc(100% - 57px);
+}
+
+/* Полностью убираем элемент user-status везде */
+.user-status, 
+.chat-user-status, 
+.status-text,
+.user-bio,
+.chat-bio {
+    display: none !important;
+    visibility: hidden !important;
+    height: 0 !important;
+    width: 0 !important;
+    opacity: 0 !important;
+    position: absolute !important;
+    overflow: hidden !important;
+    clip: rect(0, 0, 0, 0) !important;
+    margin: -1px !important;
+    padding: 0 !important;
+    border: 0 !important;
+}
+
+.chat-menu-btn {
+    position: absolute;
+    right: 16px;
+    top: 50%;
+    transform: translateY(-50%);
+    width: 40px;
+    height: 40px;
+    background: transparent;
+    border: none;
+    color: #aaa;
+    border-radius: 50%;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 0;
+    margin: 0;
+}
