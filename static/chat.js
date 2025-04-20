@@ -537,6 +537,20 @@ function createChatInterface(user) {
     </svg>
   `;
   
+  // Create a hidden file input element
+  const fileInput = document.createElement('input');
+  fileInput.type = 'file';
+  fileInput.multiple = true;
+  fileInput.accept = 'image/*,video/*,.pdf,.doc,.docx,.xls,.xlsx,.zip,.rar';
+  fileInput.style.display = 'none';
+  fileInput.id = 'chatFileInput';
+  document.body.appendChild(fileInput);
+  
+  // Add click event to paperclip button
+  paperclipButton.addEventListener('click', function() {
+    showFileMenu(fileInput, user);
+  });
+  
   // Input field
   const messageInputField = document.createElement('div');
   messageInputField.className = 'message-input-field';
@@ -605,6 +619,179 @@ function createChatInterface(user) {
   
   // Focus input field
   setTimeout(() => inputField.focus(), 0);
+}
+
+/**
+ * Show file menu when paperclip button is clicked
+ */
+function showFileMenu(fileInput, user) {
+  // Create menu if it doesn't exist
+  let fileMenu = document.getElementById('fileUploadMenu');
+  if (!fileMenu) {
+    fileMenu = document.createElement('div');
+    fileMenu.id = 'fileUploadMenu';
+    fileMenu.className = 'file-upload-menu';
+    fileMenu.innerHTML = `
+      <div class="file-menu-options">
+        <div class="file-option" id="photoOption">
+          <div class="file-option-icon">
+            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect>
+              <circle cx="8.5" cy="8.5" r="1.5"></circle>
+              <polyline points="21 15 16 10 5 21"></polyline>
+            </svg>
+          </div>
+          <div class="file-option-label">Photo</div>
+        </div>
+        <div class="file-option" id="documentOption">
+          <div class="file-option-icon">
+            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
+              <polyline points="14 2 14 8 20 8"></polyline>
+              <line x1="16" y1="13" x2="8" y2="13"></line>
+              <line x1="16" y1="17" x2="8" y2="17"></line>
+              <polyline points="10 9 9 9 8 9"></polyline>
+            </svg>
+          </div>
+          <div class="file-option-label">Document</div>
+        </div>
+      </div>
+    `;
+    document.body.appendChild(fileMenu);
+    
+    // Add event listeners to menu options
+    document.getElementById('photoOption').addEventListener('click', function() {
+      fileInput.accept = 'image/*';
+      fileInput.click();
+      fileMenu.style.display = 'none';
+    });
+    
+    document.getElementById('documentOption').addEventListener('click', function() {
+      fileInput.accept = '.pdf,.doc,.docx,.xls,.xlsx,.zip,.rar';
+      fileInput.click();
+      fileMenu.style.display = 'none';
+    });
+    
+    // Close menu when clicking outside
+    document.addEventListener('click', function(e) {
+      if (fileMenu && !fileMenu.contains(e.target) && 
+          !e.target.classList.contains('paperclip-button') && 
+          !e.target.closest('.paperclip-button')) {
+        fileMenu.style.display = 'none';
+      }
+    });
+  }
+  
+  // Calculate position for the menu (below paperclip button)
+  const buttonRect = event.target.closest('.paperclip-button').getBoundingClientRect();
+  
+  // Position the menu
+  fileMenu.style.display = 'block';
+  fileMenu.style.position = 'absolute';
+  fileMenu.style.left = `${buttonRect.left}px`;
+  fileMenu.style.top = `${buttonRect.bottom + 10}px`;
+  fileMenu.style.zIndex = '1000';
+  
+  // Set up file selection handler if not already done
+  if (!fileInput.hasEventListener) {
+    fileInput.addEventListener('change', function() {
+      if (this.files && this.files.length > 0) {
+        handleFileSelection(this.files, user);
+        this.value = ''; // Reset for next selection
+      }
+    });
+    fileInput.hasEventListener = true;
+  }
+}
+
+/**
+ * Handle file selection and send files
+ */
+function handleFileSelection(files, user) {
+  if (!files || files.length === 0) return;
+  
+  // Get chat messages container
+  const chatMessages = document.querySelector('.chat-messages');
+  if (!chatMessages) return;
+  
+  // Get or create messages container
+  let messagesContainer = chatMessages.querySelector('.messages-container');
+  const noMessages = chatMessages.querySelector('.no-messages');
+  if (noMessages) {
+    chatMessages.removeChild(noMessages);
+    messagesContainer = document.createElement('div');
+    messagesContainer.className = 'messages-container';
+    chatMessages.appendChild(messagesContainer);
+  }
+  
+  if (!messagesContainer) {
+    messagesContainer = document.createElement('div');
+    messagesContainer.className = 'messages-container';
+    chatMessages.appendChild(messagesContainer);
+  }
+  
+  // Process each file
+  Array.from(files).forEach(file => {
+    // Create message element to show the file
+    const message = document.createElement('div');
+    message.className = 'message message-sent message-file';
+    
+    // Format timestamp
+    const now = new Date();
+    const hours = String(now.getHours()).padStart(2, '0');
+    const minutes = String(now.getMinutes()).padStart(2, '0');
+    
+    // Determine file type and create content
+    const isImage = file.type.startsWith('image/');
+    let fileContent;
+    
+    if (isImage) {
+      const imageUrl = URL.createObjectURL(file);
+      fileContent = `
+        <div class="message-image">
+          <img src="${imageUrl}" alt="${file.name}" style="max-width: 200px; max-height: 200px; border-radius: 8px;">
+        </div>
+        <div class="message-file-name">${file.name} (${formatFileSize(file.size)})</div>
+      `;
+    } else {
+      // Icon based on file type
+      let iconSvg = `
+        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2">
+          <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
+          <polyline points="14 2 14 8 20 8"></polyline>
+        </svg>
+      `;
+      
+      fileContent = `
+        <div class="message-file-icon">${iconSvg}</div>
+        <div class="message-file-name">${file.name} (${formatFileSize(file.size)})</div>
+      `;
+    }
+    
+    // Add content to message
+    message.innerHTML = `
+      ${fileContent}
+      <div class="message-time">${hours}:${minutes}</div>
+    `;
+    
+    // Add message to container
+    messagesContainer.appendChild(message);
+    
+    // Scroll to new message
+    chatMessages.scrollTop = chatMessages.scrollHeight;
+    
+    // TODO: Send file to server (implement server-side handling)
+    // This would involve using FormData and fetch to upload the file
+  });
+}
+
+/**
+ * Format file size in human-readable format
+ */
+function formatFileSize(bytes) {
+  if (bytes < 1024) return bytes + ' B';
+  else if (bytes < 1048576) return (bytes / 1024).toFixed(1) + ' KB';
+  else return (bytes / 1048576).toFixed(1) + ' MB';
 }
 
 /**
