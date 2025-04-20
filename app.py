@@ -861,11 +861,28 @@ def send_message():
     
     try:
         data = request.get_json()
+        logging.info(f"Received message data: {data}")
+        
         recipient_id = data.get('recipient_id')
         content = data.get('content')
         
         if not recipient_id or not content:
+            logging.warning(f"Missing required fields. recipient_id: {recipient_id}, content length: {len(content) if content else 0}")
             return jsonify({'error': 'Recipient ID and content are required'}), 400
+        
+        # Verify the users exist
+        sender = User.query.get(session['user_id'])
+        recipient = User.query.get(recipient_id)
+        
+        if not sender:
+            logging.error(f"Sender with ID {session['user_id']} not found")
+            return jsonify({'error': 'Invalid sender'}), 400
+            
+        if not recipient:
+            logging.error(f"Recipient with ID {recipient_id} not found")
+            return jsonify({'error': 'Invalid recipient'}), 400
+        
+        logging.info(f"Creating message from {sender.name} to {recipient.name}")
         
         # Create a new message
         new_message = Message(
@@ -874,17 +891,26 @@ def send_message():
             content=content
         )
         
+        # Add to session and commit with detailed logging
         db.session.add(new_message)
+        logging.info(f"Message added to session, committing...")
         db.session.commit()
+        logging.info(f"Message committed successfully with ID: {new_message.id}")
+        
+        # Convert to dictionary for response
+        message_dict = new_message.to_dict()
+        logging.info(f"Returning message: {message_dict}")
         
         return jsonify({
             'success': True,
-            'message': new_message.to_dict()
+            'message': message_dict
         })
     except Exception as e:
         db.session.rollback()
-        logging.error(f"Error sending message: {str(e)}")
-        return jsonify({'error': 'Server error'}), 500
+        error_msg = f"Error sending message: {str(e)}"
+        logging.error(error_msg)
+        logging.exception(e)  # This logs the full stack trace
+        return jsonify({'error': error_msg}), 500
 
 # Route for getting message history between two users
 @app.route('/get_messages')

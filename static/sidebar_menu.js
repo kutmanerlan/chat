@@ -529,27 +529,7 @@ document.addEventListener('DOMContentLoaded', function() {
         // Обработчик события ввода в поле поиска
         searchInput.addEventListener('input', performSearch);
         
-        // Функция для начала чата с выбранным пользователем
-        function startChatWithUser(userId, userName) {
-            console.log(`Открываем чат с пользователем: ${userName} (ID: ${userId})`);
-            
-            // Закрываем результаты поиска
-            const searchResults = document.querySelector('.search-results');
-            if (searchResults) {
-                searchResults.style.display = 'none';
-            }
-            
-            // Очищаем поле поиска
-            const searchInput = document.getElementById('searchInput');
-            if (searchInput) {
-                searchInput.value = '';
-            }
-            
-            // Открываем чат с пользователем без добавления в контакты
-            openChat(userId, userName);
-        }
-        
-        // Функция для начала чата с выбранным пользователем
+        // Функция для начала чата с выбранным пользователем - REMOVE DUPLICATE FUNCTION
         function startChatWithUser(userId, userName) {
             console.log(`Открываем чат с пользователем: ${userName} (ID: ${userId})`);
             
