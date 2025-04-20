@@ -61,3 +61,27 @@ class Contact(db.Model):
     
     # Индекс для быстрого поиска и уникальности
     __table_args__ = (db.UniqueConstraint('user_id', 'contact_id', name='_user_contact_uc'),)
+
+# Model for storing messages between users
+class Message(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    sender_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
+    recipient_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
+    content = db.Column(db.Text, nullable=False)
+    timestamp = db.Column(db.DateTime, default=datetime.utcnow, index=True)
+    is_read = db.Column(db.Boolean, default=False)
+    
+    # Define relationships
+    sender = db.relationship('User', foreign_keys=[sender_id], backref=db.backref('sent_messages', lazy='dynamic'))
+    recipient = db.relationship('User', foreign_keys=[recipient_id], backref=db.backref('received_messages', lazy='dynamic'))
+    
+    def to_dict(self):
+        """Convert message to dictionary for JSON serialization"""
+        return {
+            'id': self.id,
+            'sender_id': self.sender_id,
+            'recipient_id': self.recipient_id,
+            'content': self.content,
+            'timestamp': self.timestamp.isoformat(),
+            'is_read': self.is_read
+        }

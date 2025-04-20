@@ -49,96 +49,101 @@ document.addEventListener('DOMContentLoaded', function() {
             return response.json();
         })
         .then(data => {
-            if (data.user_name) {
-                console.log("Обновляем информацию пользователя:", data);
+            if (data.user_id) {
+                // Store current user ID for message comparison
+                currentUserId = data.user_id;
                 
-                // Обновляем имя пользователя
-                const userNameElements = document.querySelectorAll('.user-info h3');
-                userNameElements.forEach(el => {
-                    el.textContent = data.user_name;
-                });
-                
-                // Обновляем статус пользователя - БОЛЕЕ ТОЧНО ВЫБИРАЕМ ЭЛЕМЕНТЫ
-                const userStatusElements = document.querySelectorAll('.side-menu .user-status');
-                userStatusElements.forEach(el => {
-                    el.textContent = data.bio || 'Нет информации';
-                    // Убедимся, что элемент видим
-                    el.style.display = 'block';
-                    el.style.visibility = 'visible';
-                });
-                
-                // Также обновляем форму редактирования
-                const profileNameInput = document.getElementById('profileName');
-                const profileBioInput = document.getElementById('profileBio');
-                
-                if (profileNameInput) {
-                    profileNameInput.value = data.user_name;
-                }
-                
-                if (profileBioInput) {
-                    profileBioInput.value = data.bio || '';
-                }
-                
-                // Обновляем аватар пользователя - полностью переписанный код
-                if (data.avatar_path) {
-                    // Убедимся, что у нас есть аватар-плейсхолдер
-                    const avatarPlaceholder = document.getElementById('avatarPlaceholder');
+                if (data.user_name) {
+                    console.log("Обновляем информацию пользователя:", data);
                     
-                    if (avatarPlaceholder) {
-                        // Очищаем содержимое плейсхолдера
-                        avatarPlaceholder.innerHTML = '';
-                        
-                        // Создаем новое изображение
-                        const img = document.createElement('img');
-                        img.src = data.avatar_path;
-                        img.alt = data.user_name;
-                        img.className = 'avatar-image';
-                        
-                        // Добавляем изображение в плейсхолдер
-                        avatarPlaceholder.appendChild(img);
-                        
-                        // Добавляем иконку загрузки обратно
-                        const uploadIcon = document.createElement('div');
-                        uploadIcon.className = 'avatar-upload-icon';
-                        uploadIcon.innerHTML = `
-                            <svg width="24" height="24" viewBox="0 0 24 24" fill="none">
-                                <path d="M12 5V19" stroke="white" stroke-width="2" stroke-linecap="round"/>
-                                <path d="M5 12H19" stroke="white" stroke-width="2" stroke-linecap="round"/>
-                            </svg>
-                        `;
-                        avatarPlaceholder.appendChild(uploadIcon);
-                    }
-                } else {
-                    // Если аватара нет, показываем инициалы
-                    const avatarPlaceholder = document.getElementById('avatarPlaceholder');
+                    // Обновляем имя пользователя
+                    const userNameElements = document.querySelectorAll('.user-info h3');
+                    userNameElements.forEach(el => {
+                        el.textContent = data.user_name;
+                    });
                     
-                    if (avatarPlaceholder) {
-                        // Очищаем содержимое плейсхолдера
-                        avatarPlaceholder.innerHTML = '';
-                        
-                        // Создаем div с инициалами
-                        const initialsDiv = document.createElement('div');
-                        initialsDiv.id = 'avatarInitials';
-                        initialsDiv.className = 'avatar-initials';
-                        initialsDiv.textContent = data.user_name.charAt(0);
-                        
-                        // Добавляем инициалы в плейсхолдер
-                        avatarPlaceholder.appendChild(initialsDiv);
-                        
-                        // Добавляем иконку загрузки обратно
-                        const uploadIcon = document.createElement('div');
-                        uploadIcon.className = 'avatar-upload-icon';
-                        uploadIcon.innerHTML = `
-                            <svg width="24" height="24" viewBox="0 0 24 24" fill="none">
-                                <path d="M12 5V19" stroke="white" stroke-width="2" stroke-linecap="round"/>
-                                <path d="M5 12H19" stroke="white" stroke-width="2" stroke-linecap="round"/>
-                            </svg>
-                        `;
-                        avatarPlaceholder.appendChild(uploadIcon);
+                    // Обновляем статус пользователя - БОЛЕЕ ТОЧНО ВЫБИРАЕМ ЭЛЕМЕНТЫ
+                    const userStatusElements = document.querySelectorAll('.side-menu .user-status');
+                    userStatusElements.forEach(el => {
+                        el.textContent = data.bio || 'Нет информации';
+                        // Убедимся, что элемент видим
+                        el.style.display = 'block';
+                        el.style.visibility = 'visible';
+                    });
+                    
+                    // Также обновляем форму редактирования
+                    const profileNameInput = document.getElementById('profileName');
+                    const profileBioInput = document.getElementById('profileBio');
+                    
+                    if (profileNameInput) {
+                        profileNameInput.value = data.user_name;
                     }
+                    
+                    if (profileBioInput) {
+                        profileBioInput.value = data.bio || '';
+                    }
+                    
+                    // Обновляем аватар пользователя - полностью переписанный код
+                    if (data.avatar_path) {
+                        // Убедимся, что у нас есть аватар-плейсхолдер
+                        const avatarPlaceholder = document.getElementById('avatarPlaceholder');
+                        
+                        if (avatarPlaceholder) {
+                            // Очищаем содержимое плейсхолдера
+                            avatarPlaceholder.innerHTML = '';
+                            
+                            // Создаем новое изображение
+                            const img = document.createElement('img');
+                            img.src = data.avatar_path;
+                            img.alt = data.user_name;
+                            img.className = 'avatar-image';
+                            
+                            // Добавляем изображение в плейсхолдер
+                            avatarPlaceholder.appendChild(img);
+                            
+                            // Добавляем иконку загрузки обратно
+                            const uploadIcon = document.createElement('div');
+                            uploadIcon.className = 'avatar-upload-icon';
+                            uploadIcon.innerHTML = `
+                                <svg width="24" height="24" viewBox="0 0 24 24" fill="none">
+                                    <path d="M12 5V19" stroke="white" stroke-width="2" stroke-linecap="round"/>
+                                    <path d="M5 12H19" stroke="white" stroke-width="2" stroke-linecap="round"/>
+                                </svg>
+                            `;
+                            avatarPlaceholder.appendChild(uploadIcon);
+                        }
+                    } else {
+                        // Если аватара нет, показываем инициалы
+                        const avatarPlaceholder = document.getElementById('avatarPlaceholder');
+                        
+                        if (avatarPlaceholder) {
+                            // Очищаем содержимое плейсхолдера
+                            avatarPlaceholder.innerHTML = '';
+                            
+                            // Создаем div с инициалами
+                            const initialsDiv = document.createElement('div');
+                            initialsDiv.id = 'avatarInitials';
+                            initialsDiv.className = 'avatar-initials';
+                            initialsDiv.textContent = data.user_name.charAt(0);
+                            
+                            // Добавляем инициалы в плейсхолдер
+                            avatarPlaceholder.appendChild(initialsDiv);
+                            
+                            // Добавляем иконку загрузки обратно
+                            const uploadIcon = document.createElement('div');
+                            uploadIcon.className = 'avatar-upload-icon';
+                            uploadIcon.innerHTML = `
+                                <svg width="24" height="24" viewBox="0 0 24 24" fill="none">
+                                    <path d="M12 5V19" stroke="white" stroke-width="2" stroke-linecap="round"/>
+                                    <path d="M5 12H19" stroke="white" stroke-width="2" stroke-linecap="round"/>
+                                </svg>
+                            `;
+                            avatarPlaceholder.appendChild(uploadIcon);
+                        }
+                    }
+                    // After updating avatar, update the cross icon
+                    updateAvatarWithCrossIcon();
                 }
-                // After updating avatar, update the cross icon
-                updateAvatarWithCrossIcon();
             }
         })
         .catch(error => console.error('Ошибка при получении информации о пользователе:', error));
@@ -711,6 +716,76 @@ document.addEventListener('DOMContentLoaded', function() {
             
             // Отображаем содержимое
             mainContent.style.display = 'flex';
+            
+            // Load message history
+            fetch(`/get_messages?user_id=${user.id}`, {
+                method: 'GET',
+                headers: {
+                    'Content-Type': 'application/json'
+                }
+            })
+            .then(response => response.json())
+            .then(data => {
+                // Remove loading indicator
+                chatMessages.removeChild(loadingIndicator);
+                
+                if (data.success && data.messages && data.messages.length > 0) {
+                    // Create container for messages
+                    const messagesContainer = document.createElement('div');
+                    messagesContainer.className = 'messages-container';
+                    chatMessages.appendChild(messagesContainer);
+                    
+                    // Add each message
+                    data.messages.forEach(message => {
+                        const messageEl = document.createElement('div');
+                        
+                        // Determine if this is a sent or received message
+                        const isSent = message.sender_id == currentUserId;
+                        messageEl.className = `message ${isSent ? 'message-sent' : 'message-received'}`;
+                        messageEl.dataset.messageId = message.id;
+                        
+                        // Format timestamp
+                        const timestamp = new Date(message.timestamp);
+                        const hours = String(timestamp.getHours()).padStart(2, '0');
+                        const minutes = String(timestamp.getMinutes()).padStart(2, '0');
+                        
+                        // Add message content
+                        messageEl.innerHTML = `
+                            <div class="message-content">${message.content}</div>
+                            <div class="message-time">${hours}:${minutes}</div>
+                        `;
+                        
+                        messagesContainer.appendChild(messageEl);
+                    });
+                    
+                    // Scroll to bottom
+                    chatMessages.scrollTop = chatMessages.scrollHeight;
+                } else {
+                    // Show "No messages" placeholder
+                    const noMessages = document.createElement('div');
+                    noMessages.className = 'no-messages';
+                    noMessages.textContent = 'Нет сообщений';
+                    chatMessages.appendChild(noMessages);
+                }
+            })
+            .catch(error => {
+                console.error('Error loading messages:', error);
+                chatMessages.removeChild(loadingIndicator);
+                
+                // Show error message
+                const errorMsg = document.createElement('div');
+                errorMsg.className = 'messages-error';
+                errorMsg.textContent = 'Failed to load messages. Please try again.';
+                errorMsg.style.color = '#e57373';
+                errorMsg.style.textAlign = 'center';
+                errorMsg.style.padding = '20px';
+                chatMessages.appendChild(errorMsg);
+            });
+            
+            // Focus on the input field
+            setTimeout(() => {
+                inputField.focus();
+            }, 0);
         }
         
         // Function for creating chat interface
@@ -972,57 +1047,78 @@ document.addEventListener('DOMContentLoaded', function() {
         function sendTextMessage(inputField, chatMessages, user) {
             const messageText = inputField.value.trim();
             if (messageText) {
-                // Get or create messages container
-                let messagesContainer = chatMessages.querySelector('.messages-container');
-                
-                // Remove "No messages" if it exists
-                const noMessages = chatMessages.querySelector('.no-messages');
-                if (noMessages) {
-                    chatMessages.removeChild(noMessages);
-                    messagesContainer = document.createElement('div');
-                    messagesContainer.className = 'messages-container';
-                    chatMessages.appendChild(messagesContainer);
-                }
-                
-                if (!messagesContainer) {
-                    messagesContainer = document.createElement('div');
-                    messagesContainer.className = 'messages-container';
-                    chatMessages.appendChild(messagesContainer);
-                }
-                
-                // Create message element
-                const message = document.createElement('div');
-                message.className = 'message message-sent';
-                
-                // Current time for the message
-                const now = new Date();
-                const hours = String(now.getHours()).padStart(2, '0');
-                const minutes = String(now.getMinutes()).padStart(2, '0');
-                
-                // Add message content with proper handling for very long text
-                message.innerHTML = `
-                    <div class="message-content">${messageText}</div>
-                    <div class="message-time">${hours}:${minutes}</div>
-                `;
-                
-                // Add message to container
-                messagesContainer.appendChild(message);
-                
-                // Clear input
-                inputField.value = '';
-                inputField.focus();
-                
-                // Scroll chat down
-                chatMessages.scrollTop = chatMessages.scrollHeight;
-                
-                // TODO: Send message to server
-                console.log(`Sending message to ${user.name} (ID: ${user.id}):`, messageText);
-                
-                // После отправки сообщения делаем кнопку серой снова
-                const sendButton = document.querySelector('.send-button');
-                if (sendButton) {
-                    sendButton.classList.remove('active');
-                }
+                // Send message to server first
+                fetch('/send_message', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        recipient_id: user.id,
+                        content: messageText
+                    })
+                })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.success) {
+                        // Get or create messages container
+                        let messagesContainer = chatMessages.querySelector('.messages-container');
+                        
+                        // Remove "No messages" if it exists
+                        const noMessages = chatMessages.querySelector('.no-messages');
+                        if (noMessages) {
+                            chatMessages.removeChild(noMessages);
+                            messagesContainer = document.createElement('div');
+                            messagesContainer.className = 'messages-container';
+                            chatMessages.appendChild(messagesContainer);
+                        }
+                        
+                        if (!messagesContainer) {
+                            messagesContainer = document.createElement('div');
+                            messagesContainer.className = 'messages-container';
+                            chatMessages.appendChild(messagesContainer);
+                        }
+                        
+                        // Create message element
+                        const message = document.createElement('div');
+                        message.className = 'message message-sent';
+                        message.dataset.messageId = data.message.id;
+                        
+                        // Format timestamp
+                        const timestamp = new Date(data.message.timestamp);
+                        const hours = String(timestamp.getHours()).padStart(2, '0');
+                        const minutes = String(timestamp.getMinutes()).padStart(2, '0');
+                        
+                        // Add message content
+                        message.innerHTML = `
+                            <div class="message-content">${messageText}</div>
+                            <div class="message-time">${hours}:${minutes}</div>
+                        `;
+                        
+                        // Add message to container
+                        messagesContainer.appendChild(message);
+                        
+                        // Clear input
+                        inputField.value = '';
+                        inputField.focus();
+                        
+                        // Scroll chat down
+                        chatMessages.scrollTop = chatMessages.scrollHeight;
+                        
+                        // Make send button inactive
+                        const sendButton = document.querySelector('.send-button');
+                        if (sendButton) {
+                            sendButton.classList.remove('active');
+                        }
+                    } else {
+                        console.error('Error sending message:', data.error);
+                        alert('Failed to send message. Please try again.');
+                    }
+                })
+                .catch(error => {
+                    console.error('Error sending message:', error);
+                    alert('Failed to send message. Please check your connection.');
+                });
             }
         }
         

@@ -41,7 +41,7 @@ else:
     app.config['SERVER_NAME'] = 'localhost:5000'
 
 # Инициализация базы данных
-from models.user import db, User, Contact
+from models.user import db, User, Contact, Message
 db.init_app(app)
 
 # Функция для создания таблиц базы данных
@@ -851,6 +851,81 @@ def add_contact():
     except Exception as e:
         db.session.rollback()
         logging.error(f"Ошибка при добавлении контакта: {str(e)}")
+        return jsonify({'error': 'Server error'}), 500
+
+# Route for sending a message
+@app.route('/send_message', methods=['POST'])
+def send_message():
+    if 'user_id' not in session:
+        return jsonify({'error': 'Unauthorized'}), 401
+    
+    try:
+        data = request.get_json()
+        recipient_id = data.get('recipient_id')
+        content = data.get('content')
+        
+        if not recipient_id or not content:
+            return jsonify({'error': 'Recipient ID and content are required'}), 400
+        
+        # Create a new message
+        new_message = Message(
+            sender_id=session['user_id'],
+            recipient_id=recipient_id,
+            content=content
+        )
+        
+        db.session.add(new_message)
+        db.session.commit()
+        
+        return jsonify({
+            'success': True,
+            'message': new_message.to_dict()
+        })
+    except Exception as e:
+        db.session.rollback()
+        logging.error(f"Error sending message: {str(e)}")
+        return jsonify({'error': 'Server error'}), 500
+
+# Route for getting message history between two users
+@app.route('/get_messages')
+def get_messages():
+    if 'user_id' not in session:
+        return jsonify({'error': 'Unauthorized'}), 401
+    
+    try:
+        user_id = session['user_id']
+        other_user_id = request.args.get('user_id')
+        
+        if not other_user_id:
+            return jsonify({'error': 'User ID is required'}), 400
+        
+        # Query messages between the two users (in both directions)
+        messages = Message.query.filter(
+            ((Message.sender_id == user_id) & (Message.recipient_id == other_user_id)) |
+            ((Message.sender_id == other_user_id) & (Message.recipient_id == user_id))
+        ).order_by(Message.timestamp).all()
+        
+        # Mark messages as read if current user is the recipient
+        unread_messages = Message.query.filter_by(
+            recipient_id=user_id, 
+            sender_id=other_user_id,
+            is_read=False
+        ).all()
+        
+        for msg in unread_messages:
+            msg.is_read = True
+        
+        db.session.commit()
+        
+        # Convert messages to dictionaries
+        message_list = [msg.to_dict() for msg in messages]
+        
+        return jsonify({
+            'success': True,
+            'messages': message_list
+        })
+    except Exception as e:
+        logging.error(f"Error retrieving messages: {str(e)}")
         return jsonify({'error': 'Server error'}), 500
 
 if __name__ == '__main__':
