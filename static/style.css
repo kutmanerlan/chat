@@ -258,19 +258,19 @@ body {
     box-sizing: border-box;
 }
 
+/* Полностью переработанные стили для заголовка чата */
 .chat-user-info {
     display: flex;
-    align-items: flex-start; /* Изменено с center для верхнего выравнивания */
-    flex-direction: column;
-    justify-content: center;
+    flex-direction: row; /* Горизонтальное расположение элементов */
+    align-items: center; /* Вертикальное выравнивание по центру */
     flex-grow: 1;
     height: 100%;
-    padding-top: 8px; /* Добавляем отступ сверху для смещения текста выше */
+    padding: 0; /* Убираем отступы */
 }
 
 .chat-user-avatar {
-    width: 45px; /* Увеличенный размер аватара */
-    height: 45px; /* Увеличенный размер аватара */
+    width: 45px;
+    height: 45px;
     border-radius: 50%;
     background-color: #555;
     margin-right: 12px;
@@ -302,7 +302,12 @@ body {
     color: white;
     font-size: 17px;
     font-weight: 500;
-    margin-top: -10px; /* Негативный отступ для поднятия имени выше */
+    margin: 0; /* Убираем все отступы */
+}
+
+/* Полностью скрываем элемент user-status без исключений */
+.user-status {
+    display: none !important; /* Используем !important для перезаписи любых других стилей */
 }
 
 /* Вертикальные три точки вместо горизонтальных */

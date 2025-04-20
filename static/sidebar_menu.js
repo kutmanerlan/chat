@@ -576,7 +576,7 @@ document.addEventListener('DOMContentLoaded', function() {
             const chatHeader = document.createElement('div');
             chatHeader.className = 'chat-header';
             
-            // User info
+            // User info with correct horizontal layout
             const userInfo = document.createElement('div');
             userInfo.className = 'chat-user-info';
             
@@ -590,12 +590,12 @@ document.addEventListener('DOMContentLoaded', function() {
                 userAvatar.innerHTML = `<div class="avatar-initials">${user.name.charAt(0)}</div>`;
             }
             
-            // User name - создаем с модифицированным классом для правильного позиционирования
+            // User name - simple text without any extra elements
             const userName = document.createElement('div');
             userName.className = 'chat-user-name';
             userName.textContent = user.name;
             
-            // Добавляем элементы в правильном порядке
+            // Correctly add elements for horizontal layout
             userInfo.appendChild(userAvatar);
             userInfo.appendChild(userName);
             
