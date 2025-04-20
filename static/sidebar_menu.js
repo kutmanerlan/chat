@@ -136,6 +136,8 @@ document.addEventListener('DOMContentLoaded', function() {
                         avatarPlaceholder.appendChild(uploadIcon);
                     }
                 }
+                // After updating avatar, update the cross icon
+                updateAvatarWithCrossIcon();
             }
         })
         .catch(error => console.error('Ошибка при получении информации о пользователе:', error));
@@ -1283,4 +1285,32 @@ document.addEventListener('DOMContentLoaded', function() {
     loadContacts();
     
     console.log('Обработчики событий установлены');
+    
+    updateAvatarWithCrossIcon();
 });
+
+// Update the avatar upload icon to be a cross instead of a plus
+function updateAvatarWithCrossIcon() {
+    // Get all avatar placeholders with upload icons
+    const avatarPlaceholders = document.querySelectorAll('#avatarPlaceholder');
+    
+    avatarPlaceholders.forEach(placeholder => {
+        // Find existing upload icon if any
+        let uploadIcon = placeholder.querySelector('.avatar-upload-icon');
+        
+        // If no icon exists, create it
+        if (!uploadIcon) {
+            uploadIcon = document.createElement('div');
+            uploadIcon.className = 'avatar-upload-icon';
+            placeholder.appendChild(uploadIcon);
+        }
+        
+        // Update the icon to be a cross (X) instead of a plus
+        uploadIcon.innerHTML = `
+            <svg width="24" height="24" viewBox="0 0 24 24" fill="none">
+                <path d="M18 6L6 18" stroke="white" stroke-width="2" stroke-linecap="round"/>
+                <path d="M6 6L18 18" stroke="white" stroke-width="2" stroke-linecap="round"/>
+            </svg>
+        `;
+    });
+}

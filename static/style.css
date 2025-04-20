@@ -1250,17 +1250,24 @@ button:hover {
 /* Fix avatar upload icon position */
 .avatar-upload-icon {
     position: absolute !important;
-    bottom: 0 !important;
-    right: 0 !important;
-    width: 24px !important;
-    height: 24px !important;
+    top: 50% !important;
+    left: 50% !important;
+    transform: translate(-50%, -50%) !important;
+    width: 28px !important;
+    height: 28px !important;
     background-color: rgba(0, 0, 0, 0.6) !important;
     border-radius: 50% !important;
     display: flex !important;
     align-items: center !important;
     justify-content: center !important;
-    opacity: 0.8 !important;
+    opacity: 0 !important; /* Hidden by default */
     z-index: 2 !important;
+    transition: opacity 0.2s ease !important;
+}
+
+/* Show the upload icon when hovering over the avatar */
+.side-menu .avatar-placeholder:hover .avatar-upload-icon {
+    opacity: 1 !important;
 }
 
 /* Fix initials centering in avatar */
