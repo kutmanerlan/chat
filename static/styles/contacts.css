@@ -1,0 +1,153 @@
+/**
+ * Contacts CSS - contact list and user entries
+ */
+
+/* Contact list styles */
+.contacts-list {
+    flex-grow: 1;
+    overflow-y: auto;
+    padding: 5px 0;
+    scrollbar-width: thin;
+}
+
+.contacts-list::-webkit-scrollbar {
+    width: var(--scrollbar-width-thin);
+}
+
+.contacts-list::-webkit-scrollbar-track {
+    background: var(--sidebar-background);
+}
+
+.contacts-list::-webkit-scrollbar-thumb {
+    background: #444;
+    border-radius: calc(var(--scrollbar-width-thin) / 2);
+}
+
+.contact-item {
+    display: flex;
+    align-items: center;
+    padding: 12px 15px;
+    cursor: pointer;
+    transition: background-color 0.2s;
+    border-radius: 5px;
+    margin: 3px 8px;
+    position: relative;
+}
+
+.contact-item.active {
+    background-color: #333333;
+}
+
+.contact-item:hover {
+    background-color: #292929;
+}
+
+.contact-item.active:hover {
+    background-color: #333333;
+}
+
+.contact-avatar {
+    width: 50px;
+    height: 50px;
+    border-radius: 50%;
+    background-color: var(--avatar-background);
+    margin-right: 15px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+    overflow: hidden;
+}
+
+.contact-avatar img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+}
+
+.contact-avatar .avatar-initials {
+    font-size: 20px;
+    color: white;
+    font-weight: 500;
+}
+
+.contact-info {
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    height: 50px;
+}
+
+.contact-name {
+    font-size: 17px;
+    color: white;
+    font-weight: 500;
+    margin-bottom: 0;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    line-height: normal;
+    position: relative;
+    top: -10px;
+}
+
+.contact-bio {
+    display: none;
+}
+
+.no-contacts-message {
+    padding: 20px;
+    text-align: center;
+    color: #777;
+    font-size: 14px;
+    font-style: italic;
+    margin-top: 20px;
+    display: none;
+}
+
+/* Conversations and recents */
+.conversations-section {
+    margin-bottom: 15px;
+}
+
+.section-title {
+    padding: 10px 15px 5px;
+    font-size: 13px;
+    color: var(--text-secondary);
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+.conversation-item {
+    position: relative;
+}
+
+.conversation-item .contact-info {
+    width: calc(100% - 65px);
+}
+
+.last-message {
+    font-size: 13px;
+    color: var(--text-dimmed);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    max-width: 100%;
+    margin-top: 3px;
+}
+
+.unread-badge {
+    position: absolute;
+    top: 10px;
+    right: 10px;
+    min-width: 18px;
+    height: 18px;
+    background-color: var(--message-sent);
+    color: white;
+    border-radius: 9px;
+    font-size: 11px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 0 5px;
+}

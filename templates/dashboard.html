@@ -4,12 +4,21 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Главное окно</title>
-  <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+  <!-- Include modular CSS files -->
+  <link rel="stylesheet" href="{{ url_for('static', filename='styles/main.css') }}">
   <link rel="stylesheet" href="{{ url_for('static', filename='styles/notification.css') }}">
   <link rel="stylesheet" href="{{ url_for('static', filename='styles/file-menu.css') }}">
   
-  <!-- Replace the old script with our new, improved chat.js -->
-  <script src="{{ url_for('static', filename='chat.js') }}" defer></script>
+  <!-- Include modular JavaScript files -->
+  <script src="{{ url_for('static', filename='js/core.js') }}" defer></script>
+  <script src="{{ url_for('static', filename='js/api.js') }}" defer></script>
+  <script src="{{ url_for('static', filename='js/ui.js') }}" defer></script>
+  <script src="{{ url_for('static', filename='js/chat.js') }}" defer></script>
+  <script src="{{ url_for('static', filename='js/messages.js') }}" defer></script>
+  <script src="{{ url_for('static', filename='js/contacts.js') }}" defer></script>
+  <script src="{{ url_for('static', filename='js/search.js') }}" defer></script>
+  <script src="{{ url_for('static', filename='js/notifications.js') }}" defer></script>
+  <script src="{{ url_for('static', filename='js/main.js') }}" defer></script>
 </head>
 <body>
   <!-- Боковая панель -->

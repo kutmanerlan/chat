@@ -1,0 +1,190 @@
+/**
+ * Profile CSS - user profile and editing
+ */
+
+/* Avatar upload elements */
+.avatar-upload-icon {
+    position: absolute !important;
+    top: 50% !important;
+    left: 50% !important;
+    transform: translate(-50%, -50%) !important;
+    width: 28px !important;
+    height: 28px !important;
+    background-color: rgba(0, 0, 0, 0.6) !important;
+    border-radius: 50% !important;
+    display: flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    opacity: 0 !important;
+    z-index: 2 !important;
+    transition: opacity 0.2s ease !important;
+}
+
+.avatar-placeholder:hover .avatar-upload-icon {
+    opacity: 1 !important;
+}
+
+.edit-profile-btn {
+    width: 38px !important;
+    height: 38px !important;
+    padding: 0 !important;
+    margin-left: 10px !important;
+    background: transparent !important;
+    border: none !important;
+    cursor: pointer !important;
+    color: var(--text-secondary) !important;
+    display: flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    border-radius: 50% !important;
+    flex-shrink: 0 !important;
+    position: absolute !important;
+    right: 0 !important;
+    top: 50% !important;
+    transform: translateY(-50%) !important;
+    z-index: 3 !important;
+}
+
+.edit-profile-btn:hover {
+    color: white;
+    background-color: #333;
+}
+
+/* Edit profile sidebar */
+.edit-profile-sidebar {
+    position: fixed;
+    top: 0;
+    left: -320px;
+    width: 320px;
+    height: 100vh;
+    background-color: #1c1c1c;
+    z-index: 1000;
+    transition: left 0.3s ease;
+    display: flex;
+    flex-direction: column;
+    padding: 15px;
+    box-sizing: border-box;
+}
+
+.edit-profile-sidebar.active {
+    left: 0;
+}
+
+.edit-profile-header {
+    display: flex;
+    align-items: center;
+    padding: 10px 0;
+    margin-bottom: 20px;
+    border-bottom: 1px solid var(--border-color);
+    height: 40px;
+}
+
+.header-title-wrapper {
+    display: flex;
+    align-items: center;
+    width: 100%;
+    position: relative;
+}
+
+.back-btn {
+    background: transparent;
+    border: none;
+    color: var(--text-secondary);
+    padding: 0;
+    cursor: pointer;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 28px;
+    height: 28px;
+    position: absolute;
+    left: 0;
+    top: 50%;
+    transform: translateY(-50%);
+    z-index: 2;
+}
+
+.back-btn:hover {
+    color: white;
+    background-color: #333;
+}
+
+.back-btn svg {
+    width: 16px;
+    height: 16px;
+}
+
+.edit-profile-header h3 {
+    width: 100%;
+    margin: 0;
+    color: white;
+    font-size: 16px;
+    text-align: center;
+    position: relative;
+    font-weight: normal;
+    z-index: 1;
+}
+
+.edit-profile-content {
+    padding: 15px 0;
+}
+
+.edit-field {
+    margin-bottom: 20px;
+}
+
+.edit-field label {
+    display: block;
+    margin-bottom: 8px;
+    color: var(--text-secondary);
+    font-size: 14px;
+}
+
+.edit-field input,
+.edit-field textarea {
+    width: 100%;
+    padding: 10px;
+    background-color: #2c2c2c;
+    border: 1px solid #444;
+    border-radius: 4px;
+    color: white;
+    font-size: 14px;
+    box-sizing: border-box;
+}
+
+.edit-field textarea {
+    min-height: 100px;
+    height: 150px;
+    resize: none;
+    overflow-y: auto;
+    scrollbar-width: none;
+    -ms-overflow-style: none;
+    color: var(--text-secondary);
+}
+
+.edit-field textarea::-webkit-scrollbar {
+    width: 0;
+    height: 0;
+    display: none;
+}
+
+.edit-field textarea::placeholder {
+    color: var(--text-dimmed);
+}
+
+.save-profile-btn {
+    padding: 10px 20px;
+    background-color: #6b6b6b;
+    color: white;
+    border: none;
+    border-radius: 4px;
+    font-size: 14px;
+    cursor: pointer;
+    width: 100%;
+    margin-top: 15px;
+}
+
+.save-profile-btn:hover {
+    background-color: #5a5a5a;
+}
