@@ -688,6 +688,27 @@ button:hover {
     box-sizing: border-box;
 }
 
+/* Add close button for side menu */
+.close-menu-btn {
+    position: absolute;
+    top: 15px;
+    right: 15px;
+    width: 32px;
+    height: 32px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: var(--text-secondary);
+    cursor: pointer;
+    z-index: 10;
+    border-radius: 50%;
+}
+
+.close-menu-btn:hover {
+    background-color: #333;
+    color: white;
+}
+
 .side-menu.active {
     left: 0; /* При активации сдвигаем меню внутрь экрана */
 }
@@ -891,6 +912,7 @@ button:hover {
     margin-top: auto;
     padding-bottom: 20px;
     position: relative; /* Added for positioning the version text */
+    width: 100%; /* Ensure it spans full width */
 }
 
 .menu-item {
@@ -913,16 +935,18 @@ button:hover {
     text-align: center;
 }
 
-/* Modify logout button to highlight just the text */
+/* Modify logout button to position in bottom left corner */
 .menu-item.logout {
     color: #e74c3c;
-    display: inline-flex; /* Change to inline-flex */
-    padding: 8px 14px; /* Adjust padding to be tighter around text */
-    margin-left: 10px; /* Add some margin to the left */
-    align-items: center; /* Ensure vertical alignment of text */
-    justify-content: center; /* Center text horizontally */
-    position: relative; /* Establish positioning context */
-    z-index: 2; /* Ensure text stays above background */
+    display: inline-flex;
+    padding: 8px 14px;
+    margin-left: 0; /* Remove left margin */
+    position: absolute; /* Position absolutely within menu-items */
+    bottom: 20px; /* Position at bottom with some padding */
+    left: 0; /* Position at left */
+    align-items: center;
+    justify-content: flex-start; /* Align text to left */
+    z-index: 2;
 }
 
 /* Add version text at bottom right */

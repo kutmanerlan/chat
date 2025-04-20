@@ -8,6 +8,7 @@ document.addEventListener('DOMContentLoaded', function() {
     const logoutBtn = document.getElementById('logoutBtn');
     const logoutModal = document.getElementById('logoutModal');
     const cancelLogout = document.getElementById('cancelLogout');
+    const closeMenuBtn = document.getElementById('closeMenuBtn'); // Add this line
     
     // Элементы для работы с аватаром
     const avatarPlaceholder = document.getElementById('avatarPlaceholder');
@@ -1287,6 +1288,14 @@ document.addEventListener('DOMContentLoaded', function() {
     console.log('Обработчики событий установлены');
     
     updateAvatarWithCrossIcon();
+    
+    // Add event listener for the close menu button
+    if (closeMenuBtn) {
+        closeMenuBtn.addEventListener('click', function() {
+            sideMenu.classList.remove('active');
+            overlay.classList.remove('active');
+        });
+    }
 });
 
 // Update the avatar upload icon to be a plus instead of a cross
