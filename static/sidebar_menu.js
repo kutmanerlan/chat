@@ -594,7 +594,7 @@ document.addEventListener('DOMContentLoaded', function() {
                 userAvatar.innerHTML = `<div class="avatar-initials">${user.name.charAt(0)}</div>`;
             }
             
-            // User name
+            // User name - only display name, no additional info
             const userName = document.createElement('div');
             userName.className = 'chat-user-name';
             userName.textContent = user.name;
@@ -1118,9 +1118,10 @@ document.addEventListener('DOMContentLoaded', function() {
                     contactName.className = 'contact-name';
                     contactName.textContent = contact.name;
                     
+                    // Создаем элемент для био информации (вместо времени)
                     const contactBio = document.createElement('div');
                     contactBio.className = 'contact-bio';
-                    contactBio.textContent = contact.bio || 'Нет информации';
+                    contactBio.textContent = contact.bio || ''; // Показываем био если есть, иначе пустая строка
                     
                     // Собираем элемент контакта
                     contactInfo.appendChild(contactName);

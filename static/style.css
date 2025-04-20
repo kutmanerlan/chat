@@ -799,6 +799,7 @@ body {
     display: flex;
     align-items: center;
     width: 100%; /* Позволяет занимать всю доступную ширину */
+    padding-top: 5px; /* Add padding to move username higher */
 }
 
 .edit-profile-btn {
@@ -873,21 +874,14 @@ body {
     color: white;
     font-size: 18px; /* Увеличиваем с 16px до 18px */
     font-weight: 500; /* Делаем шрифт чуть полужирнее */
-    margin-bottom: 5px; /* Добавляем отступ снизу */
+    margin-bottom: 0; /* Remove bottom margin */
     white-space: nowrap; /* Предотвращаем перенос текста */
     overflow: hidden; /* Скрываем выходящий за пределы текст */
     text-overflow: ellipsis; /* Добавляем многоточие для длинного текста */
 }
 
 .user-status {
-    margin: 0;
-    color: #aaa;
-    font-size: 14px; /* Увеличиваем с 13px до 14px */
-    line-height: 1.3; /* Улучшаем читаемость */
-    display: -webkit-box;
-    -webkit-line-clamp: 2; /* Ограничиваем двумя строками */
-    -webkit-box-orient: vertical;
-    overflow: hidden; /* Скрываем выходящий за пределы текст */
+    display: none; /* Hide the user status completely */
 }
 
 /* Стили для боковой панели редактирования профиля */
@@ -1308,6 +1302,7 @@ body {
     border-radius: 2px;
 }
 
+/* Updated contact item styling with padding adjustments */
 .contact-item {
     display: flex;
     align-items: center;
@@ -1316,6 +1311,7 @@ body {
     transition: background-color 0.2s;
     border-radius: 5px;
     margin: 2px 8px;
+    position: relative; /* Added for absolute positioning of child elements */
 }
 
 .contact-item:hover {
@@ -1351,26 +1347,31 @@ body {
     font-weight: bold;
 }
 
+/* Updated contact info positioning */
 .contact-info {
     flex-grow: 1;
     min-width: 0;
+    padding-top: 3px; /* Add padding to move content up a bit */
 }
 
+/* Updated contact name - positioned higher */
 .contact-name {
     font-size: 15px;
     color: white;
-    margin-bottom: 3px;
+    margin-bottom: 4px;
     white-space: nowrap;
     overflow: hidden;
     text-overflow: ellipsis;
 }
 
+/* Updated contact bio - replaces time information with ellipsis for overflow */
 .contact-bio {
     font-size: 13px;
     color: #aaa;
     white-space: nowrap;
     overflow: hidden;
     text-overflow: ellipsis;
+    max-width: 100%;
 }
 
 .no-contacts-message {

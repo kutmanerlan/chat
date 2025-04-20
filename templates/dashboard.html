@@ -59,7 +59,7 @@
         
         <div class="user-info">
           <h3>{{ session.get('user_name', 'User') }}</h3>
-          <p class="user-status">{{ user.bio if user and user.bio else 'Нет информации' }}</p>
+          <!-- Removed user.bio display, leaving empty space -->
         </div>
       </div>
       <!-- Кнопка редактирования профиля -->
