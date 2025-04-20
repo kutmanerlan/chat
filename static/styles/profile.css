@@ -196,11 +196,12 @@
     display: flex !important;
     flex-direction: column !important;
     position: relative !important;
-    padding-top: -5 !important;
+    padding-top: 0 !important;
     width: calc(100% - 110px) !important;
     overflow: hidden !important;
     justify-content: center !important; /* Added to center content vertically */
     height: auto !important; /* Allow height to adjust to content */
+    margin-top: -10px !important; /* Move the entire user info section up */
 }
 
 .side-menu .user-info h3 {
@@ -213,9 +214,9 @@
     text-overflow: ellipsis;
     line-height: 1.4; /* Increased from 1.2 to give more space */
     position: relative;
-    top: 0; /* Changed from -8px to 0 to prevent cutting off */
+    top: -4px !important; /* Move the nickname upward */
     margin-bottom: 5px; /* Increased from 3px for more spacing */
-    padding-top: 4px; /* Add some padding at the top */
+    padding-top: 0; /* Remove top padding */
 }
 
 .side-menu .user-status {
@@ -224,7 +225,7 @@
     color: #888 !important;
     font-size: 14px !important; /* Increased from 13px to 14px */
     position: relative !important;
-    top: 0 !important; /* Changed from -8px to 0 */
+    top: -4px !important; /* Also move the status text upward */
     width: 100% !important; 
     white-space: nowrap !important;
     overflow: hidden !important;
