@@ -201,7 +201,7 @@
     overflow: hidden !important;
     justify-content: center !important; /* Added to center content vertically */
     height: auto !important; /* Allow height to adjust to content */
-    margin-top: -3.5px !important; /* Move the entire user info section up */
+    margin-top: -3px !important; /* Move the entire user info section up */
 }
 
 .side-menu .user-info h3 {
