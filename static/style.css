@@ -1252,7 +1252,7 @@ button:hover {
     text-overflow: ellipsis !important;
     line-height: 1.2 !important;
     position: relative !important;
-    top: 1px !important; /* Increased from -12px to -14px to position higher */
+    top: 3px !important; /* Increased from -12px to -14px to position higher */
     margin-bottom: 18px !important; /* Добавляем отступ до статуса */
 }
 
