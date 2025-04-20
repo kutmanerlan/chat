@@ -1057,7 +1057,7 @@ else:
                     logging.warning("Не удалось обновить схему базы данных, но приложение продолжит работу")
                 
                 # Проверка наличия папки для аватаров
-                if не os.path.exists(app.config['UPLOAD_FOLDER']):
+                if not os.path.exists(app.config['UPLOAD_FOLDER']):
                     os.makedirs(app.config['UPLOAD_FOLDER'], exist_ok=True)
                     logging.info(f"Создана папка для аватаров: {app.config['UPLOAD_FOLDER']}")
                 
