@@ -2909,6 +2909,23 @@ body {
 }
 
 /* Возвращаем имя пользователя в боковой панели на прежнюю высоту */
+.side-menu .user-info h3 {
+    margin: 0;
+    color: white;
+    font-size: 18px;
+    font-weight: 500;
+    margin-bottom: 5px; /* Возвращаем отступ снизу как было раньше */
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+/* При этом сохраняем статус скрытым */
+.side-menu .user-status {
+    display: none !important;
+}
+
+/* Возвращаем имя пользователя в боковой панели на прежнюю высоту */
 .side-menu .user-profile {
     display: flex;
     align-items: center;
