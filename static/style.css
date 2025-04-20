@@ -1219,8 +1219,8 @@ button:hover {
     align-items: center !important;
     width: 100% !important;
     position: relative !important;
-    margin: 0 !important; /* Reset any margins */
-    padding: 0 5px !important; /* Small padding on both sides */
+    margin: 0 !important;
+    padding: 0 !important; /* Remove padding that might cause shifting */
     box-sizing: border-box !important;
 }
 
@@ -1230,7 +1230,7 @@ button:hover {
     height: 60px !important;
     border-radius: 50% !important;
     background-color: #706c6c !important;
-    margin: 0 15px 0 0 !important; /* Only right margin, reset others */
+    margin-right: 15px !important;
     position: relative !important;
     flex-shrink: 0 !important;
     display: flex !important;
@@ -1239,11 +1239,40 @@ button:hover {
     overflow: hidden !important;
 }
 
+/* Ensure image fits properly within the avatar container */
 .side-menu .avatar-placeholder img {
     width: 100% !important;
     height: 100% !important;
     object-fit: cover !important;
-    display: block !important;
+    object-position: center !important; /* Center the image precisely */
+}
+
+/* Fix avatar upload icon position */
+.avatar-upload-icon {
+    position: absolute !important;
+    bottom: 0 !important;
+    right: 0 !important;
+    width: 24px !important;
+    height: 24px !important;
+    background-color: rgba(0, 0, 0, 0.6) !important;
+    border-radius: 50% !important;
+    display: flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    opacity: 0.8 !important;
+    z-index: 2 !important;
+}
+
+/* Fix initials centering in avatar */
+.side-menu .avatar-placeholder .avatar-initials {
+    width: 100% !important;
+    height: 100% !important;
+    display: flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    font-size: 24px !important;
+    font-weight: 500 !important;
+    color: white !important;
 }
 
 /* Ensure consistency for avatar-image class used throughout the app */
