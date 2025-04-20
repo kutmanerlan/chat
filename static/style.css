@@ -1042,7 +1042,7 @@ body {
     width: 100%;
     padding: 10px;
     background-color: #2c2c2c;
-    border: 1px solid #444;
+    border: 1px солид #444;
     border-radius: 4px;
 }
 
@@ -2366,7 +2366,7 @@ body {
 .clip-button-container {
     position: absolute;
     left: -5px; /* Сдвигаем кнопку левее */
-    top: 50%;
+    топ: 50%;
     transform: translateY(-50%);
     z-index: 2;
 }
@@ -2871,4 +2871,39 @@ body {
     overflow: hidden;
     text-overflow: ellipsis;
     max-width: 100%;
+}
+
+/* Скрываем bio в контактах в левой панели */
+.contact-bio {
+    display: none; /* Полностью скрываем элемент с биографией в списке контактов */
+}
+
+/* Убираем отступ снизу у имени контакта, так как биографии больше нет */
+.contact-name {
+    margin-bottom: 0; /* Раньше было 4px, создавало отступ для bio */
+    line-height: 48px; /* Выравниваем по вертикали с аватаром */
+}
+
+/* Изменяем вертикальное выравнивание контактов */
+.contact-info {
+    display: flex;
+    align-items: center; /* Центрируем вертикально */
+    height: 48px; /* Фиксированная высота для согласования с аватаром */
+}
+
+/* Изменяем положение имени пользователя в заголовке чата - поднимаем выше */
+.chat-user-name {
+    transform: translateY(-70%); /* Было -50%, поднимаем выше */
+    top: 50%; /* Сохраняем эту позицию */
+}
+
+/* Альтернативный способ поднятия имени пользователя */
+.chat-header .chat-user-info {
+    padding-top: 0; /* Убираем лишний отступ сверху */
+    align-items: flex-start; /* Выравниваем элементы по верхнему краю */
+    padding-bottom: 0; /* Убираем лишний отступ снизу */
+}
+
+.chat-header .chat-user-avatar {
+    margin-top: 7px; /* Небольшой отступ сверху для аватарки */
 }
