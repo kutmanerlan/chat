@@ -2671,3 +2671,148 @@ body {
     overflow: hidden;
     text-overflow: ellipsis;
 }
+
+/* РАДИКАЛЬНОЕ РЕШЕНИЕ: УДАЛЯЕМ СТАРЫЕ СТИЛИ */
+/* Удаляем все старые стили, связанные со статусом пользователя */
+
+/* НОВЫЕ СТИЛИ ДЛЯ БОКОВОГО МЕНЮ */
+/* Контейнер пользовательской информации в боковом меню */
+.side-menu .user-profile {
+    display: flex;
+    align-items: center;
+    width: 100%;
+    padding-top: 0;
+    margin-bottom: 10px;
+}
+
+/* Аватар пользователя в боковом меню */
+.side-menu .avatar-placeholder {
+    width: 60px;
+    height: 60px;
+    border-radius: 50%;
+    background-color: #706c6c;
+    margin-right: 15px;
+    position: relative;
+    cursor: pointer;
+    overflow: hidden;
+    flex-shrink: 0;
+}
+
+/* Информация о пользователе в боковом меню */
+.side-menu .user-info {
+    flex-grow: 1;
+    min-width: 0;
+    padding-right: 5px;
+    display: flex;
+    flex-direction: column;
+}
+
+/* Имя пользователя в боковом меню */
+.side-menu .user-info h3 {
+    margin: 0;
+    color: white;
+    font-size: 18px;
+    font-weight: 500;
+    margin-bottom: 5px; /* Добавляем отступ для статуса */
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+/* Статус пользователя в боковом меню - ЯВНО ПОКАЗЫВАЕМ */
+.side-menu .user-status {
+    display: block !important; /* Принудительно показываем */
+    color: #888;
+    font-size: 14px;
+    margin: 0;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    max-width: 100%;
+    visibility: visible !important;
+    position: static !important;
+    height: auto !important;
+    width: auto !important;
+    opacity: 1 !important;
+}
+
+/* НОВЫЕ СТИЛИ ДЛЯ ЗАГОЛОВКА ЧАТА */
+/* Структура заголовка чата */
+.chat-header {
+    position: relative;
+    height: 60px;
+    background-color: #212121;
+    display: flex;
+    align-items: center;
+    padding: 0 16px;
+    border-bottom: 1px solid #333;
+    box-sizing: border-box;
+}
+
+/* Информация о пользователе в чате */
+.chat-header .chat-user-info {
+    display: flex;
+    align-items: center;
+    flex-grow: 1;
+    max-width: calc(100% - 60px);
+    height: 100%;
+}
+
+/* Аватар пользователя в чате */
+.chat-header .chat-user-avatar {
+    width: 45px;
+    height: 45px;
+    border-radius: 50%;
+    background-color: #555;
+    margin-right: 12px;
+    overflow: hidden;
+    position: relative;
+    flex-shrink: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+/* Имя пользователя в чате */
+.chat-header .chat-user-name {
+    color: white;
+    font-size: 17px;
+    font-weight: 500;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    max-width: calc(100% - 57px);
+}
+
+/* Полностью скрываем элемент user-status ТОЛЬКО в чате */
+.chat-header .user-status,
+.chat-header .chat-user-status,
+.chat-header .status-text {
+    display: none !important;
+}
+
+/* УДАЛЯЕМ глобальное правило, которое скрывает все статусы пользователя */
+/* Следующие правила нужно удалить или закомментировать: */
+/*
+.user-status {
+    display: none !important;
+}
+
+.user-status, 
+.chat-user-status, 
+.status-text,
+.user-bio,
+.chat-bio {
+    display: none !important;
+    visibility: hidden !important;
+    height: 0 !important;
+    width: 0 !important;
+    opacity: 0 !important;
+    position: absolute !important;
+    overflow: hidden !important;
+    clip: rect(0, 0, 0, 0) !important;
+    margin: -1px !important;
+    padding: 0 !important;
+    border: 0 !important;
+}
+*/

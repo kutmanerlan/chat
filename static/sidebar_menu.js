@@ -49,19 +49,24 @@ document.addEventListener('DOMContentLoaded', function() {
         })
         .then(data => {
             if (data.user_name) {
+                console.log("Обновляем информацию пользователя:", data);
+                
                 // Обновляем имя пользователя
                 const userNameElements = document.querySelectorAll('.user-info h3');
                 userNameElements.forEach(el => {
                     el.textContent = data.user_name;
                 });
                 
-                // Восстанавливаем обновление статуса пользователя
-                const userStatusElements = document.querySelectorAll('.user-status');
+                // Обновляем статус пользователя - БОЛЕЕ ТОЧНО ВЫБИРАЕМ ЭЛЕМЕНТЫ
+                const userStatusElements = document.querySelectorAll('.side-menu .user-status');
                 userStatusElements.forEach(el => {
                     el.textContent = data.bio || 'Нет информации';
+                    // Убедимся, что элемент видим
+                    el.style.display = 'block';
+                    el.style.visibility = 'visible';
                 });
                 
-                // Также обновляем информацию в форме редактирования
+                // Также обновляем форму редактирования
                 const profileNameInput = document.getElementById('profileName');
                 const profileBioInput = document.getElementById('profileBio');
                 
@@ -323,15 +328,21 @@ document.addEventListener('DOMContentLoaded', function() {
             .then(response => response.json())
             .then(data => {
                 if (data.success) {
-                    // Обновляем информацию о пользователе на странице
+                    console.log("Профиль обновлен успешно:", data);
+                    
+                    // Обновляем имя пользователя на странице
                     const userNameElements = document.querySelectorAll('.user-info h3');
                     userNameElements.forEach(el => {
                         el.textContent = data.user_name;
                     });
                     
-                    const userStatusElements = document.querySelectorAll('.user-status');
+                    // Обновляем статус пользователя - БОЛЕЕ ТОЧНО ВЫБИРАЕМ ЭЛЕМЕНТЫ
+                    const userStatusElements = document.querySelectorAll('.side-menu .user-status');
                     userStatusElements.forEach(el => {
                         el.textContent = data.bio || 'Нет информации';
+                        // Убедимся, что элемент видим
+                        el.style.display = 'block';
+                        el.style.visibility = 'visible';
                     });
                     
                     // Закрываем панель редактирования
