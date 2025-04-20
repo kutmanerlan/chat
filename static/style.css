@@ -724,7 +724,7 @@ button:hover {
     align-items: center;
     padding: 15px 0;
     margin-bottom: 20px;
-    border-bottom: 1px solid var(--border-color);
+    border-bottom: 1px solid #333;
 }
 
 /* Side menu styles - adjust user profile layout */
@@ -756,15 +756,12 @@ button:hover {
 .side-menu .user-info {
     flex-grow: 1;
     min-width: 0;
-    padding-right: 5px;
     display: flex;
     flex-direction: column;
-    height: 60px;
-    padding-top: 0; /* Changed from 10px to 0 */
-    justify-content: center; /* Added to center vertically */
-    position: relative; /* Added for positioning */
+    position: relative;
 }
 
+/* Стили для имени пользователя - позиционирование выше */
 .side-menu .user-info h3 {
     margin: 0;
     color: white;
@@ -774,27 +771,31 @@ button:hover {
     overflow: hidden;
     text-overflow: ellipsis;
     line-height: 1.2;
-    position: absolute;
-    top: 8px; /* Move the username higher */
+    position: relative;
+    top: -10px; /* Сдвигаем имя вверх */
+    margin-bottom: 18px; /* Добавляем отступ до статуса */
 }
 
-/* Clean up the empty space after user info */
-.side-menu .user-info::after {
-    display: none; /* Убираем пустое пространство */
-}
-
-/* Properly hide user status */
+/* Стили для статуса пользователя */
 .side-menu .user-status {
-    display: block !important;
-    visibility: visible !important;
+    margin: 0;
+    padding: 0;
     color: #888;
     font-size: 13px;
-    position: absolute;
-    top: 32px; /* Располагаем статус под именем */
+    position: relative;
+    top: -8px; /* Сдвигаем статус вверх тоже */
     width: 100%;
     white-space: nowrap;
     overflow: hidden;
     text-overflow: ellipsis;
+    display: block;
+    visibility: visible;
+}
+
+/* Отключаем псевдоэлемент, который создавал лишнее пространство */
+.side-menu .user-info::after {
+    display: none;
+    content: none;
 }
 
 .user-profile {
