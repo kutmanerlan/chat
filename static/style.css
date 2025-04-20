@@ -1213,33 +1213,37 @@ button:hover {
     border-bottom: 1px solid #333 !important;
 }
 
+/* Fix the alignment of the user profile container */
 .side-menu .user-profile {
     display: flex !important;
     align-items: center !important;
     width: 100% !important;
     position: relative !important;
-    padding-left: 5px !important; /* Add left padding to fix alignment */
+    margin: 0 !important; /* Reset any margins */
+    padding: 0 5px !important; /* Small padding on both sides */
+    box-sizing: border-box !important;
 }
 
+/* Fix the avatar placeholder position and spacing */
 .side-menu .avatar-placeholder {
     width: 60px !important;
     height: 60px !important;
     border-radius: 50% !important;
     background-color: #706c6c !important;
-    margin-right: 15px !important;
+    margin: 0 15px 0 0 !important; /* Only right margin, reset others */
     position: relative !important;
     flex-shrink: 0 !important;
-    display: flex !important; /* Ensure flex display */
-    align-items: center !important; /* Center vertically */
-    justify-content: center !important; /* Center horizontally */
+    display: flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    overflow: hidden !important;
 }
 
-/* Make sure images inside avatar are properly centered */
 .side-menu .avatar-placeholder img {
     width: 100% !important;
     height: 100% !important;
     object-fit: cover !important;
-    display: block !important; /* Ensure block display */
+    display: block !important;
 }
 
 /* Ensure consistency for avatar-image class used throughout the app */
