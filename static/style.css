@@ -2932,9 +2932,9 @@ body {
 /* Возвращаем имя пользователя в боковой панели на прежнюю высоту */
 .side-menu .user-profile {
     display: flex;
-    align-items: center;
+    align-items: flex-start;
     width: 100%;
-    padding-top: 0; /* Убираем верхний отступ */
+    padding-top: 10; /* Убираем верхний отступ */
     margin-bottom: 10px;
 }
 
