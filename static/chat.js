@@ -1127,13 +1127,19 @@ function removeFromContacts(userId) {
     const dropdown = document.querySelector('.chat-dropdown-menu');
     if (dropdown) {
       dropdown.innerHTML = `
-        <div class="dropdown-item add-contact" data-user-id="${userId}">
-          Add to contacts
+        <div class="dropdown-option" id="addContactOption">
+          <div class="dropdown-option-icon">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <path d="M12 5v14"></path>
+              <path d="M5 12h14"></path>
+            </svg>
+          </div>
+          <div class="dropdown-option-label">Add to contacts</div>
         </div>
       `;
       
       // Update event handler
-      dropdown.querySelector('.add-contact').addEventListener('click', function(e) {
+      document.getElementById('addContactOption').addEventListener('click', function(e) {
         e.stopPropagation();
         const userName = document.querySelector('.chat-user-name').textContent;
         addToContacts(userId, userName);
@@ -1141,7 +1147,8 @@ function removeFromContacts(userId) {
       });
     }
     
-    showSuccessNotification('Contact removed');
+    // Use a special class for remove contact notifications
+    showNotification('Contact removed', 'remove-contact');
     return data;
   })
   .catch(error => {
@@ -1508,10 +1515,13 @@ function updateProfile(formData) {
 }
 
 /**
- * Show success notification
+ * Show a notification message
+ * @param {string} message - The message to display
+ * @param {string} type - The notification type ('success', 'error', 'info', 'remove-contact')
+ * @param {number} duration - How long to show the notification in ms
  */
-function showSuccessNotification(message, duration = 3000) {
-  const notification = createNotification(message, 'success');
+function showNotification(message, type, duration = 3000) {
+  const notification = createNotification(message, type);
   document.body.appendChild(notification);
   
   setTimeout(() => {
@@ -1521,16 +1531,17 @@ function showSuccessNotification(message, duration = 3000) {
 }
 
 /**
+ * Show success notification
+ */
+function showSuccessNotification(message, duration = 3000) {
+  showNotification(message, 'success', duration);
+}
+
+/**
  * Show error notification
  */
 function showErrorNotification(message, duration = 5000) {
-  const notification = createNotification(message, 'error');
-  document.body.appendChild(notification);
-  
-  setTimeout(() => {
-    notification.classList.add('hide');
-    setTimeout(() => notification.remove(), 300);
-  }, duration);
+  showNotification(message, 'error', duration);
 }
 
 /**
