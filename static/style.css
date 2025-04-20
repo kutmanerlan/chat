@@ -919,6 +919,10 @@ button:hover {
     display: inline-flex; /* Change to inline-flex */
     padding: 8px 14px; /* Adjust padding to be tighter around text */
     margin-left: 10px; /* Add some margin to the left */
+    align-items: center; /* Ensure vertical alignment of text */
+    justify-content: center; /* Center text horizontally */
+    position: relative; /* Establish positioning context */
+    z-index: 2; /* Ensure text stays above background */
 }
 
 /* Add version text at bottom right */
@@ -1298,7 +1302,7 @@ button:hover {
     flex-direction: column !important;
     position: relative !important;
     padding-top: 16px !important;
-    width: calc(100% - 75px) !important; /* Adjusted width to leave space for the edit button */
+    width: calc(100% - 110px) !important; /* Fixed width calculation accounting for avatar and edit button */
     overflow: hidden !important; /* Ensure content doesn't overflow */
 }
 
@@ -1324,54 +1328,6 @@ button:hover {
     z-index: 3 !important; /* Ensure it stays on top */
 }
 
-/* ПОЛНОСТЬЮ ПЕРЕОПРЕДЕЛЕННЫЕ СТИЛИ ДЛЯ ПРОФИЛЯ В БОКОВОМ МЕНЮ */
-.side-menu .user-profile-header {
-    display: flex !important;
-    justify-content: space-between !important;
-    align-items: center !important;
-    padding: 15px 0 !important;
-    margin-bottom: 20px !important;
-    border-bottom: 1px solid #333 !important;
-}
-
-/* Fix the alignment of the user profile container */
-.side-menu .user-profile {
-    display: flex !important;
-    align-items: center !important;
-    width: 100% !important;
-    position: relative !important;
-    margin: 0 !important;
-    padding: 0 !important; /* Remove padding that might cause shifting */
-    box-sizing: border-box !important;
-}
-
-/* Fix user info container with proper width constraints */
-.side-menu .user-info {
-    flex-grow: 1 !important;
-    min-width: 0 !important; /* Allow the container to shrink below its content size */
-    display: flex !important;
-    flex-direction: column !important;
-    position: relative !important;
-    padding-top: 16px !important;
-    width: calc(100% - 110px) !important; /* Fixed width calculation accounting for avatar and edit button */
-    overflow: hidden !important; /* Ensure content doesn't overflow */
-}
-
-/* Стили для имени пользователя - позиционирование */
-.side-menu .user-info h3 {
-    margin: 0 !important;
-    color: white !important;
-    font-size: 16px !important;
-    font-weight: 500 !important;
-    white-space: nowrap !important;
-    overflow: hidden !important;
-    text-overflow: ellipsis !important;
-    line-height: 1.2 !important;
-    position: static !important;
-    top: auto !important;
-    margin-bottom: 7px !important;
-}
-
 /* Fix status text to properly truncate with ellipsis */
 .side-menu .user-status {
     margin: 0 !important;
@@ -1386,27 +1342,7 @@ button:hover {
     text-overflow: ellipsis !important;
     display: block !important;
     visibility: visible !important;
-}
-
-/* Fix edit profile button with fixed position */
-.edit-profile-btn {
-    width: 38px !important;
-    height: 38px !important;
-    padding: 0 !important;
-    margin-left: 10px !important;
-    background: transparent !important;
-    border: none !important;
-    cursor: pointer !important;
-    color: var(--text-secondary) !important;
-    display: flex !important;
-    align-items: center !important;
-    justify-content: center !important;
-    border-radius: 50% !important;
-    flex-shrink: 0 !important;
-    position: absolute !important; /* Position it absolutely */
-    right: 0 !important; /* Align to the right of the container */
-    top: 50% !important; /* Center vertically */
-    transform: translateY(-50%) !important; /* Adjust for perfect centering */
+    max-width: 180px !important; /* Add maximum width to ensure shorter text display */
 }
 
 /* Fix the avatar placeholder position and spacing */
