@@ -1440,9 +1440,19 @@ function updateAvatarWithCrossIcon() {
 let currentUserId = null;
 
 // Fix loadMessageHistory function to properly load messages
-function loadMessageHistory(userId, chatMessages, loadingIndicator) {
-    // Log the current user ID to debug the sent/received message logic
+function loadMessageHistory(userId, chatMessages) {
     console.log("Loading messages between current user (" + currentUserId + ") and user " + userId);
+    
+    // Clear existing content and add loading indicator
+    chatMessages.innerHTML = '';
+    
+    const loadingIndicator = document.createElement('div');
+    loadingIndicator.className = 'loading-messages';
+    loadingIndicator.textContent = 'Загрузка сообщений...';
+    loadingIndicator.style.textAlign = 'center';
+    loadingIndicator.style.padding = '20px';
+    loadingIndicator.style.color = '#888';
+    chatMessages.appendChild(loadingIndicator);
     
     fetch(`/get_messages?user_id=${userId}`, {
         method: 'GET',
@@ -1454,16 +1464,8 @@ function loadMessageHistory(userId, chatMessages, loadingIndicator) {
     .then(data => {
         console.log("Message data received:", data);
         
-        // Remove loading indicator if it exists
-        if (loadingIndicator && loadingIndicator.parentNode === chatMessages) {
-            chatMessages.removeChild(loadingIndicator);
-        } else {
-            // Clear any existing "no messages" placeholder
-            const noMessages = chatMessages.querySelector('.no-messages');
-            if (noMessages) {
-                chatMessages.removeChild(noMessages);
-            }
-        }
+        // Clear chat messages area including loading indicator
+        chatMessages.innerHTML = '';
         
         if (data.success && data.messages && data.messages.length > 0) {
             // Create container for messages
@@ -1476,12 +1478,11 @@ function loadMessageHistory(userId, chatMessages, loadingIndicator) {
                 const messageEl = document.createElement('div');
                 
                 // Determine if this is a sent or received message
-                // Use double equals (==) not triple equals (===) for type coercion since IDs might be string vs number
-                const isSent = message.sender_id == currentUserId;
+                const isSent = parseInt(message.sender_id) === parseInt(currentUserId);
                 messageEl.className = `message ${isSent ? 'message-sent' : 'message-received'}`;
                 messageEl.dataset.messageId = message.id;
                 
-                console.log(`Message ${message.id}: sender=${message.sender_id}, current=${currentUserId}, isSent=${isSent}`);
+                console.log(`Message ${message.id}: sender=${message.sender_id} (${typeof message.sender_id}), current=${currentUserId} (${typeof currentUserId}), isSent=${isSent}`);
                 
                 // Format timestamp
                 const timestamp = new Date(message.timestamp);
@@ -1509,15 +1510,12 @@ function loadMessageHistory(userId, chatMessages, loadingIndicator) {
     })
     .catch(error => {
         console.error('Error loading messages:', error);
-        // Remove loading indicator if it exists
-        if (loadingIndicator && loadingIndicator.parentNode === chatMessages) {
-            chatMessages.removeChild(loadingIndicator);
-        }
         
-        // Show error message
+        // Clear and show error message
+        chatMessages.innerHTML = '';
         const errorMsg = document.createElement('div');
         errorMsg.className = 'messages-error';
-        errorMsg.textContent = 'Failed to load messages. Please try again.';
+        errorMsg.textContent = 'Не удалось загрузить сообщения. Попробуйте снова.';
         errorMsg.style.color = '#e57373';
         errorMsg.style.textAlign = 'center';
         errorMsg.style.padding = '20px';
@@ -1525,7 +1523,7 @@ function loadMessageHistory(userId, chatMessages, loadingIndicator) {
     });
 }
 
-// Modified createChatInterface function to properly handle loading indicator
+// Modified createChatInterface function that correctly handles chat initialization
 function createChatInterface(user) {
     console.log("Creating chat interface for user:", user);
     
@@ -1542,7 +1540,7 @@ function createChatInterface(user) {
     const chatHeader = document.createElement('div');
     chatHeader.className = 'chat-header';
     
-    // User info with correct horizontal layout
+    // User info
     const userInfo = document.createElement('div');
     userInfo.className = 'chat-user-info';
     
@@ -1576,18 +1574,9 @@ function createChatInterface(user) {
         </svg>
     `;
     
-    // Messages area
+    // Messages area - just create the container, loadMessageHistory will handle the content
     const chatMessages = document.createElement('div');
     chatMessages.className = 'chat-messages';
-    
-    // Add loading indicator
-    const loadingIndicator = document.createElement('div');
-    loadingIndicator.className = 'loading-messages';
-    loadingIndicator.textContent = 'Loading messages...';
-    loadingIndicator.style.textAlign = 'center';
-    loadingIndicator.style.padding = '20px';
-    loadingIndicator.style.color = '#888';
-    chatMessages.appendChild(loadingIndicator);
     
     // Input container
     const messageInputContainer = document.createElement('div');
@@ -1677,9 +1666,9 @@ function createChatInterface(user) {
         inputField.focus();
     }, 0);
     
-    // Load message history - make sure loadingIndicator is passed
+    // Load message history - no longer passing loadingIndicator
     console.log("Loading message history for user ID:", user.id);
-    loadMessageHistory(user.id, chatMessages, loadingIndicator);
+    loadMessageHistory(user.id, chatMessages);
 }
 
 // Add a function to load recent conversations in the sidebar
@@ -1813,7 +1802,7 @@ function loadRecentConversations() {
     });
 }
 
-// Modified sendTextMessage function that shows the message in UI after server confirms success
+// Modified sendTextMessage function that properly updates the UI
 function sendTextMessage(inputField, chatMessages, user) {
     const messageText = inputField.value.trim();
     if (messageText) {
@@ -1840,10 +1829,10 @@ function sendTextMessage(inputField, chatMessages, user) {
             console.log("Server response:", data);
             
             if (data.success) {
-                // Get or create messages container
+                // Find or create messages container
                 let messagesContainer = chatMessages.querySelector('.messages-container');
                 
-                // Remove "No messages" if it exists
+                // Handle missing messages container or no messages placeholder
                 const noMessages = chatMessages.querySelector('.no-messages');
                 if (noMessages) {
                     chatMessages.removeChild(noMessages);
@@ -1851,8 +1840,7 @@ function sendTextMessage(inputField, chatMessages, user) {
                     messagesContainer.className = 'messages-container';
                     chatMessages.appendChild(messagesContainer);
                 }
-                
-                if (!messagesContainer) {
+                else if (!messagesContainer) {
                     messagesContainer = document.createElement('div');
                     messagesContainer.className = 'messages-container';
                     chatMessages.appendChild(messagesContainer);

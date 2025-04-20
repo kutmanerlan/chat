@@ -923,7 +923,7 @@ def get_messages():
         other_user_id = request.args.get('user_id')
         
         if not other_user_id:
-            return jsonify({'error': 'User ID is required'}), 400
+            return jsonify({'error': 'Missing user_id parameter'}), 400
         
         # Query messages between the two users (in both directions)
         messages = Message.query.filter(
@@ -952,7 +952,7 @@ def get_messages():
         })
     except Exception as e:
         logging.error(f"Error retrieving messages: {str(e)}")
-        return jsonify({'error': 'Server error'}), 500
+        return jsonify({'error': str(e), 'success': False}), 500
 
 # Route for getting recent conversations (users you've messaged with)
 @app.route('/get_recent_conversations')
