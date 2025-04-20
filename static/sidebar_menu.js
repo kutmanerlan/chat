@@ -1096,6 +1096,9 @@ document.addEventListener('DOMContentLoaded', function() {
                         if (sendButton) {
                             sendButton.classList.remove('active');
                         }
+                        
+                        // Refresh the conversations list
+                        loadRecentConversations();
                     } else {
                         console.error('Error sending message:', data.error);
                         alert('Failed to send message. Please try again.');
@@ -1402,6 +1405,9 @@ document.addEventListener('DOMContentLoaded', function() {
             overlay.classList.remove('active');
         });
     }
+    
+    // Load recent conversations
+    loadRecentConversations();
 });
 
 // Update the avatar upload icon to be a plus instead of a cross
@@ -1433,7 +1439,93 @@ function updateAvatarWithCrossIcon() {
 // Add a variable to store current user ID for message comparison
 let currentUserId = null;
 
-// Modified function for creating chat interface - consolidate the duplicate implementations
+// Fix loadMessageHistory function to properly load messages
+function loadMessageHistory(userId, chatMessages, loadingIndicator) {
+    // Log the current user ID to debug the sent/received message logic
+    console.log("Loading messages between current user (" + currentUserId + ") and user " + userId);
+    
+    fetch(`/get_messages?user_id=${userId}`, {
+        method: 'GET',
+        headers: {
+            'Content-Type': 'application/json'
+        }
+    })
+    .then(response => response.json())
+    .then(data => {
+        console.log("Message data received:", data);
+        
+        // Remove loading indicator if it exists
+        if (loadingIndicator && loadingIndicator.parentNode === chatMessages) {
+            chatMessages.removeChild(loadingIndicator);
+        } else {
+            // Clear any existing "no messages" placeholder
+            const noMessages = chatMessages.querySelector('.no-messages');
+            if (noMessages) {
+                chatMessages.removeChild(noMessages);
+            }
+        }
+        
+        if (data.success && data.messages && data.messages.length > 0) {
+            // Create container for messages
+            const messagesContainer = document.createElement('div');
+            messagesContainer.className = 'messages-container';
+            chatMessages.appendChild(messagesContainer);
+            
+            // Add each message
+            data.messages.forEach(message => {
+                const messageEl = document.createElement('div');
+                
+                // Determine if this is a sent or received message
+                // Use double equals (==) not triple equals (===) for type coercion since IDs might be string vs number
+                const isSent = message.sender_id == currentUserId;
+                messageEl.className = `message ${isSent ? 'message-sent' : 'message-received'}`;
+                messageEl.dataset.messageId = message.id;
+                
+                console.log(`Message ${message.id}: sender=${message.sender_id}, current=${currentUserId}, isSent=${isSent}`);
+                
+                // Format timestamp
+                const timestamp = new Date(message.timestamp);
+                const hours = String(timestamp.getHours()).padStart(2, '0');
+                const minutes = String(timestamp.getMinutes()).padStart(2, '0');
+                
+                // Add message content
+                messageEl.innerHTML = `
+                    <div class="message-content">${message.content}</div>
+                    <div class="message-time">${hours}:${minutes}</div>
+                `;
+                
+                messagesContainer.appendChild(messageEl);
+            });
+            
+            // Scroll to bottom
+            chatMessages.scrollTop = chatMessages.scrollHeight;
+        } else {
+            // Show "No messages" placeholder
+            const noMessages = document.createElement('div');
+            noMessages.className = 'no-messages';
+            noMessages.textContent = 'Нет сообщений';
+            chatMessages.appendChild(noMessages);
+        }
+    })
+    .catch(error => {
+        console.error('Error loading messages:', error);
+        // Remove loading indicator if it exists
+        if (loadingIndicator && loadingIndicator.parentNode === chatMessages) {
+            chatMessages.removeChild(loadingIndicator);
+        }
+        
+        // Show error message
+        const errorMsg = document.createElement('div');
+        errorMsg.className = 'messages-error';
+        errorMsg.textContent = 'Failed to load messages. Please try again.';
+        errorMsg.style.color = '#e57373';
+        errorMsg.style.textAlign = 'center';
+        errorMsg.style.padding = '20px';
+        chatMessages.appendChild(errorMsg);
+    });
+}
+
+// Modified createChatInterface function to properly handle loading indicator
 function createChatInterface(user) {
     console.log("Creating chat interface for user:", user);
     
@@ -1585,79 +1677,139 @@ function createChatInterface(user) {
         inputField.focus();
     }, 0);
     
-    // Load message history
+    // Load message history - make sure loadingIndicator is passed
+    console.log("Loading message history for user ID:", user.id);
     loadMessageHistory(user.id, chatMessages, loadingIndicator);
 }
 
-// Function to load message history
-function loadMessageHistory(userId, chatMessages, loadingIndicator) {
-    fetch(`/get_messages?user_id=${userId}`, {
+// Add a function to load recent conversations in the sidebar
+function loadRecentConversations() {
+    fetch('/get_recent_conversations', {
         method: 'GET',
         headers: {
-            'Content-Type': 'application/json'
+            'Cache-Control': 'no-cache, no-store, must-revalidate',
+            'Pragma': 'no-cache',
+            'Expires': '0'
         }
     })
-    .then(response => response.json())
+    .then(response => {
+        if (!response.ok) {
+            throw new Error('Network response was not ok');
+        }
+        return response.json();
+    })
     .then(data => {
-        // Remove loading indicator if it exists
-        if (loadingIndicator && loadingIndicator.parentNode === chatMessages) {
-            chatMessages.removeChild(loadingIndicator);
+        const contactsList = document.getElementById('contactsList');
+        
+        // Create a section for recent conversations if it doesn't exist
+        let conversationsSection = document.querySelector('.conversations-section');
+        if (!conversationsSection) {
+            conversationsSection = document.createElement('div');
+            conversationsSection.className = 'conversations-section';
+            
+            const sectionTitle = document.createElement('div');
+            sectionTitle.className = 'section-title';
+            sectionTitle.textContent = 'Недавние чаты';
+            
+            conversationsSection.appendChild(sectionTitle);
+            
+            // Insert at the beginning of the contacts list
+            if (contactsList.firstChild) {
+                contactsList.insertBefore(conversationsSection, contactsList.firstChild);
+            } else {
+                contactsList.appendChild(conversationsSection);
+            }
         }
         
-        if (data.success && data.messages && data.messages.length > 0) {
-            // Create container for messages
-            const messagesContainer = document.createElement('div');
-            messagesContainer.className = 'messages-container';
-            chatMessages.appendChild(messagesContainer);
+        // Clear existing conversations
+        Array.from(conversationsSection.children).forEach(child => {
+            if (!child.classList.contains('section-title')) {
+                conversationsSection.removeChild(child);
+            }
+        });
+        
+        if (data.conversations && data.conversations.length > 0) {
+            // Hide the no contacts message
+            const noContactsMessage = document.querySelector('.no-contacts-message');
+            if (noContactsMessage) {
+                noContactsMessage.style.display = 'none';
+            }
             
-            // Add each message
-            data.messages.forEach(message => {
-                const messageEl = document.createElement('div');
+            // Add each conversation to the sidebar
+            data.conversations.forEach(conversation => {
+                const conversationItem = document.createElement('div');
+                conversationItem.className = 'contact-item conversation-item';
+                conversationItem.dataset.userId = conversation.user_id;
                 
-                // Determine if this is a sent or received message
-                const isSent = message.sender_id == currentUserId;
-                messageEl.className = `message ${isSent ? 'message-sent' : 'message-received'}`;
-                messageEl.dataset.messageId = message.id;
+                // Create avatar
+                const userAvatar = document.createElement('div');
+                userAvatar.className = 'contact-avatar';
                 
-                // Format timestamp
-                const timestamp = new Date(message.timestamp);
-                const hours = String(timestamp.getHours()).padStart(2, '0');
-                const minutes = String(timestamp.getMinutes()).padStart(2, '0');
+                if (conversation.avatar_path) {
+                    userAvatar.innerHTML = `<img src="${conversation.avatar_path}" alt="${conversation.name}">`;
+                } else {
+                    userAvatar.innerHTML = `<div class="avatar-initials">${conversation.name.charAt(0)}</div>`;
+                }
                 
-                // Add message content
-                messageEl.innerHTML = `
-                    <div class="message-content">${message.content}</div>
-                    <div class="message-time">${hours}:${minutes}</div>
-                `;
+                // Create user info
+                const userInfo = document.createElement('div');
+                userInfo.className = 'contact-info';
                 
-                messagesContainer.appendChild(messageEl);
+                const userName = document.createElement('div');
+                userName.className = 'contact-name';
+                userName.textContent = conversation.name;
+                
+                // Create last message preview
+                const lastMessage = document.createElement('div');
+                lastMessage.className = 'last-message';
+                
+                // Show a snippet of the last message
+                let messagePreview = conversation.last_message;
+                if (messagePreview.length > 25) {
+                    messagePreview = messagePreview.substring(0, 25) + '...';
+                }
+                lastMessage.textContent = messagePreview;
+                
+                // Add unread indicator if there are unread messages
+                if (conversation.unread_count > 0) {
+                    const unreadBadge = document.createElement('div');
+                    unreadBadge.className = 'unread-badge';
+                    unreadBadge.textContent = conversation.unread_count;
+                    conversationItem.appendChild(unreadBadge);
+                }
+                
+                // Assemble the conversation item
+                userInfo.appendChild(userName);
+                userInfo.appendChild(lastMessage);
+                
+                conversationItem.appendChild(userAvatar);
+                conversationItem.appendChild(userInfo);
+                
+                // Add click handler to open chat
+                conversationItem.addEventListener('click', function() {
+                    // Open chat with this user
+                    openChat(conversation.user_id, conversation.name);
+                    
+                    // Highlight this conversation
+                    document.querySelectorAll('.contact-item').forEach(item => {
+                        item.classList.remove('active');
+                    });
+                    conversationItem.classList.add('active');
+                    
+                    // Remove unread badge
+                    const badge = conversationItem.querySelector('.unread-badge');
+                    if (badge) {
+                        conversationItem.removeChild(badge);
+                    }
+                });
+                
+                // Add to conversations section
+                conversationsSection.appendChild(conversationItem);
             });
-            
-            // Scroll to bottom
-            chatMessages.scrollTop = chatMessages.scrollHeight;
-        } else {
-            // Show "No messages" placeholder
-            const noMessages = document.createElement('div');
-            noMessages.className = 'no-messages';
-            noMessages.textContent = 'Нет сообщений';
-            chatMessages.appendChild(noMessages);
         }
     })
     .catch(error => {
-        console.error('Error loading messages:', error);
-        // Remove loading indicator if it exists
-        if (loadingIndicator && loadingIndicator.parentNode === chatMessages) {
-            chatMessages.removeChild(loadingIndicator);
-        }
-        
-        // Show error message
-        const errorMsg = document.createElement('div');
-        errorMsg.className = 'messages-error';
-        errorMsg.textContent = 'Failed to load messages. Please try again.';
-        errorMsg.style.color = '#e57373';
-        errorMsg.style.textAlign = 'center';
-        errorMsg.style.padding = '20px';
-        chatMessages.appendChild(errorMsg);
+        console.error('Error loading recent conversations:', error);
     });
 }
 
@@ -1737,6 +1889,9 @@ function sendTextMessage(inputField, chatMessages, user) {
                 if (sendButton) {
                     sendButton.classList.remove('active');
                 }
+                
+                // Refresh the conversations list
+                loadRecentConversations();
             } else {
                 console.error('Error sending message:', data.error || 'Unknown error');
                 alert('Failed to send message. Please try again.');
