@@ -829,7 +829,7 @@ button:hover {
 .side-menu .user-info h3 {
     margin: 0;
     color: white;
-    font-size: 18px; /* Increased from 16px to 18px */
+    font-size: 16px;
     font-weight: 500;
     white-space: nowrap;
     overflow: hidden;
@@ -837,7 +837,7 @@ button:hover {
     line-height: 1.2;
     position: static; /* Убираем относительное позиционирование */
     top: auto; /* Убираем сдвиг вверх */
-    margin-bottom: 5px; /* Increased from 3px to 5px to add more space between name and status */
+    margin-bottom: 3px; /* Небольшой отступ до статуса */
 }
 
 /* Стили для статуса пользователя */
@@ -1315,7 +1315,7 @@ button:hover {
     display: flex !important;
     justify-content: space-between !important;
     align-items: center !important;
-    padding: 20px 0 !important; /* Increased from 15px to 20px for more vertical space */
+    padding: 15px 0 !important;
     margin-bottom: 20px !important;
     border-bottom: 1px solid #333 !important;
     position: relative !important; /* Ensure it creates a positioning context */
@@ -1385,8 +1385,8 @@ button:hover {
 
 /* Fix the avatar placeholder position and spacing */
 .side-menu .avatar-placeholder {
-    width: 70px !important; /* Increased from 60px to 70px */
-    height: 70px !important; /* Increased from 60px to 70px */
+    width: 60px !important;
+    height: 60px !important;
     border-radius: 50% !important;
     background-color: #706c6c !important;
     margin-right: 15px !important;
@@ -1436,7 +1436,7 @@ button:hover {
     display: flex !important;
     align-items: center !important;
     justify-content: center !important;
-    font-size: 28px !important; /* Increased from 24px to 28px */
+    font-size: 24px !important;
     font-weight: 500 !important;
     color: white !important;
 }
