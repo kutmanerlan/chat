@@ -49,6 +49,12 @@ document.addEventListener('DOMContentLoaded', function() {
             return response.json();
         })
         .then(data => {
+            // Set the current user ID first
+            if (data.user_id) {
+                currentUserId = data.user_id;
+                console.log("Current user ID set to:", currentUserId);
+            }
+            
             if (data.user_id) {
                 // Store current user ID for message comparison
                 currentUserId = data.user_id;
@@ -1442,4 +1448,323 @@ function updateAvatarWithCrossIcon() {
             </svg>
         `;
     });
+}
+
+// Add a variable to store current user ID for message comparison
+let currentUserId = null;
+
+// Modified function for creating chat interface - consolidate the duplicate implementations
+function createChatInterface(user) {
+    console.log("Creating chat interface for user:", user);
+    
+    const mainContent = document.querySelector('.main-content');
+    if (!mainContent) {
+        console.error("main-content container not found");
+        return;
+    }
+    
+    // Clear the main content
+    mainContent.innerHTML = '';
+    
+    // Create chat header
+    const chatHeader = document.createElement('div');
+    chatHeader.className = 'chat-header';
+    
+    // User info with correct horizontal layout
+    const userInfo = document.createElement('div');
+    userInfo.className = 'chat-user-info';
+    
+    // User avatar
+    const userAvatar = document.createElement('div');
+    userAvatar.className = 'chat-user-avatar';
+    
+    if (user.avatar_path) {
+        userAvatar.innerHTML = `<img src="${user.avatar_path}" alt="${user.name}">`;
+    } else {
+        userAvatar.innerHTML = `<div class="avatar-initials">${user.name.charAt(0)}</div>`;
+    }
+    
+    // User name
+    const userName = document.createElement('div');
+    userName.className = 'chat-user-name';
+    userName.textContent = user.name;
+    
+    // Add elements to user info
+    userInfo.appendChild(userAvatar);
+    userInfo.appendChild(userName);
+    
+    // Menu button
+    const menuButton = document.createElement('button');
+    menuButton.className = 'chat-menu-btn';
+    menuButton.innerHTML = `
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <circle cx="12" cy="5" r="1"></circle>
+            <circle cx="12" cy="12" r="1"></circle>
+            <circle cx="12" cy="19" r="1"></circle>
+        </svg>
+    `;
+    
+    // Messages area
+    const chatMessages = document.createElement('div');
+    chatMessages.className = 'chat-messages';
+    
+    // Add loading indicator
+    const loadingIndicator = document.createElement('div');
+    loadingIndicator.className = 'loading-messages';
+    loadingIndicator.textContent = 'Loading messages...';
+    loadingIndicator.style.textAlign = 'center';
+    loadingIndicator.style.padding = '20px';
+    loadingIndicator.style.color = '#888';
+    chatMessages.appendChild(loadingIndicator);
+    
+    // Input container
+    const messageInputContainer = document.createElement('div');
+    messageInputContainer.className = 'message-input-container';
+    
+    // Input wrapper
+    const inputWrapper = document.createElement('div');
+    inputWrapper.className = 'input-wrapper';
+    
+    // Clip button container
+    const clipButtonContainer = document.createElement('div');
+    clipButtonContainer.className = 'clip-button-container';
+    
+    // Paperclip button
+    const paperclipButton = document.createElement('button');
+    paperclipButton.className = 'paperclip-button';
+    paperclipButton.innerHTML = `
+        <svg viewBox="0 0 24 24" width="24" height="24" stroke="currentColor" stroke-width="2" fill="none">
+            <path d="M21.44 11.05l-9.19 9.19a6 6 0 0 1-8.49-8.49l9.19-9.19a4 4 0 0 1 5.66 5.66l-9.2 9.19a2 2 0 0 1-2.83-2.83l8.49-8.48"></path>
+        </svg>
+    `;
+    
+    // Message input field
+    const messageInputField = document.createElement('div');
+    messageInputField.className = 'message-input-field';
+    
+    // Input field
+    const inputField = document.createElement('input');
+    inputField.type = 'text';
+    inputField.placeholder = 'Сообщение';
+    
+    // Send button
+    const sendButton = document.createElement('button');
+    sendButton.className = 'send-button';
+    sendButton.innerHTML = `
+        <svg viewBox="0 0 24 24" width="24" height="24" stroke="currentColor" stroke-width="2" fill="none">
+            <line x1="22" y1="2" x2="11" y2="13"></line>
+            <polygon points="22 2 15 22 11 13 2 9 22 2"></polygon>
+        </svg>
+    `;
+    
+    // Assemble the interface
+    clipButtonContainer.appendChild(paperclipButton);
+    messageInputField.appendChild(inputField);
+    
+    inputWrapper.appendChild(clipButtonContainer);
+    inputWrapper.appendChild(messageInputField);
+    inputWrapper.appendChild(sendButton);
+    
+    messageInputContainer.appendChild(inputWrapper);
+    
+    // Add elements to main content
+    chatHeader.appendChild(userInfo);
+    chatHeader.appendChild(menuButton);
+    
+    mainContent.appendChild(chatHeader);
+    mainContent.appendChild(chatMessages);
+    mainContent.appendChild(messageInputContainer);
+    
+    // Show content
+    mainContent.style.display = 'flex';
+    
+    // Add event handlers
+    inputField.addEventListener('input', function() {
+        if (this.value.trim()) {
+            sendButton.classList.add('active');
+        } else {
+            sendButton.classList.remove('active');
+        }
+    });
+    
+    sendButton.addEventListener('click', function() {
+        if (this.classList.contains('active')) {
+            sendTextMessage(inputField, chatMessages, user);
+        }
+    });
+    
+    inputField.addEventListener('keydown', function(e) {
+        if (e.key === 'Enter' && this.value.trim()) {
+            e.preventDefault();
+            sendTextMessage(inputField, chatMessages, user);
+        }
+    });
+    
+    // Focus the input field
+    setTimeout(() => {
+        inputField.focus();
+    }, 0);
+    
+    // Load message history
+    loadMessageHistory(user.id, chatMessages, loadingIndicator);
+}
+
+// Function to load message history
+function loadMessageHistory(userId, chatMessages, loadingIndicator) {
+    fetch(`/get_messages?user_id=${userId}`, {
+        method: 'GET',
+        headers: {
+            'Content-Type': 'application/json'
+        }
+    })
+    .then(response => response.json())
+    .then(data => {
+        // Remove loading indicator if it exists
+        if (loadingIndicator && loadingIndicator.parentNode === chatMessages) {
+            chatMessages.removeChild(loadingIndicator);
+        }
+        
+        if (data.success && data.messages && data.messages.length > 0) {
+            // Create container for messages
+            const messagesContainer = document.createElement('div');
+            messagesContainer.className = 'messages-container';
+            chatMessages.appendChild(messagesContainer);
+            
+            // Add each message
+            data.messages.forEach(message => {
+                const messageEl = document.createElement('div');
+                
+                // Determine if this is a sent or received message
+                const isSent = message.sender_id == currentUserId;
+                messageEl.className = `message ${isSent ? 'message-sent' : 'message-received'}`;
+                messageEl.dataset.messageId = message.id;
+                
+                // Format timestamp
+                const timestamp = new Date(message.timestamp);
+                const hours = String(timestamp.getHours()).padStart(2, '0');
+                const minutes = String(timestamp.getMinutes()).padStart(2, '0');
+                
+                // Add message content
+                messageEl.innerHTML = `
+                    <div class="message-content">${message.content}</div>
+                    <div class="message-time">${hours}:${minutes}</div>
+                `;
+                
+                messagesContainer.appendChild(messageEl);
+            });
+            
+            // Scroll to bottom
+            chatMessages.scrollTop = chatMessages.scrollHeight;
+        } else {
+            // Show "No messages" placeholder
+            const noMessages = document.createElement('div');
+            noMessages.className = 'no-messages';
+            noMessages.textContent = 'Нет сообщений';
+            chatMessages.appendChild(noMessages);
+        }
+    })
+    .catch(error => {
+        console.error('Error loading messages:', error);
+        // Remove loading indicator if it exists
+        if (loadingIndicator && loadingIndicator.parentNode === chatMessages) {
+            chatMessages.removeChild(loadingIndicator);
+        }
+        
+        // Show error message
+        const errorMsg = document.createElement('div');
+        errorMsg.className = 'messages-error';
+        errorMsg.textContent = 'Failed to load messages. Please try again.';
+        errorMsg.style.color = '#e57373';
+        errorMsg.style.textAlign = 'center';
+        errorMsg.style.padding = '20px';
+        chatMessages.appendChild(errorMsg);
+    });
+}
+
+// Modified sendTextMessage function that shows the message in UI after server confirms success
+function sendTextMessage(inputField, chatMessages, user) {
+    const messageText = inputField.value.trim();
+    if (messageText) {
+        console.log(`Sending message to ${user.name} (ID: ${user.id}):`, messageText);
+        
+        // Send message to server
+        fetch('/send_message', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({
+                recipient_id: user.id,
+                content: messageText
+            })
+        })
+        .then(response => {
+            if (!response.ok) {
+                throw new Error(`Server returned ${response.status}: ${response.statusText}`);
+            }
+            return response.json();
+        })
+        .then(data => {
+            console.log("Server response:", data);
+            
+            if (data.success) {
+                // Get or create messages container
+                let messagesContainer = chatMessages.querySelector('.messages-container');
+                
+                // Remove "No messages" if it exists
+                const noMessages = chatMessages.querySelector('.no-messages');
+                if (noMessages) {
+                    chatMessages.removeChild(noMessages);
+                    messagesContainer = document.createElement('div');
+                    messagesContainer.className = 'messages-container';
+                    chatMessages.appendChild(messagesContainer);
+                }
+                
+                if (!messagesContainer) {
+                    messagesContainer = document.createElement('div');
+                    messagesContainer.className = 'messages-container';
+                    chatMessages.appendChild(messagesContainer);
+                }
+                
+                // Create message element
+                const message = document.createElement('div');
+                message.className = 'message message-sent';
+                message.dataset.messageId = data.message.id;
+                
+                // Format timestamp
+                const timestamp = new Date(data.message.timestamp);
+                const hours = String(timestamp.getHours()).padStart(2, '0');
+                const minutes = String(timestamp.getMinutes()).padStart(2, '0');
+                
+                // Add message content
+                message.innerHTML = `
+                    <div class="message-content">${messageText}</div>
+                    <div class="message-time">${hours}:${minutes}</div>
+                `;
+                
+                // Add message to container
+                messagesContainer.appendChild(message);
+                
+                // Clear input
+                inputField.value = '';
+                inputField.focus();
+                
+                // Scroll chat down
+                chatMessages.scrollTop = chatMessages.scrollHeight;
+                
+                // Make send button inactive
+                const sendButton = document.querySelector('.send-button');
+                if (sendButton) {
+                    sendButton.classList.remove('active');
+                }
+            } else {
+                console.error('Error sending message:', data.error || 'Unknown error');
+                alert('Failed to send message. Please try again.');
+            }
+        })
+        .catch(error => {
+            console.error('Error sending message:', error);
+            alert('Failed to send message. Please check your connection.');
+        });
+    }
 }
