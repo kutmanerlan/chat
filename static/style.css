@@ -774,18 +774,27 @@ button:hover {
     overflow: hidden;
     text-overflow: ellipsis;
     line-height: 1.2;
-    position: relative;
-    top: -10px; /* Move the username higher */
-    margin-bottom: 20px; /* Add space between username and status/empty space */
+    position: absolute;
+    top: 8px; /* Move the username higher */
 }
 
 /* Clean up the empty space after user info */
 .side-menu .user-info::after {
-    content: '';
-    display: block;
-    height: 18px;
-    position: relative;
-    top: -10px; /* Move this up to match username */
+    display: none; /* Убираем пустое пространство */
+}
+
+/* Properly hide user status */
+.side-menu .user-status {
+    display: block !important;
+    visibility: visible !important;
+    color: #888;
+    font-size: 13px;
+    position: absolute;
+    top: 32px; /* Располагаем статус под именем */
+    width: 100%;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
 }
 
 .user-profile {
@@ -823,14 +832,6 @@ button:hover {
     content: '';
     display: block;
     height: 18px;
-}
-
-/* Properly hide user status */
-.side-menu .user-status {
-    display: none !important;
-    visibility: hidden !important;
-    height: 0 !important;
-    opacity: 0 !important;
 }
 
 .edit-profile-btn {
