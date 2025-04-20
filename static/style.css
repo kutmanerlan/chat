@@ -595,17 +595,36 @@ button:hover {
     position: relative;
 }
 
-.contact-item:hover {
-    background-color: #2a2a2a;
+/* Add explicit styles for contact avatar */
+.contact-avatar {
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    background-color: var(--avatar-background);
+    margin-right: 12px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+    overflow: hidden;
 }
 
-.contact-item.active {
-    background-color: #333;
+.contact-avatar img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+}
+
+.contact-avatar .avatar-initials {
+    font-size: 16px;
+    color: white;
+    font-weight: 500;
 }
 
 .contact-info {
     display: flex;
-    align-items: center;
+    flex-direction: column;
+    justify-content: center;
     height: 48px;
 }
 
@@ -616,7 +635,7 @@ button:hover {
     white-space: nowrap;
     overflow: hidden;
     text-overflow: ellipsis;
-    line-height: 48px;
+    line-height: normal;
 }
 
 /* Hide contact bio */
@@ -675,10 +694,10 @@ button:hover {
 }
 
 .side-menu .avatar-placeholder {
-    width: 46px; /* Уменьшаем размер с 60px до 46px */
-    height: 46px; /* Уменьшаем размер с 60px до 46px */
-    border-radius: 50%;
-    background-color: #706c6c;
+    width: 48px !important;
+    height: 48px !important;
+    border-radius: 50% !important;
+    background-color: #706c6c !important;
     display: flex;
     align-items: center;
     justify-content: center;
@@ -687,6 +706,12 @@ button:hover {
     cursor: pointer;
     overflow: hidden;
     flex-shrink: 0;
+}
+
+.side-menu .avatar-placeholder img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
 }
 
 .side-menu .user-info {
@@ -1232,4 +1257,22 @@ button:hover {
 .side-menu .user-info::after {
     display: none !important;
     content: none !important;
+}
+
+/* Ensure consistency for avatar-image class used throughout the app */
+.avatar-image {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+}
+
+.avatar-initials {
+    width: 100%;
+    height: 100%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 18px;
+    font-weight: 500;
+    color: white;
 }
