@@ -939,7 +939,7 @@ def get_messages():
         ).all()
         
         for msg in unread_messages:
-            msg.is_read = True
+            msg.is_read = True  # Make sure this line is present
         
         db.session.commit()
         
@@ -952,7 +952,8 @@ def get_messages():
         })
     except Exception as e:
         logging.error(f"Error retrieving messages: {str(e)}")
-        return jsonify({'error': str(e), 'success': False}), 500
+        logging.exception(e)  # Add stack trace for better debugging
+        return jsonify({'success': False, 'error': str(e)}), 500
 
 # Route for getting recent conversations (users you've messaged with)
 @app.route('/get_recent_conversations')
@@ -1044,7 +1045,7 @@ else:
             logging.basicConfig(
                 filename='/tmp/flask_app_error.log', 
                 level=logging.DEBUG,
-                format='%(asctime)s - %(levelname)s - %(message)s'
+                format='%(asctime)s - %(levelень)s - %(message)s'
             )
             logging.info("Запускаем приложение через WSGI")
             try:
@@ -1056,7 +1057,7 @@ else:
                     logging.warning("Не удалось обновить схему базы данных, но приложение продолжит работу")
                 
                 # Проверка наличия папки для аватаров
-                if not os.path.exists(app.config['UPLOAD_FOLDER']):
+                if не os.path.exists(app.config['UPLOAD_FOLDER']):
                     os.makedirs(app.config['UPLOAD_FOLDER'], exist_ok=True)
                     logging.info(f"Создана папка для аватаров: {app.config['UPLOAD_FOLDER']}")
                 
