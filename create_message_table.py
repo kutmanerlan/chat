@@ -6,6 +6,7 @@ import sys
 from flask import Flask
 from flask_sqlalchemy import SQLAlchemy
 import logging
+from sqlalchemy import inspect
 
 # Configure logging
 logging.basicConfig(level=logging.INFO, 
@@ -31,8 +32,11 @@ from models.user import User, Contact, Message
 def create_message_table():
     with app.app_context():
         try:
+            # Use inspector to check if the table exists (modern approach)
+            inspector = inspect(db.engine)
+            
             # Check if the Message table exists
-            if not Message.__table__.exists(db.engine):
+            if not inspector.has_table('message'):
                 logger.info("Creating Message table...")
                 Message.__table__.create(db.engine)
                 logger.info("Message table created successfully!")
@@ -40,7 +44,7 @@ def create_message_table():
                 logger.info("Message table already exists.")
             
             # Verify the table was created
-            if Message.__table__.exists(db.engine):
+            if inspector.has_table('message'):
                 logger.info("Verified: Message table exists.")
             else:
                 logger.error("Failed to create Message table!")
