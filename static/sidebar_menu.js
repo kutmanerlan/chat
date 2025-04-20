@@ -299,16 +299,18 @@ document.addEventListener('DOMContentLoaded', function() {
     
     // Показать панель редактирования профиля
     if (editProfileBtn) {
-        editProfileBtn.addEventListener('click', function() {
+        editProfileBtn.addEventListener('click', function(e) {
+            e.stopPropagation(); // Предотвращаем клик по основному меню
             sideMenu.classList.remove('active'); // Скрываем основное меню
             editProfileSidebar.classList.add('active'); // Показываем панель редактирования
-            overlay.classList.add('active'); // Оставляем подложку активной
+            overlay.classList.add('active'); // Показываем затемняющую подложку
         });
     }
     
     // Вернуться к основному меню
     if (backToMainMenu) {
-        backToMainMenu.addEventListener('click', function() {
+        backToMainMenu.addEventListener('click', function(e) {
+            e.stopPropagation(); // Предотвращаем всплытие события
             editProfileSidebar.classList.remove('active'); // Скрываем панель редактирования
             sideMenu.classList.add('active'); // Показываем основное меню
         });

@@ -994,10 +994,10 @@ button:hover {
 .edit-profile-sidebar {
     position: fixed;
     top: 0;
-    left: -var(--sidebar-width);
-    width: var(--sidebar-width);
+    left: -320px; /* Начальная позиция за пределами экрана */
+    width: 320px;
     height: 100vh;
-    background-color: var(--sidebar-background);
+    background-color: #1c1c1c;
     z-index: 1000;
     transition: left 0.3s ease;
     display: flex;
@@ -1006,8 +1006,9 @@ button:hover {
     box-sizing: border-box;
 }
 
+/* Только когда панель активна, показываем её */
 .edit-profile-sidebar.active {
-    left: 0;
+    left: 0; /* При активации панель сдвигается вправо и становится видимой */
 }
 
 .edit-profile-header {
