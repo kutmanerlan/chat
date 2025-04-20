@@ -189,7 +189,7 @@
     background-color: #5a5a5a;
 }
 
-/* Adjusting user info positioning */
+/* Adjusting user info positioning and sizing */
 .side-menu .user-info {
     flex-grow: 1 !important;
     min-width: 0 !important;
@@ -206,7 +206,7 @@
 .side-menu .user-info h3 {
     margin: 0;
     color: white;
-    font-size: 16px;
+    font-size: 18px !important; /* Increased from 16px to 18px */
     font-weight: 500;
     white-space: nowrap;
     overflow: hidden;
@@ -214,7 +214,7 @@
     line-height: 1.4; /* Increased from 1.2 to give more space */
     position: relative;
     top: 0; /* Changed from -8px to 0 to prevent cutting off */
-    margin-bottom: 3px;
+    margin-bottom: 5px; /* Increased from 3px for more spacing */
     padding-top: 4px; /* Add some padding at the top */
 }
 
@@ -222,7 +222,7 @@
     margin: 0 !important;
     padding: 0 !important;
     color: #888 !important;
-    font-size: 13px !important;
+    font-size: 14px !important; /* Increased from 13px to 14px */
     position: relative !important;
     top: 0 !important; /* Changed from -8px to 0 */
     width: 100% !important; 
@@ -232,7 +232,7 @@
     display: block !important;
     visibility: visible !important;
     max-width: 180px !important;
-    line-height: 1.2 !important; /* Added line height */
+    line-height: 1.3 !important; /* Increased from 1.2 for better readability */
 }
 
 /* Making sure the profile section has enough space */
@@ -243,7 +243,7 @@
     padding: 15px 0 20px; /* Increased from 10px 0 15px for more vertical space */
     margin-bottom: 15px;
     border-bottom: 1px solid #333;
-    min-height: 80px; /* Ensure minimum height for the header */
+    min-height: 85px; /* Increased from 80px to provide more space */
     position: relative; /* Ensure positioning context */
 }
 
@@ -255,5 +255,26 @@
     margin: 0 !important;
     padding: 0 !important;
     box-sizing: border-box !important;
-    min-height: 60px !important; /* Ensure minimum height for content */
+    min-height: 65px !important; /* Slightly increased from 60px */
+}
+
+/* Adjust avatar size to balance with larger text */
+.side-menu .avatar-placeholder {
+    width: 65px !important; /* Increased from 60px */
+    height: 65px !important; /* Increased from 60px */
+    border-radius: 50% !important;
+    background-color: #706c6c !important;
+    margin-right: 15px !important;
+    position: relative !important;
+    flex-shrink: 0 !important;
+    display: flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    overflow: hidden !important;
+}
+
+/* Adjust avatar initials size */
+.side-menu .avatar-placeholder .avatar-initials {
+    font-size: 26px !important; /* Increased from default size */
+    font-weight: 500 !important;
 }
