@@ -244,18 +244,55 @@ body {
     border-left: 1px solid #333; /* Добавляем четкую границу между блоками */
 }
 
-/* Шапка чата в стиле Telegram */
+/* Полностью новые стили для заголовка чата с высоким приоритетом */
 .chat-header {
-    height: 60px; /* Изменяем высоту заголовка */
-    background-color: #212121; /* Цвет как на фото 1 */
-    display: flex;
-    align-items: center; /* Убедимся, что все элементы вертикально центрированы */
-    justify-content: space-between;
-    padding: 0 16px;
-    border-bottom: 1px solid #333; /* Более заметная граница */
-    flex-shrink: 0;
-    z-index: 10;
-    box-sizing: border-box;
+    height: 60px !important;
+    background-color: #212121 !important;
+    display: flex !important;
+    align-items: center !important;
+    justify-content: space-between !important;
+    padding: 0 16px !important;
+    border-bottom: 1px solid #333 !important;
+    flex-shrink: 0 !important;
+    z-index: 10 !important;
+    box-sizing: border-box !important;
+}
+
+.chat-user-info {
+    display: flex !important;
+    flex-direction: row !important; /* Принудительно устанавливаем горизонтальное расположение */
+    align-items: center !important; /* Центрирование по вертикали */
+    justify-content: flex-start !important;
+    flex-grow: 1 !important;
+    height: auto !important; /* Изменяем с 100% на auto */
+    padding: 0 !important;
+    margin: 0 !important;
+    max-width: 80% !important; /* Ограничиваем ширину */
+}
+
+.chat-user-avatar {
+    width: 45px !important;
+    height: 45px !important;
+    border-radius: 50% !important;
+    background-color: #555 !important;
+    margin-right: 12px !important;
+    overflow: hidden !important;
+    position: relative !important;
+    flex-shrink: 0 !important;
+    display: flex !important; /* Добавляем для выравнивания инициалов */
+    align-items: center !important;
+    justify-content: center !important;
+}
+
+.chat-user-name {
+    color: white !important;
+    font-size: 17px !important;
+    font-weight: 500 !important;
+    margin: 0 !important;
+    padding: 0 !important;
+    white-space: nowrap !important;
+    overflow: hidden !important;
+    text-overflow: ellipsis !important;
 }
 
 /* Полностью переработанные стили для заголовка чата */

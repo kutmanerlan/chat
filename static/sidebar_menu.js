@@ -564,6 +564,100 @@ document.addEventListener('DOMContentLoaded', function() {
             });
         }
         
+        // Полностью обновленная функция создания чата
+        function createChatInterface(user) {
+            const mainContent = document.querySelector('.main-content');
+            if (!mainContent) return;
+            
+            // Очищаем контент
+            mainContent.innerHTML = '';
+            
+            // Создаем заголовок чата
+            const chatHeader = document.createElement('div');
+            chatHeader.className = 'chat-header';
+            
+            // Создаем блок информации о пользователе с принудительной структурой
+            const userInfo = document.createElement('div');
+            userInfo.className = 'chat-user-info';
+            
+            // Создаем аватар пользователя
+            const userAvatar = document.createElement('div');
+            userAvatar.className = 'chat-user-avatar';
+            
+            // Добавляем изображение аватара или инициалы
+            if (user.avatar_path) {
+                const avatarImg = document.createElement('img');
+                avatarImg.src = user.avatar_path;
+                avatarImg.alt = user.name;
+                avatarImg.style.width = '100%';
+                avatarImg.style.height = '100%';
+                avatarImg.style.objectFit = 'cover';
+                userAvatar.appendChild(avatarImg);
+            } else {
+                const avatarInitials = document.createElement('div');
+                avatarInitials.className = 'avatar-initials';
+                avatarInitials.textContent = user.name.charAt(0);
+                userAvatar.appendChild(avatarInitials);
+            }
+            
+            // Создаем элемент для имени пользователя
+            const userName = document.createElement('div');
+            userName.className = 'chat-user-name';
+            userName.textContent = user.name;
+            
+            // Явно добавляем элементы в правильном порядке
+            userInfo.appendChild(userAvatar);
+            userInfo.appendChild(userName);
+            
+            // Создаем кнопку меню с тремя точками
+            const menuButton = document.createElement('button');
+            menuButton.className = 'chat-menu-btn';
+            menuButton.innerHTML = `
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <circle cx="12" cy="5" r="1"></circle>
+                    <circle cx="12" cy="12" r="1"></circle>
+                    <circle cx="12" cy="19" r="1"></circle>
+                </svg>
+            `;
+            
+            // Добавляем элементы в заголовок чата
+            chatHeader.appendChild(userInfo);
+            chatHeader.appendChild(menuButton);
+            
+            // Создаем область сообщений
+            const chatMessages = document.createElement('div');
+            chatMessages.className = 'chat-messages';
+            
+            // Добавляем заглушку "Нет сообщений"
+            const noMessages = document.createElement('div');
+            noMessages.className = 'no-messages';
+            noMessages.textContent = 'Нет сообщений';
+            chatMessages.appendChild(noMessages);
+            
+            // Создаем поле ввода сообщений
+            const inputContainer = document.createElement('div');
+            inputContainer.className = 'message-input-container';
+            
+            // Создаем обертку для элементов поля ввода
+            const inputWrapper = document.createElement('div');
+            inputWrapper.className = 'input-wrapper';
+            inputContainer.appendChild(inputWrapper);
+            
+            // Создаем скрепку, поле ввода и кнопку отправки
+            // ...existing code for creating input elements...
+            
+            // Добавляем все элементы в основной контейнер
+            mainContent.appendChild(chatHeader);
+            mainContent.appendChild(chatMessages);
+            mainContent.appendChild(inputContainer);
+            
+            // Показываем содержимое
+            mainContent.style.display = 'flex';
+            
+            // Остальная логика (добавление выпадающего меню, обработчиков событий и т.д.)
+            // ...existing code...
+        }
+        
         // Function for creating chat interface
         function createChatInterface(user) {
             const mainContent = document.querySelector('.main-content');
