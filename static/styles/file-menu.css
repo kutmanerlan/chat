@@ -10,6 +10,8 @@
   display: none;
   overflow: hidden;
   animation: menu-fade-in 0.2s ease-out;
+  position: fixed; /* Use fixed positioning */
+  z-index: 10000; /* Higher z-index to ensure it appears on top */
 }
 
 .file-menu-options {

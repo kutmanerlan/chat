@@ -682,15 +682,23 @@ function showFileMenu(fileInput, user) {
     });
   }
   
-  // Calculate position for the menu (below paperclip button)
-  const buttonRect = event.target.closest('.paperclip-button').getBoundingClientRect();
+  // Get the paperclip button position
+  const paperclipButton = event.target.closest('.paperclip-button');
+  if (!paperclipButton) return;
   
-  // Position the menu
+  const buttonRect = paperclipButton.getBoundingClientRect();
+  
+  // Position the menu above the input area, not at the bottom of the screen
   fileMenu.style.display = 'block';
   fileMenu.style.position = 'absolute';
   fileMenu.style.left = `${buttonRect.left}px`;
-  fileMenu.style.top = `${buttonRect.bottom + 10}px`;
+  fileMenu.style.top = `${buttonRect.top - fileMenu.offsetHeight - 10}px`; // Position above the button
   fileMenu.style.zIndex = '1000';
+  
+  // If menu would go off the top of the screen, position it below instead
+  if (parseFloat(fileMenu.style.top) < 0) {
+    fileMenu.style.top = `${buttonRect.bottom + 10}px`;
+  }
   
   // Set up file selection handler if not already done
   if (!fileInput.hasEventListener) {
