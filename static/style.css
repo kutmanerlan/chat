@@ -712,6 +712,56 @@ button:hover {
     position: relative; /* Added for positioning context */
 }
 
+.side-menu .user-info {
+    flex-grow: 1;
+    min-width: 0;
+    display: flex;
+    flex-direction: column;
+    position: relative;
+    padding-top: 5px; /* Add padding to move content lower */
+}
+
+/* Стили для имени пользователя - позиционирование */
+.side-menu .user-info h3 {
+    margin: 0;
+    color: white;
+    font-size: 16px;
+    font-weight: 500;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    line-height: 1.2;
+    position: static;
+    top: auto;
+    margin-bottom: 5px; /* Increased spacing between name and status */
+}
+
+/* Стили для статуса пользователя */
+.side-menu .user-status {
+    margin: 0;
+    padding: 0;
+    color: #888;
+    font-size: 13px;
+    position: static;
+    top: auto;
+    width: 100%;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    display: block;
+    visibility: visible;
+}
+
+.side-menu .user-profile {
+    display: flex;
+    align-items: center; /* Changed from flex-start to center */
+    width: 100%;
+    padding-top: 0;
+    margin-bottom: 10px;
+    height: 60px;
+    position: relative; /* Added for positioning context */
+}
+
 .side-menu .avatar-placeholder {
     width: 48px !important;
     height: 48px !important;
