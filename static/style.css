@@ -281,119 +281,56 @@ button:hover {
 
 /* Chat header - consolidated styles */
 .chat-header {
+    position: relative;
     height: 60px;
-    background-color: var(--chat-header-background);
+    background-color: #212121;
     display: flex;
     align-items: center;
     justify-content: space-between;
     padding: 0 16px;
-    border-bottom: 1px solid var(--border-color);
+    border-bottom: 1px solid #333;
     flex-shrink: 0;
     z-index: 10;
     box-sizing: border-box;
 }
 
+/* Структурируем информацию о пользователе в заголовке чата */
 .chat-user-info {
     display: flex;
-    flex-direction: row;
     align-items: center;
-    justify-content: flex-start;
     flex-grow: 1;
-    height: auto;
-    padding: 0;
-    margin: 0;
     max-width: 80%;
-}
-
-.chat-user-avatar,
-.contact-avatar,
-.search-user-avatar,
-.avatar-placeholder {
-    /* Common styles for all avatars using shared class */
-    border-radius: 50%;
-    overflow: hidden;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    flex-shrink: 0;
+    height: 100%;
     position: relative;
 }
 
 .chat-user-avatar {
     width: 45px;
     height: 45px;
-    background-color: var(--avatar-background);
+    border-radius: 50%;
+    background-color: #555;
     margin-right: 12px;
-}
-
-.contact-avatar {
-    width: 48px;
-    height: 48px;
-    background-color: var(--avatar-background);
-    margin-right: 12px;
-}
-
-.search-user-avatar {
-    width: 40px;
-    height: 40px;
-    background-color: var(--avatar-background);
-    margin-right: 12px;
-}
-
-.avatar-placeholder {
-    width: 60px;
-    height: 60px;
-    background-color: var(--avatar-placeholder-color);
-    margin-right: 15px;
-    cursor: pointer;
-}
-
-.chat-user-avatar img,
-.contact-avatar img,
-.search-user-avatar img,
-.avatar-placeholder img {
-    width: 100%;
-    height: 100%;
-    object-fit: cover;
-}
-
-.chat-user-avatar .avatar-initials,
-.contact-avatar .avatar-initials,
-.search-user-avatar .avatar-initials,
-.avatar-placeholder .avatar-initials {
-    color: white;
-    font-size: 20px;
-    width: 100%;
-    height: 100%;
+    overflow: hidden;
+    flex-shrink: 0;
     display: flex;
     align-items: center;
     justify-content: center;
-    position: absolute;
-    top: 0;
-    left: 0;
 }
 
-.search-user-avatar .avatar-initials {
-    font-size: 18px;
-}
-
-.contact-avatar .avatar-initials {
-    font-size: 20px;
-    font-weight: bold;
-}
-
+/* Радикально меняем позиционирование имени пользователя */
 .chat-user-name {
-    position: absolute;
-    left: 57px;
-    top: 50%;
-    transform: translateY(-70%);
     font-size: 17px;
     font-weight: 500;
     color: white;
     white-space: nowrap;
     overflow: hidden;
     text-overflow: ellipsis;
-    max-width: calc(100% - 57px);
+    max-width: calc(100% - 12px);
+    position: relative; /* Меняем с absolute на relative */
+    left: 0; /* Удаляем сдвиг влево */
+    top: 0; /* Удаляем сдвиг вверх */
+    transform: none; /* Убираем трансформацию */
+    margin: 0; /* Сбрасываем все отступы */
 }
 
 .chat-menu-btn {
