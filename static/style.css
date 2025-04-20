@@ -718,7 +718,7 @@ button:hover {
     display: flex;
     flex-direction: column;
     position: relative;
-    padding-top: 5px; /* Add padding to move content lower */
+    padding-top: 13px; /* Add padding to move content lower */
 }
 
 /* Стили для имени пользователя - позиционирование */
