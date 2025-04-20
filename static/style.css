@@ -1,15 +1,65 @@
+/* Optimizing common properties with CSS variables */
+:root {
+    --dark-background: #100E0E;
+    --sidebar-background: #1c1c1c;
+    --chat-header-background: #212121;
+    --input-background: #303030;
+    --message-sent: #2b5278;
+    --message-received: #333333;
+    --text-primary: #fff;
+    --text-secondary: #aaa;
+    --text-dimmed: #666;
+    --border-color: #333;
+    --button-hover: rgba(255, 255, 255, 0.1);
+    --avatar-background: #555;
+    --scrollbar-thumb: rgba(255, 255, 255, 0.2);
+    --scrollbar-thumb-hover: rgba(255, 255, 255, 0.3);
+    --scrollbar-width: 6px;
+    --scrollbar-width-thin: 4px;
+    --sidebar-width: 320px;
+    --avatar-placeholder-color: #706c6c;
+}
+
+/* Common styling patterns - can be shared across elements */
+.avatar-shared {
+    border-radius: 50%;
+    overflow: hidden;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+    position: relative;
+}
+
+.text-ellipsis {
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.flex-center {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+/* Rest of the CSS file with optimizations */
 body {
     font-family: Arial, sans-serif;
-    background-color: #393737; /* фон всей страницы */
+    background-color: var(--dark-background);
+    color: var(--text-primary);
     display: flex;
     justify-content: center;
     align-items: center;
     height: 100vh;
     margin: 0;
+    padding: 0;
+    box-sizing: border-box;
 }
 
+/* Login container styles */
 .login-container {
-    background-color: #1b1919; /* фон окна */
+    background-color: #1b1919;
     padding: 30px;
     border-radius: 8px;
     box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
@@ -21,7 +71,7 @@ h1 {
     margin-top: 0;
     margin-bottom: 25px;
     font-size: 24px;
-    color: #f4f4f4; /* цвет текста */
+    color: #f4f4f4;
 }
 
 .input-group {
@@ -33,17 +83,17 @@ label {
     display: block;
     margin-bottom: 5px;
     font-weight: bold;
-    color: #474747; /* цвет текста */
+    color: #474747;
 }
 
 input {
     width: 100%;
     padding: 10px;
-    border: 1px солид #474747;
+    border: 1px solid #474747;
     border-radius: 4px;
     box-sizing: border-box;
     background-color: #1b1919;
-    color: #f4f4f4; /* текст внутри полей */
+    color: #f4f4f4;
 }
 
 input::placeholder {
@@ -52,12 +102,12 @@ input::placeholder {
 
 button {
     width: 100%;
-    padding: 10px; /* Reduced from 12px */
-    background-color: #6b6b6b; /* цвет кнопки */
-    color: #f4f4f4; /* текст на кнопке */
+    padding: 10px;
+    background-color: #6b6b6b;
+    color: #f4f4f4;
     border: none;
     border-radius: 4px;
-    font-size: 14px; /* Reduced from 16px */
+    font-size: 14px;
     cursor: pointer;
     margin-bottom: 15px;
 }
@@ -68,7 +118,7 @@ button:hover {
 
 .footer {
     font-size: 12px;
-    color: #474747; /* цвет текста */
+    color: #474747;
     margin-top: 10px;
 }
 
@@ -93,47 +143,46 @@ button:hover {
 }
 
 .forgot-password-btn:hover {
-    color: #3498db; /* Не меняем цвет при наведении */
+    color: #3498db;
     text-decoration: none;
-    background-color: transparent !important; /* Принудительно убираем фон */
-    opacity: 1; /* Сохраняем полную непрозрачность */
-    transform: none; /* Убираем любые трансформации */
+    background-color: transparent !important;
+    opacity: 1;
+    transform: none;
 }
 
-/* Остальной код остается без изменений */
-* {
-    margin: 0;
-    padding: 0;
-    box-sizing: border-box;
-}
-
-body {
-    font-family: Arial, sans-serif;
-    background-color: #100E0E;
-    color: #fff;
-    display: flex;
-}
-
+/* Sidebar and main layout */
 .sidebar {
-    width: 320px;
+    width: var(--sidebar-width);
     height: 100vh;
-    background-color: #1c1c1c;
-    padding: 0; /* Убираем стандартный padding чтобы поместить элементы выше */
+    background-color: var(--sidebar-background);
+    padding: 0;
     display: flex;
     flex-direction: column;
-    position: relative; /* Добавляем для контекста позиционирования */
+    position: relative;
 }
 
+.main-content {
+    flex-grow: 1;
+    background-color: #0e0e0e;
+    display: flex;
+    flex-direction: column;
+    position: relative;
+    width: calc(100% - var(--sidebar-width));
+    height: 100vh;
+    overflow: hidden;
+    border-left: 1px solid var(--border-color);
+}
+
+/* Top bar with search */
 .top-bar {
     display: flex;
     align-items: center;
     gap: 10px;
-    padding: 8px 12px 8px 14px; /* Точные отступы как на фото 1 */
-    margin: 0; /* Убираем margin */
-    background-color: #1c1c1c; /* Убедимся, что цвет фона соответствует */
+    padding: 8px 12px 8px 14px;
+    margin: 0;
+    background-color: var(--sidebar-background);
 }
 
-/* Добавляем стили для контейнера поиска */
 .search-container {
     position: relative;
     flex-grow: 1;
@@ -141,29 +190,52 @@ body {
     align-items: center;
 }
 
-/* Стили для иконки поиска */
 .search-icon {
     position: absolute;
     left: 12px;
     top: 50%;
     transform: translateY(-50%);
-    pointer-events: none; /* Чтобы иконка не блокировала клики по полю */
+    pointer-events: none;
     z-index: 1;
-    width: 22px; /* Увеличили с 18px */
-    height: 22px; /* Увеличили с 18px */
+    width: 22px;
+    height: 22px;
 }
 
 .search-icon path {
-    stroke-width: 0.6; /* Добавляем обводку для большей толщины */
-    stroke: #aaa; /* Цвет обводки совпадает с цветом заливки */
+    stroke-width: 0.6;
+    stroke: var(--text-secondary);
 }
 
+#searchInput {
+    flex-grow: 1;
+    height: 36px;
+    padding: 0 15px 0 42px;
+    border: none;
+    border-radius: 18px;
+    background-color: var(--dark-background);
+    color: var(--text-primary);
+    font-size: 15px;
+    outline: none;
+    margin: 0;
+    width: 100%;
+}
+
+#searchInput:focus {
+    outline: none;
+    box-shadow: none;
+}
+
+#searchInput::placeholder {
+    color: var(--text-secondary);
+}
+
+/* Menu button styles - consolidated */
 .menu-btn {
     display: flex;
     flex-direction: column;
     justify-content: center;
     align-items: center;
-    width: 20px; /* Размер как на фото 1 */
+    width: 20px;
     height: 20px;
     background-color: transparent;
     border: none;
@@ -185,21 +257,20 @@ body {
 
 .menu-btn span {
     display: block;
-    width: 16px; /* Ширина линий как на фото 1 */
-    height: 1.5px; /* Толщина линий */
-    background-color: #aaa; /* Цвет менее яркий, как на фото 1 */
+    width: 16px;
+    height: 1.5px;
+    background-color: var(--text-secondary);
     position: absolute;
-    left: 2px; /* Центрирование линий */
+    left: 2px;
 }
 
-/* Позиции линий как на фото 1 */
 .menu-btn span:nth-child(1) {
     top: 5px;
     transform: none;
 }
 
 .menu-btn span:nth-child(2) {
-    top: 10px; /* Центральная линия */
+    top: 10px;
     transform: none;
 }
 
@@ -208,123 +279,90 @@ body {
     transform: none;
 }
 
-#searchInput {
-    flex-grow: 1;
-    height: 36px; /* Высота как на фото 1 */
-    padding: 0 15px 0 42px; /* Увеличили левый отступ с 38px до 42px для учета увеличения размера иконки */
-    border: none;
-    border-radius: 18px;
-    background-color: #100E0E;
-    color: #fff;
-    font-size: 15px;
-    outline: none;
-    margin: 0;
-    width: 100%; /* Гарантируем, что поле займет все доступное пространство */
-}
-
-#searchInput:focus {
-    outline: none;
-    box-shadow: none;
-}
-
-#searchInput::placeholder {
-    color: #aaa;
-}
-
-/* Основной стиль для главного контента - сделаем размер фиксированным */
-.main-content {
-    flex-grow: 1;
-    background-color: #0e0e0e; /* Темный фон как в Telegram */
-    display: flex;
-    flex-direction: column;
-    position: relative;
-    width: calc(100% - 320px); /* Фиксированная ширина, учитывающая боковую панель */
-    height: 100vh; /* Фиксированная высота на весь экран */
-    overflow: hidden; /* Предотвращаем общую прокрутку */
-    border-left: 1px solid #333; /* Добавляем четкую границу между блоками */
-}
-
-/* Полностью новые стили для заголовка чата с высоким приоритетом */
+/* Chat header - consolidated styles */
 .chat-header {
-    height: 60px !important;
-    background-color: #212121 !important;
-    display: flex !important;
-    align-items: center !important;
-    justify-content: space-between !important;
-    padding: 0 16px !important;
-    border-bottom: 1px solid #333 !important;
-    flex-shrink: 0 !important;
-    z-index: 10 !important;
-    box-sizing: border-box !important;
+    height: 60px;
+    background-color: var(--chat-header-background);
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 0 16px;
+    border-bottom: 1px solid var(--border-color);
+    flex-shrink: 0;
+    z-index: 10;
+    box-sizing: border-box;
 }
 
-.chat-user-info {
-    display: flex !important;
-    flex-direction: row !important; /* Принудительно устанавливаем горизонтальное расположение */
-    align-items: center !important; /* Центрирование по вертикали */
-    justify-content: flex-start !important;
-    flex-grow: 1 !important;
-    height: auto !important; /* Изменяем с 100% на auto */
-    padding: 0 !important;
-    margin: 0 !important;
-    max-width: 80% !important; /* Ограничиваем ширину */
-}
-
-.chat-user-avatar {
-    width: 45px !important;
-    height: 45px !important;
-    border-radius: 50% !important;
-    background-color: #555 !important;
-    margin-right: 12px !important;
-    overflow: hidden !important;
-    position: relative !important;
-    flex-shrink: 0 !important;
-    display: flex !important; /* Добавляем для выравнивания инициалов */
-    align-items: center !important;
-    justify-content: center !important;
-}
-
-.chat-user-name {
-    color: white !important;
-    font-size: 17px !important;
-    font-weight: 500 !important;
-    margin: 0 !important;
-    padding: 0 !important;
-    white-space: nowrap !important;
-    overflow: hidden !important;
-    text-overflow: ellipsis !important;
-}
-
-/* Полностью переработанные стили для заголовка чата */
 .chat-user-info {
     display: flex;
-    flex-direction: row; /* Горизонтальное расположение элементов */
-    align-items: center; /* Вертикальное выравнивание по центру */
+    flex-direction: row;
+    align-items: center;
+    justify-content: flex-start;
     flex-grow: 1;
-    height: 100%;
-    padding: 0; /* Убираем отступы */
+    height: auto;
+    padding: 0;
+    margin: 0;
+    max-width: 80%;
+}
+
+.chat-user-avatar,
+.contact-avatar,
+.search-user-avatar,
+.avatar-placeholder {
+    /* Common styles for all avatars using shared class */
+    border-radius: 50%;
+    overflow: hidden;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+    position: relative;
 }
 
 .chat-user-avatar {
     width: 45px;
     height: 45px;
-    border-radius: 50%;
-    background-color: #555;
+    background-color: var(--avatar-background);
     margin-right: 12px;
-    overflow: hidden;
-    position: relative;
-    flex-shrink: 0;
 }
 
-.chat-user-avatar img {
+.contact-avatar {
+    width: 48px;
+    height: 48px;
+    background-color: var(--avatar-background);
+    margin-right: 12px;
+}
+
+.search-user-avatar {
+    width: 40px;
+    height: 40px;
+    background-color: var(--avatar-background);
+    margin-right: 12px;
+}
+
+.avatar-placeholder {
+    width: 60px;
+    height: 60px;
+    background-color: var(--avatar-placeholder-color);
+    margin-right: 15px;
+    cursor: pointer;
+}
+
+.chat-user-avatar img,
+.contact-avatar img,
+.search-user-avatar img,
+.avatar-placeholder img {
     width: 100%;
     height: 100%;
     object-fit: cover;
 }
 
-.chat-user-avatar .avatar-initials {
+.chat-user-avatar .avatar-initials,
+.contact-avatar .avatar-initials,
+.search-user-avatar .avatar-initials,
+.avatar-placeholder .avatar-initials {
     color: white;
-    font-size: 20px; /* Увеличенный размер шрифта */
+    font-size: 20px;
     width: 100%;
     height: 100%;
     display: flex;
@@ -335,52 +373,67 @@ body {
     left: 0;
 }
 
-.chat-user-name {
-    color: white;
-    font-size: 17px;
-    font-weight: 500;
-    margin: 0; /* Убираем все отступы */
+.search-user-avatar .avatar-initials {
+    font-size: 18px;
 }
 
-/* Вертикальные три точки вместо горизонтальных */
+.contact-avatar .avatar-initials {
+    font-size: 20px;
+    font-weight: bold;
+}
+
+.chat-user-name {
+    position: absolute;
+    left: 57px;
+    top: 50%;
+    transform: translateY(-70%);
+    font-size: 17px;
+    font-weight: 500;
+    color: white;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    max-width: calc(100% - 57px);
+}
+
 .chat-menu-btn {
     width: 40px;
     height: 40px;
     background: transparent;
     border: none;
-    color: #aaa;
+    color: var(--text-secondary);
     border-radius: 50%;
     cursor: pointer;
     display: flex;
     align-items: center;
     justify-content: center;
-    align-self: center; /* Добавляем для лучшего вертикального выравнивания */
+    align-self: center;
     margin-top: 0;
     margin-bottom: 0;
     padding: 0;
 }
 
 .chat-menu-btn:hover {
-    background-color: rgba(255, 255, 255, 0.1);
+    background-color: var(--button-hover);
     color: white;
 }
 
-/* Область сообщений с фиксированными размерами и скроллингом */
+/* Chat messages area */
 .chat-messages {
     flex-grow: 1;
-    height: calc(100vh - 128px); /* Вычитаем высоту header (60px) и input (68px) */
+    height: calc(100vh - 128px);
     padding: 20px 16px;
-    overflow-y: auto; /* Только вертикальная прокрутка */
+    overflow-y: auto;
     display: flex;
     flex-direction: column;
-    background-color: #0f0f0f; /* Темный фон как на фото */
-    background-image: none; /* Убираем паттерн */
+    background-color: #0f0f0f;
+    background-image: none;
     scrollbar-width: thin;
-    scrollbar-color: rgba(255, 255, 255, 0.2) transparent;
+    scrollbar-color: var(--scrollbar-thumb) transparent;
 }
 
 .chat-messages::-webkit-scrollbar {
-    width: 6px; /* Тонкий скроллбар как в Telegram */
+    width: var(--scrollbar-width);
 }
 
 .chat-messages::-webkit-scrollbar-track {
@@ -388,64 +441,59 @@ body {
 }
 
 .chat-messages::-webkit-scrollbar-thumb {
-    background: rgba(255, 255, 255, 0.2);
-    border-radius: 6px;
+    background: var(--scrollbar-thumb);
+    border-radius: calc(var(--scrollbar-width) / 2);
 }
 
 .chat-messages::-webkit-scrollbar-thumb:hover {
-    background: rgba(255, 255, 255, 0.3);
+    background: var(--scrollbar-thumb-hover);
 }
 
-/* "Резиновый" контейнер для сообщений, который растягивается, оставляя внизу место */
 .messages-container {
-    margin-top: auto; /* Это прижмет сообщения к нижней части контейнера */
+    margin-top: auto;
     display: flex;
     flex-direction: column;
     gap: 8px;
     width: 100%;
 }
 
-/* Стили для сообщений в стиле Telegram */
+/* Message styles */
 .message {
-    max-width: 50%; /* Ограничиваем ширину до половины контейнера */
+    max-width: 50%;
     padding: 10px 12px;
     position: relative;
     margin-bottom: 6px;
     line-height: 1.4;
-    border-radius: 8px; /* Более округлые сообщения */
+    border-radius: 8px;
     animation: fadeIn 0.2s ease-out;
     box-shadow: 0 1px 2px rgba(0, 0, 0, 0.2);
-    word-wrap: break-word; /* Важно для переноса длинных слов */
-    overflow-wrap: break-word; /* Более современное свойство */
-    hyphens: auto; /* Добавляем переносы */
+    word-wrap: break-word;
+    overflow-wrap: break-word;
+    hyphens: auto;
 }
 
-/* Улучшаем отображение контента сообщений */
 .message-content {
     font-size: 15px;
-    white-space: pre-wrap; /* Сохраняем переносы строк и пробелы */
+    white-space: pre-wrap;
     overflow-wrap: break-word;
-    word-break: break-word; /* Разрешаем разрыв слова для очень длинных слов */
-    max-width: 100%; /* Ограничиваем ширину контента */
+    word-break: break-word;
+    max-width: 100%;
 }
 
-/* Особенности для отправленных сообщений */
 .message-sent {
-    background-color: #2b5278; /* Синий цвет как в Telegram */
-    color: #fff;
+    background-color: var(--message-sent);
+    color: var(--text-primary);
     align-self: flex-end;
-    border-radius: 8px 8px 2px 8px; /* Скругленные углы как в Telegram */
+    border-radius: 8px 8px 2px 8px;
 }
 
-/* Особенности для полученных сообщений */
 .message-received {
-    background-color: #333333; /* Цвет как на фото */
-    color: #fff;
+    background-color: var(--message-received);
+    color: var(--text-primary);
     align-self: flex-start;
     border-radius: 8px 8px 8px 2px;
 }
 
-/* Обновленные стили для времени сообщения */
 .message-time {
     color: rgba(255, 255, 255, 0.7);
     font-size: 11px;
@@ -453,348 +501,191 @@ body {
     text-align: right;
 }
 
-/* Решаем проблему с очень длинными URL и текстом без пробелов */
 .message a {
     word-break: break-all;
 }
 
-/* Поле ввода в стиле Telegram */
-.chat-input {
-    height: 68px; /* Фиксированная высота поля ввода */
-    background-color: #212121; /* Цвет как на фото */
-    display: flex;
-    align-items: center;
-    padding: 0 16px;
-    gap: 12px;
-    flex-shrink: 0;
-    border-top: 1px solid #333; /* Добавляем заметную границу */
-    position: relative;
-    z-index: 10;
-}
-
-.input-container {
-    display: flex;
-    align-items: center;
-    background-color: #242f3d;
-    border-radius: 22px;
-    width: 100%;
-    min-height: 48px;
-    padding: 0 8px;
-}
-
-.attachment-btn {
-    width: 44px;
-    height: 44px;
-    background: transparent;
-    border: none;
-    color: #768c9e;
-    cursor: pointer;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    flex-shrink: 0;
-    transition: color 0.2s;
-}
-
-.attachment-btn:hover {
-    color: #a8bac8;
-}
-
-.attachment-btn svg {
-    width: 24px;
-    height: 24px;
-    stroke-width: 1.5;
-}
-
-.chat-input textarea {
-    flex-grow: 1;
-    height: 40px;
-    max-height: 120px;
-    background-color: #333;
-    border: none;
-    border-radius: 22px; /* Более округлый */
-    padding: 11px 16px; /* Увеличенные отступы */
-    color: white;
-    resize: none;
-    outline: none;
-    font-family: inherit;
-    font-size: 15px;
-    line-height: 20px;
-    transition: background-color 0.2s, height 0.1s ease;
-}
-
-.chat-input textarea:focus {
-    background-color: #3a3a3a;
-}
-
-.chat-input textarea::placeholder {
-    color: #768c9e;
-}
-
-.chat-input .send-btn {
-    width: 44px;
-    height: 44px;
-    background-color: #2b5278; /* Цвет как у сообщений */
-    color: white;
-    border: none;
-    border-radius: 50%;
-    cursor: pointer;
-    display: none;
-    align-items: center;
-    justify-content: center;
-    flex-shrink: 0;
-    padding: 0;
-    margin-left: 8px;
-    transition: background-color 0.2s, transform 0.1s;
-}
-
-.chat-input .send-btn.visible {
-    display: flex;
-}
-
-.chat-input .send-btn:hover {
-    background-color: #366497; /* Немного светлее при наведении */
-}
-
-.chat-input .send-btn:active {
-    transform: scale(0.95);
-}
-
-.chat-input .send-btn svg {
-    width: 22px;
-    height: 22px;
-}
-
-/* Улучшенные стили для поля ввода сообщений */
-.chat-input {
-    height: 68px; /* Увеличенная высота */
-    background-color: #212121;
-    display: flex;
-    align-items: center;
-    padding: 0 16px;
-    gap: 12px;
-    flex-shrink: 0;
-    border-top: 1px solid #333;
-    position: relative;
-    z-index: 10;
-}
-
-.emoji-button {
-    width: 40px;
-    height: 40px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    flex-shrink: 0;
-    border-radius: 50%;
-    cursor: pointer;
-    color: #aaa;
-    transition: background-color 0.2s, color 0.2s;
-}
-
-.emoji-button:hover {
-    background-color: rgba(255, 255, 255, 0.1);
-    color: white;
-}
-
-.emoji-button svg {
-    width: 24px;
-    height: 24px;
-}
-
-.chat-input textarea {
-    flex-grow: 1;
-    height: 40px;
-    max-height: 120px;
-    background-color: #333;
-    border: none;
-    border-radius: 22px; /* Более округлый */
-    padding: 11px 16px; /* Увеличенные отступы */
-    color: white;
-    resize: none;
-    outline: none;
-    font-family: inherit;
-    font-size: 15px;
-    line-height: 20px;
-    transition: background-color 0.2s;
-}
-
-.chat-input textarea:focus {
-    background-color: #3a3a3a;
-}
-
-.chat-input textarea::placeholder {
-    color: #888;
-}
-
-.chat-input .send-btn {
-    width: 44px;
-    height: 44px;
-    background-color: #2b5278; /* Цвет как у сообщений */
-    color: white;
-    border: none;
-    border-radius: 50%;
-    cursor: pointer;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    flex-shrink: 0;
-    padding: 0;
-    margin: 0;
-    transition: background-color 0.2s, transform 0.1s;
-}
-
-.chat-input .send-btn:hover {
-    background-color: #366497; /* Немного светлее при наведении */
-}
-
-.chat-input .send-btn:active {
-    transform: scale(0.95);
-}
-
-.chat-input .send-btn svg {
-    width: 22px;
-    height: 22px;
-}
-
-/* Стили для выпадающего меню в чате */
-.chat-dropdown-menu {
-    position: absolute;
-    top: 50px;
-    right: 15px;
-    background-color: #2a2a2a;
-    border-radius: 4px;
-    box-shadow: 0 5px 15px rgba(0, 0, 0, 0.3);
-    z-index: 100;
-    overflow: hidden;
-    min-width: 200px;
-    animation: fadeIn 0.2s ease-out;
-}
-
-.dropdown-item {
-    padding: 12px 15px;
-    color: white;
-    cursor: pointer;
-    transition: background-color 0.2s;
-    font-size: 14px;
-}
-
-.dropdown-item:hover {
-    background-color: #383838;
-}
-
-.dropdown-item.remove-contact {
-    color: #ff5d5d; /* Более мягкий красный цвет */
-}
-
-.chat-messages {
-    flex-grow: 1;
-    padding: 20px;
-    overflow-y: auto;
-    display: flex;
-    flex-direction: column;
-    background-color: #121212;
-}
-
+/* No messages placeholder */
 .no-messages {
-    color: #666;
+    color: var(--text-dimmed);
     text-align: center;
     font-style: italic;
     padding: 20px;
-    
-    /* Позиционируем текст ниже */
-    margin-top: 30%;  /* Увеличиваем отступ сверху */
-    margin-bottom: 120px;  /* Увеличиваем отступ снизу с 60px до 120px */
-    
-    /* Увеличиваем размер текста */
-    font-size: 18px;  /* Увеличиваем с 14px до 18px */
+    margin-top: 30%;
+    margin-bottom: 120px;
+    font-size: 18px;
     opacity: 0.8;
-    font-weight: 300;  /* Добавляем легкий вес шрифта для лучшей читаемости */
+    font-weight: 300;
 }
 
-.chat-input {
-    height: 68px; /* Увеличенная высота */
-    background-color: #212121;
+/* Message input container - consolidated styles */
+.message-input-container {
+    width: 100%;
+    height: 68px;
     display: flex;
     align-items: center;
     padding: 0 16px;
-    gap: 12px;
-    flex-shrink: 0;
-    border-top: 1px solid #333;
+    background-color: var(--chat-header-background);
+    border-top: 1px solid var(--border-color);
     position: relative;
     z-index: 10;
+    box-sizing: border-box;
 }
 
-.chat-input textarea {
-    flex-grow: 1;
-    height: 40px;
-    background-color: #333;
-    border: none;
-    border-radius: 22px; /* Более округлый */
-    padding: 11px 16px; /* Увеличенные отступы */
-    color: white;
-    resize: none;
-    outline: none;
-    font-family: inherit;
-    font-size: 15px;
-    line-height: 20px;
-    transition: height 0.1s ease;
-}
-
-.chat-input textarea::placeholder {
-    color: #888;
-}
-
-.chat-input .send-btn {
-    width: 44px;
-    height: 44px;
-    margin-left: 10px;
-    background-color: #333;
-    color: #aaa;
-    border: none;
-    border-radius: 50%;
-    cursor: pointer;
+.input-wrapper {
+    position: relative;
     display: flex;
     align-items: center;
-    justify-content: center;
+    width: 100%;
+    height: 100%;
+    padding-left: 8px;
 }
 
-.chat-input .send-btn:hover {
-    background-color: #444;
-    color: white;
-}
-
-.chat-input .send-btn svg {
-    width: 22px;
-    height: 22px;
-}
-
-/* Стили для выпадающего меню в чате */
-.chat-dropdown-menu {
+.clip-button-container {
     position: absolute;
-    top: 50px;
-    right: 15px;
-    background-color: #2a2a2a;
-    border-radius: 4px;
-    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
-    z-index: 100;
-    overflow: hidden;
-    min-width: 180px;
+    left: -5px;
+    top: 50%;
+    transform: translateY(-50%);
+    z-index: 2;
 }
 
-.dropdown-item {
-    padding: 12px 15px;
+.paperclip-button {
+    width: 44px;
+    height: 44px;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    background: transparent;
+    border: none;
+    color: var(--text-secondary);
+    cursor: pointer;
+    flex-shrink: 0;
+    padding: 0;
+    margin: 0;
+}
+
+.paperclip-button:hover {
+    color: var(--text-secondary);
+    background-color: transparent;
+}
+
+.message-input-field {
+    flex-grow: 1;
+    height: 44px;
+    margin: 0 10px 0 44px;
+    display: flex;
+    align-items: center;
+}
+
+.message-input-field input {
+    width: 100%;
+    height: 42px;
+    padding: 0 16px;
+    border-radius: 21px;
+    border: none;
+    background-color: var(--input-background);
     color: white;
+    font-size: 15px;
+}
+
+.message-input-field input:focus {
+    outline: none;
+}
+
+.send-button {
+    width: 50px;
+    height: 50px;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    background: transparent;
+    border: none;
+    color: #888;
+    cursor: default;
+    flex-shrink: 0;
+    padding: 0;
+    margin: 0 5px;
+    opacity: 0.7;
+    pointer-events: none;
+}
+
+.send-button.active {
+    color: var(--message-sent);
+    cursor: pointer;
+    opacity: 1;
+    pointer-events: auto;
+}
+
+.send-button svg {
+    width: 28px;
+    height: 28px;
+}
+
+.send-button:hover,
+.send-button.active:hover {
+    color: inherit;
+    background-color: transparent;
+}
+
+/* Contact list styles */
+.contacts-list {
+    flex-grow: 1;
+    overflow-y: auto;
+    padding: 5px 0;
+    scrollbar-width: thin;
+}
+
+.contacts-list::-webkit-scrollbar {
+    width: var(--scrollbar-width-thin);
+}
+
+.contacts-list::-webkit-scrollbar-track {
+    background: var(--sidebar-background);
+}
+
+.contacts-list::-webkit-scrollbar-thumb {
+    background: #444;
+    border-radius: calc(var(--scrollbar-width-thin) / 2);
+}
+
+.contact-item {
+    display: flex;
+    align-items: center;
+    padding: 10px 15px;
     cursor: pointer;
     transition: background-color 0.2s;
+    border-radius: 5px;
+    margin: 2px 8px;
+    position: relative;
 }
 
-.dropdown-item:hover {
+.contact-item:hover {
+    background-color: #2a2a2a;
+}
+
+.contact-item.active {
     background-color: #333;
 }
 
-.dropdown-item.remove-contact {
-    color: #e74c3c;
+.contact-info {
+    display: flex;
+    align-items: center;
+    height: 48px;
+}
+
+.contact-name {
+    font-size: 15px;
+    color: white;
+    margin-bottom: 0;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    line-height: 48px;
+}
+
+/* Hide contact bio */
+.contact-bio {
+    display: none;
 }
 
 .no-contacts-message {
@@ -804,16 +695,17 @@ body {
     font-size: 14px;
     font-style: italic;
     margin-top: 20px;
+    display: none;
 }
 
-/* Стили для выдвижного бокового меню */
+/* Side menu styles */
 .side-menu {
     position: fixed;
     top: 0;
-    left: -320px; /* Скрыто за пределами экрана */
-    width: 320px;
+    left: -var(--sidebar-width);
+    width: var(--sidebar-width);
     height: 100vh;
-    background-color: #1c1c1c;
+    background-color: var(--sidebar-background);
     z-index: 1000;
     transition: left 0.3s ease;
     display: flex;
@@ -823,50 +715,32 @@ body {
 }
 
 .side-menu.active {
-    left: 0; /* Показывается при активации */
+    left: 0;
 }
 
-/* Увеличенные стили для профиля пользователя */
 .user-profile-header {
     display: flex;
     justify-content: space-between;
     align-items: center;
-    padding: 15px 0; /* Увеличиваем верхний и нижний отступы */
+    padding: 15px 0;
     margin-bottom: 20px;
-    border-bottom: 1px solid #333;
+    border-bottom: 1px solid var(--border-color);
 }
 
-.user-profile {
+/* Side menu styles - adjust user profile layout */
+.side-menu .user-profile {
     display: flex;
-    align-items: center;
-    width: 100%; /* Позволяет занимать всю доступную ширину */
-    padding-top: 5px; /* Add padding to move username higher */
+    align-items: center; /* Changed from flex-start to center */
+    width: 100%;
+    padding-top: 0;
+    margin-bottom: 10px;
+    height: 60px;
+    position: relative; /* Added for positioning context */
 }
 
-.edit-profile-btn {
-    width: 38px; /* Немного увеличиваем размер кнопки */
-    height: 38px;
-    padding: 0;
-    margin-left: 10px; /* Добавляем отступ слева */
-    background: transparent;
-    border: none;
-    cursor: pointer;
-    color: #aaa;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    border-radius: 50%;
-    flex-shrink: 0; /* Не позволяем кнопке сжиматься */
-}
-
-.edit-profile-btn:hover {
-    color: white;
-    background-color: #333;
-}
-
-.avatar-placeholder {
-    width: 60px; /* Увеличиваем с 48px до 60px */
-    height: 60px; /* Увеличиваем с 48px до 60px */
+.side-menu .avatar-placeholder {
+    width: 60px;
+    height: 60px;
     border-radius: 50%;
     background-color: #706c6c;
     display: flex;
@@ -876,207 +750,111 @@ body {
     position: relative;
     cursor: pointer;
     overflow: hidden;
-    flex-shrink: 0; /* Запрещаем уменьшение размера */
+    flex-shrink: 0;
 }
 
-/* Стили для инициалов - центрируем их правильно */
-.avatar-initials {
-    color: white;
-    font-size: 28px;
+.side-menu .user-info {
+    flex-grow: 1;
+    min-width: 0;
+    padding-right: 5px;
     display: flex;
-    justify-content: center;
-    align-items: center;
-    width: 100%;
-    height: 100%;
-    position: absolute;
-    top: 0;
-    left: 0;
+    flex-direction: column;
+    height: 60px;
+    padding-top: 0; /* Changed from 10px to 0 */
+    justify-content: center; /* Added to center vertically */
+    position: relative; /* Added for positioning */
 }
 
-/* Стили для изображения аватара - обеспечиваем правильное заполнение */
-.avatar-image {
-    width: 100%;
-    height: 100%;
-    object-fit: cover;
-    position: absolute;
-    top: 0;
-    left: 0;
+.side-menu .user-info h3 {
+    margin: 0;
+    color: white;
+    font-size: 18px;
+    font-weight: 500;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    line-height: 1.2;
+    position: relative;
+    top: -10px; /* Move the username higher */
+    margin-bottom: 20px; /* Add space between username and status/empty space */
 }
 
-/* Увеличиваем область для информации */
+/* Clean up the empty space after user info */
+.side-menu .user-info::after {
+    content: '';
+    display: block;
+    height: 18px;
+    position: relative;
+    top: -10px; /* Move this up to match username */
+}
+
+.user-profile {
+    display: flex;
+    align-items: flex-start;
+    width: 100%;
+    padding-top: 0;
+    margin-bottom: 10px;
+    height: 60px;
+}
+
 .user-info {
-    flex-grow: 1; /* Позволяем расти, занимая доступное пространство */
-    min-width: 0; /* Предотвращает переполнение */
-    padding-right: 5px; /* Добавляем немного пространства справа */
+    flex-grow: 1;
+    min-width: 0;
+    padding-right: 5px;
+    display: flex;
+    flex-direction: column;
+    height: 60px;
+    padding-top: 10px;
 }
 
 .user-info h3 {
     margin: 0;
     color: white;
-    font-size: 18px; /* Увеличиваем с 16px до 18px */
-    font-weight: 500; /* Делаем шрифт чуть полужирнее */
-    margin-bottom: 0; /* Remove bottom margin */
-    white-space: nowrap; /* Предотвращаем перенос текста */
-    overflow: hidden; /* Скрываем выходящий за пределы текст */
-    text-overflow: ellipsis; /* Добавляем многоточие для длинного текста */
-    margin-top: -1px; /* Отрицательный отступ сверху для поднятия имени выше */
-    position: relative; /* Добавляем для лучшего контроля позиции */
+    font-size: 18px;
+    font-weight: 500;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    line-height: 1.2;
 }
 
-/* Полностью удаляем элемент user-status */
-.user-status {
-    display: none;
+/* Clean up the empty space after user info */
+.side-menu .user-info::after {
+    content: '';
+    display: block;
+    height: 18px;
 }
 
-/* Стили для боковой панели редактирования профиля */
-.edit-profile-sidebar {
-    position: fixed;
-    top: 0;
-    left: -320px;
-    width: 320px;
-    height: 100vh;
-    background-color: #1c1c1c;
-    z-index: 1000;
-    transition: left 0.3s ease;
-    display: flex;
-    flex-direction: column;
-    padding: 15px;
-    box-sizing: border-box;
+/* Properly hide user status */
+.side-menu .user-status {
+    display: none !important;
+    visibility: hidden !important;
+    height: 0 !important;
+    opacity: 0 !important;
 }
 
-.edit-profile-sidebar.active {
-    left: 0;
-}
-
-.edit-profile-header {
-    display: flex;
-    align-items: center;
-    padding: 10px 0;
-    margin-bottom: 20px;
-    border-bottom: 1px solid #333;
-    height: 40px; /* Фиксированная высота для стабильного вида */
-}
-
-.header-title-wrapper {
-    display: flex;
-    align-items: center;
-    width: 100%;
-    position: relative; /* Для позиционирования */
-}
-
-.back-btn {
+.edit-profile-btn {
+    width: 38px;
+    height: 38px;
+    padding: 0;
+    margin-left: 10px;
     background: transparent;
     border: none;
-    color: #aaa;
-    padding: 0; /* Убираем отступы */
     cursor: pointer;
-    border-radius: 50%;
+    color: var(--text-secondary);
     display: flex;
     align-items: center;
     justify-content: center;
-    width: 28px;
-    height: 28px;
-    position: absolute; /* Абсолютное позиционирование */
-    left: 0; /* Размещаем слева */
-    top: 50%; /* Центрируем по вертикали */
-    transform: translateY(-50%); /* Точное вертикальное центрирование */
-    z-index: 2; /* Чтобы кнопка была поверх текста */
+    border-radius: 50%;
+    flex-shrink: 0;
 }
 
-.back-btn:hover {
+.edit-profile-btn:hover {
     color: white;
     background-color: #333;
 }
 
-.back-btn svg {
-    width: 16px;
-    height: 16px;
-}
-
-.edit-profile-header h3 {
-    width: 100%;
-    margin: 0;
-    color: white;
-    font-size: 16px; /* Меньший размер шрифта как на картинке */
-    text-align: center; /* Центрирование текста */
-    position: relative; /* Для позиционирования поверх других элементов */
-    font-weight: normal; /* Нежирный шрифт как на картинке */
-    z-index: 1;
-}
-
-.edit-profile-content {
-    padding: 15px 0;
-}
-
-.edit-field {
-    margin-bottom: 20px;
-}
-
-.edit-field label {
-    display: block;
-    margin-bottom: 8px;
-    color: #aaa;
-    font-size: 14px;
-}
-
-.edit-field input,
-.edit-field textarea {
-    width: 100%;
-    padding: 10px;
-    background-color: #2c2c2c;
-    border: 1px солид #444;
-    border-radius: 4px;
-    color: white;
-    font-size: 14px;
-    box-sizing: border-box;
-}
-
-.edit-field textarea {
-    min-height: 100px;
-    height: 150px; /* Фиксированная высота */
-    resize: none; /* Запрещаем изменение размера вручную */
-    overflow-y: auto; /* Сохраняем вертикальную прокрутку */
-    scrollbar-width: none; /* Для Firefox */
-    -ms-overflow-style: none; /* Для IE и Edge */
-    box-sizing: border-box;
-    color: #aaa; /* Светло-серый цвет текста, более приглушенный */
-    font-size: 14px;
-    width: 100%;
-    padding: 10px;
-    background-color: #2c2c2c;
-    border: 1px солид #444;
-    border-radius: 4px;
-}
-
-/* Скрываем полосу прокрутки для WebKit-браузеров (Chrome, Safari, новый Edge) */
-.edit-field textarea::-webkit-scrollbar {
-    width: 0;
-    height: 0;
-    display: none;
-}
-
-/* Также изменяем placeholder цвет для textarea */
-.edit-field textarea::placeholder {
-    color: #666;
-}
-
-.save-profile-btn {
-    padding: 10px 20px;
-    background-color: #6b6b6b;
-    color: white;
-    border: none;
-    border-radius: 4px;
-    font-size: 14px;
-    cursor: pointer;
-    width: 100%;
-    margin-top: 15px;
-}
-
-.save-profile-btn:hover {
-    background-color: #5a5a5a;
-}
-
-/* Стили для пунктов меню */
+/* Menu items */
 .menu-items {
     margin-top: auto;
     padding-bottom: 20px;
@@ -1106,7 +884,7 @@ body {
     color: #e74c3c;
 }
 
-/* Затемняющая подложка при открытом меню */
+/* Overlay styles */
 .overlay {
     position: fixed;
     top: 0;
@@ -1122,7 +900,7 @@ body {
     display: block;
 }
 
-/* Стили для модального окна */
+/* Modal styles */
 .modal {
     position: fixed;
     top: 0;
@@ -1145,30 +923,29 @@ body {
 }
 
 .modal-content {
-    background-color: #1c1c1c;
+    background-color: var(--sidebar-background);
     padding: 20px;
     border-radius: 8px;
     width: 90%;
     max-width: 400px;
     box-shadow: 0 5px 15px rgba(0, 0, 0, 0.5);
-    text-align: center; /* Центрируем весь текст в модальном окне */
+    text-align: center;
 }
 
 .modal-content h3 {
     margin-top: 0;
-    color: #fff;
+    color: var(--text-primary);
     font-size: 18px;
     margin-bottom: 15px;
-    text-align: center; /* Центрируем заголовок */
+    text-align: center;
 }
 
 .modal-content p {
     color: #ccc;
     margin-bottom: 20px;
-    text-align: center; /* Центрируем текст подтверждения */
+    text-align: center;
 }
 
-/* Полностью переработанные стили для кнопок */
 .modal-buttons {
     display: flex;
     justify-content: center;
@@ -1178,13 +955,12 @@ body {
 }
 
 .btn-primary, .btn-secondary {
-    /* Общие стили для обеих кнопок */
-    display: flex;             /* Меняем на flex вместо inline-block */
-    justify-content: center;   /* Центрируем содержимое по горизонтали */
-    align-items: center;       /* Центрируем содержимое по вертикали */
+    display: flex;
+    justify-content: center;
+    align-items: center;
     width: 100px;
-    height: 36px;              /* Задаем фиксированную высоту */
-    padding: 0;                /* Убираем вертикальные отступы */
+    height: 36px;
+    padding: 0;
     text-align: center;
     border-radius: 4px;
     font-size: 14px;
@@ -1193,34 +969,173 @@ body {
     text-decoration: none;
     border: none;
     transition: background-color 0.2s;
-    box-sizing: border-box;    /* Учитываем границы в размере */
+    box-sizing: border-box;
 }
 
 .btn-primary {
-    background-color: #e74c3c; /* Красный цвет */
+    background-color: #e74c3c;
     color: white;
 }
 
 .btn-primary:hover {
-    background-color: #c0392b; /* Темнее при наведении */
+    background-color: #c0392b;
 }
 
 .btn-secondary {
-    background-color: #4d4d4d; /* Серый цвет */
+    background-color: #4d4d4d;
     color: white;
 }
 
 .btn-secondary:hover {
-    background-color: #404040; /* Темнее при наведении */
+    background-color: #404040;
 }
 
-/* Стили для результатов поиска */
+/* Edit profile sidebar */
+.edit-profile-sidebar {
+    position: fixed;
+    top: 0;
+    left: -var(--sidebar-width);
+    width: var(--sidebar-width);
+    height: 100vh;
+    background-color: var(--sidebar-background);
+    z-index: 1000;
+    transition: left 0.3s ease;
+    display: flex;
+    flex-direction: column;
+    padding: 15px;
+    box-sizing: border-box;
+}
+
+.edit-profile-sidebar.active {
+    left: 0;
+}
+
+.edit-profile-header {
+    display: flex;
+    align-items: center;
+    padding: 10px 0;
+    margin-bottom: 20px;
+    border-bottom: 1px solid var(--border-color);
+    height: 40px;
+}
+
+.header-title-wrapper {
+    display: flex;
+    align-items: center;
+    width: 100%;
+    position: relative;
+}
+
+.back-btn {
+    background: transparent;
+    border: none;
+    color: var(--text-secondary);
+    padding: 0;
+    cursor: pointer;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 28px;
+    height: 28px;
+    position: absolute;
+    left: 0;
+    top: 50%;
+    transform: translateY(-50%);
+    z-index: 2;
+}
+
+.back-btn:hover {
+    color: white;
+    background-color: #333;
+}
+
+.back-btn svg {
+    width: 16px;
+    height: 16px;
+}
+
+.edit-profile-header h3 {
+    width: 100%;
+    margin: 0;
+    color: white;
+    font-size: 16px;
+    text-align: center;
+    position: relative;
+    font-weight: normal;
+    z-index: 1;
+}
+
+.edit-profile-content {
+    padding: 15px 0;
+}
+
+.edit-field {
+    margin-bottom: 20px;
+}
+
+.edit-field label {
+    display: block;
+    margin-bottom: 8px;
+    color: var(--text-secondary);
+    font-size: 14px;
+}
+
+.edit-field input,
+.edit-field textarea {
+    width: 100%;
+    padding: 10px;
+    background-color: #2c2c2c;
+    border: 1px solid #444;
+    border-radius: 4px;
+    color: white;
+    font-size: 14px;
+    box-sizing: border-box;
+}
+
+.edit-field textarea {
+    min-height: 100px;
+    height: 150px;
+    resize: none;
+    overflow-y: auto;
+    scrollbar-width: none;
+    -ms-overflow-style: none;
+    color: var(--text-secondary);
+}
+
+.edit-field textarea::-webkit-scrollbar {
+    width: 0;
+    height: 0;
+    display: none;
+}
+
+.edit-field textarea::placeholder {
+    color: var(--text-dimmed);
+}
+
+.save-profile-btn {
+    padding: 10px 20px;
+    background-color: #6b6b6b;
+    color: white;
+    border: none;
+    border-radius: 4px;
+    font-size: 14px;
+    cursor: pointer;
+    width: 100%;
+    margin-top: 15px;
+}
+
+.save-profile-btn:hover {
+    background-color: #5a5a5a;
+}
+
+/* Search results */
 .search-results {
     position: absolute;
     top: 50px;
     left: 0;
     width: 100%;
-    background-color: #1c1c1c;
+    background-color: var(--sidebar-background);
     border-radius: 4px;
     box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
     z-index: 100;
@@ -1230,23 +1145,23 @@ body {
 }
 
 .search-results::-webkit-scrollbar {
-    width: 4px;
+    width: var(--scrollbar-width-thin);
 }
 
 .search-results::-webkit-scrollbar-track {
-    background: #1c1c1c;
+    background: var(--sidebar-background);
 }
 
 .search-results::-webkit-scrollbar-thumb {
     background: #444;
-    border-radius: 2px;
+    border-radius: calc(var(--scrollbar-width-thin) / 2);
 }
 
 .search-results-header {
     padding: 10px 15px;
-    color: #aaa;
+    color: var(--text-secondary);
     font-size: 12px;
-    border-bottom: 1px solid #333;
+    border-bottom: 1px solid var(--border-color);
 }
 
 .search-user-item {
@@ -1259,31 +1174,6 @@ body {
 
 .search-user-item:hover {
     background-color: #2a2a2a;
-}
-
-.search-user-avatar {
-    width: 40px;
-    height: 40px;
-    border-radius: 50%;
-    background-color: #555;
-    margin-right: 12px;
-    overflow: hidden;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    flex-shrink: 0;
-}
-
-.search-user-avatar img {
-    width: 100%;
-    height: 100%;
-    object-fit: cover;
-}
-
-.search-user-avatar .avatar-initials {
-    color: white;
-    font-size: 18px;
-    font-weight: bold;
 }
 
 .search-user-info {
@@ -1302,7 +1192,7 @@ body {
 
 .search-user-bio {
     font-size: 13px;
-    color: #aaa;
+    color: var(--text-secondary);
     white-space: nowrap;
     overflow: hidden;
     text-overflow: ellipsis;
@@ -1311,7 +1201,7 @@ body {
 .search-no-results, .search-error {
     padding: 15px;
     text-align: center;
-    color: #aaa;
+    color: var(--text-secondary);
     font-size: 14px;
 }
 
@@ -1319,1732 +1209,13 @@ body {
     color: #e57373;
 }
 
-/* Позиционирование контейнера поиска в боковой панели */
-.sidebar .top-bar .search-container {
-    position: relative;
-    flex-grow: 1;
-}
-
-/* Стили для списка контактов */
-.contacts-list {
-    flex-grow: 1;
-    overflow-y: auto;
-    padding: 5px 0;
-    scrollbar-width: thin;
-}
-
-.contacts-list::-webkit-scrollbar {
-    width: 4px;
-}
-
-.contacts-list::-webkit-scrollbar-track {
-    background: #1c1c1c;
-}
-
-.contacts-list::-webkit-scrollbar-thumb {
-    background: #444;
-    border-radius: 2px;
-}
-
-/* Updated contact item styling with padding adjustments */
-.contact-item {
-    display: flex;
-    align-items: center;
-    padding: 10px 15px;
-    cursor: pointer;
-    transition: background-color 0.2s;
-    border-radius: 5px;
-    margin: 2px 8px;
-    position: relative; /* Added for absolute positioning of child elements */
-}
-
-.contact-item:hover {
-    background-color: #2a2a2a;
-}
-
-.contact-item.active {
-    background-color: #333;
-}
-
-.contact-avatar {
-    width: 48px;
-    height: 48px;
-    border-radius: 50%;
-    background-color: #555;
-    margin-right: 12px;
-    overflow: hidden;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    flex-shrink: 0;
-}
-
-.contact-avatar img {
-    width: 100%;
-    height: 100%;
-    object-fit: cover;
-}
-
-.contact-avatar .avatar-initials {
-    color: white;
-    font-size: 20px;
-    font-weight: bold;
-}
-
-/* Updated contact info positioning */
-.contact-info {
-    flex-grow: 1;
-    min-width: 0;
-    padding-top: 3px; /* Add padding to move content up a bit */
-}
-
-/* Updated contact name - positioned higher */
-.contact-name {
-    font-size: 15px;
-    color: white;
-    margin-bottom: 4px;
-    white-space: nowrap;
-    overflow: hidden;
-    text-overflow: ellipsis;
-}
-
-/* Updated contact bio - replaces time information with ellipsis for overflow */
-.contact-bio {
-    font-size: 13px;
-    color: #aaa;
-    white-space: nowrap;
-    overflow: hidden;
-    text-overflow: ellipsis;
-    max-width: 100%;
-}
-
-.no-contacts-message {
-    padding: 20px;
-    text-align: center;
-    color: #777;
-    font-size: 14px;
-    font-style: italic;
-    margin-top: 20px;
-    display: none; /* По умолчанию скрыто, показываем при отсутствии контактов */
-}
-
-/* Модальное окно для выбора файлов */
-.attachment-modal {
-    position: fixed;
-    top: 0;
-    left: 0;
-    width: 100%;
-    height: 100%;
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    background-color: rgba(0, 0, 0, 0.6);
-    z-index: 1100;
-    opacity: 0;
-    visibility: hidden;
-    transition: opacity 0.2s;
-}
-
-.attachment-modal.active {
-    opacity: 1;
-    visibility: visible;
-}
-
-.attachment-modal-content {
-    width: 500px;
-    background-color: #212121;
-    border-radius: 10px;
-    overflow: hidden;
-    box-shadow: 0 5px 25px rgba(0, 0, 0, 0.5);
-    animation: fadeInUp 0.3s forwards;
+/* Animation */
+@keyframes fadeIn {
+    from { opacity: 0; }
+    to { opacity: 1; }
 }
 
 @keyframes fadeInUp {
     from { opacity: 0; transform: translateY(20px); }
     to { opacity: 1; transform: translateY(0); }
-}
-
-/* Заголовок модального окна */
-.attachment-modal-header {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    padding: 12px 16px;
-    border-bottom: 1px solid #333;
-}
-
-.attachment-modal-title {
-    color: white;
-    font-size: 16px;
-    font-weight: 500;
-}
-
-.attachment-modal-close {
-    background: none;
-    border: none;
-    color: #888;
-    cursor: pointer;
-    width: 32px;
-    height: 32px;
-    border-radius: 50%;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    transition: background-color 0.2s;
-}
-
-.attachment-modal-close:hover {
-    background-color: rgba(255, 255, 255, 0.1);
-    color: white;
-}
-
-/* Тело модального окна */
-.attachment-modal-body {
-    padding: 20px;
-    max-height: 70vh;
-    overflow-y: auto;
-}
-
-/* Сетка для предпросмотра файлов */
-.attachment-grid {
-    display: grid;
-    grid-template-columns: repeat(4, 1fr);
-    gap: 10px;
-}
-
-.attachment-item {
-    aspect-ratio: 1/1; /* Квадратное соотношение */
-    position: relative;
-    border-radius: 8px;
-    overflow: hidden;
-    cursor: pointer;
-    background-color: #2a2a2a;
-}
-
-.attachment-item img {
-    width: 100%;
-    height: 100%;
-    object-fit: cover;
-}
-
-.attachment-item-name {
-    position: absolute;
-    bottom: 0;
-    left: 0;
-    right: 0;
-    padding: 8px;
-    background-color: rgba(0, 0, 0, 0.6);
-    color: white;
-    font-size: 12px;
-    white-space: nowrap;
-    overflow: hidden;
-    text-overflow: ellipsis;
-}
-
-/* Кнопка "Показать все файлы" */
-.show-all-files-btn {
-    display: block;
-    width: 100%;
-    padding: 12px;
-    margin-top: 16px;
-    background-color: #333;
-    color: white;
-    border: none;
-    border-radius: 6px;
-    text-align: center;
-    cursor: pointer;
-    transition: background-color 0.2s;
-}
-
-.show-all-files-btn:hover {
-    background-color: #444;
-}
-
-/* Скрытый input для файлов */
-.file-input {
-    position: absolute;
-    width: 1px;
-    height: 1px;
-    padding: 0;
-    margin: -1px;
-    overflow: hidden;
-    clip: rect(0, 0, 0, 0);
-    border: 0;
-}
-
-/* Полностью обновлённые стили для поля ввода чата с прозрачным фоном */
-.chat-input {
-    height: 68px;
-    background-color: transparent !important; /* Принудительно прозрачный фон */
-    display: flex;
-    align-items: center;
-    padding: 0;
-    flex-shrink: 0;
-    border-top: 1px solid #333; /* Оставляем только верхнюю границу */
-    position: relative;
-    z-index: 10;
-    box-sizing: border-box;
-    width: 100%;
-}
-
-.chat-input-wrapper {
-    display: flex;
-    align-items: center;
-    max-width: 850px; /* Максимальная ширина для контента */
-    width: 100%;
-    margin: 0 auto; /* Центрирование */
-    padding: 0 50px; /* Отступы по бокам внутри контейнера */
-    background-color: transparent !important; /* Принудительно прозрачный фон */
-}
-
-/* Стили для кнопки скрепки */
-.attachment-btn {
-    width: 50px;
-    height: 50px;
-    background: transparent;
-    border: none;
-    color: #aaa;
-    cursor: pointer;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    border-radius: 50%;
-    flex-shrink: 0;
-    transition: color 0.2s, background-color 0.2s;
-    padding: 0;
-    margin-right: 8px;
-}
-
-/* Стиль для поля ввода сообщения - только оно имеет фоновый цвет */
-.chat-input textarea {
-    flex-grow: 1;
-    height: 42px;
-    max-height: 120px;
-    background-color: #333; /* Фон только для текстового поля */
-    border: none;
-    border-radius: 22px;
-    padding: 11px 16px;
-    color: white;
-    resize: none;
-    outline: none;
-    font-family: inherit;
-    font-size: 15px;
-    line-height: 20px;
-    transition: background-color 0.2s, height 0.1s ease;
-}
-
-/* Обновленные стили для поля ввода чата с отступами по бокам */
-.chat-input {
-    height: 68px;
-    background-color: transparent; /* Меняем на прозрачный фон */
-    display: flex;
-    align-items: center;
-    padding: 0;
-    flex-shrink: 0;
-    border-top: 1px solid #333; /* Оставляем только верхнюю границу */
-    position: relative;
-    z-index: 10;
-    box-sizing: border-box;
-    width: 100%;
-}
-
-.chat-input-wrapper {
-    display: flex;
-    align-items: center;
-    max-width: 850px; /* Максимальная ширина для контента */
-    width: 100%;
-    margin: 0 auto; /* Центрирование */
-    padding: 0 50px; /* Отступы по бокам внутри контейнера */
-    background-color: transparent; /* Прозрачный фон */
-}
-
-/* Стили для кнопки скрепки, делаем её похожей на фото 2 */
-.attachment-btn {
-    width: 50px; /* Увеличиваем ширину для правильного выравнивания */
-    height: 50px;
-    background: transparent;
-    border: none;
-    color: #aaa;
-    cursor: pointer;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    border-radius: 50%;
-    flex-shrink: 0;
-    transition: color 0.2s, background-color 0.2s;
-    padding: 0;
-    margin-right: 8px; /* Добавляем отступ справа */
-}
-
-/* Стиль для поля ввода сообщения */
-.chat-input textarea {
-    flex-grow: 1;
-    height: 42px; /* Немного увеличиваем высоту */
-    max-height: 120px;
-    background-color: #333; /* Цвет фона только для самого textarea */
-    border: none;
-    border-radius: 22px;
-    padding: 11px 16px;
-    color: white;
-    resize: none;
-    outline: none;
-    font-family: inherit;
-    font-size: 15px;
-    line-height: 20px;
-    transition: background-color 0.2s, height 0.1s ease;
-}
-
-/* Обновленные стили для поля ввода чата с отступами по бокам */
-.chat-input {
-    height: 68px;
-    background-color: transparent; /* Меняем на прозрачный фон */
-    display: flex;
-    align-items: center;
-    padding: 0;
-    flex-shrink: 0;
-    border-top: 1px solid #333; /* Оставляем только верхнюю границу */
-    position: relative;
-    z-index: 10;
-    box-sizing: border-box;
-    width: 100%;
-}
-
-.chat-input-wrapper {
-    display: flex;
-    align-items: center;
-    max-width: 850px; /* Максимальная ширина для контента */
-    width: 100%;
-    margin: 0 auto; /* Центрирование */
-    padding: 0 50px; /* Отступы по бокам внутри контейнера */
-    background-color: transparent; /* Прозрачный фон */
-}
-
-/* Стили для кнопки скрепки, делаем её похожей на фото 2 */
-.attachment-btn {
-    width: 50px; /* Увеличиваем ширину для правильного выравнивания */
-    height: 50px;
-    background: transparent;
-    border: none;
-    color: #aaa;
-    cursor: pointer;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    border-radius: 50%;
-    flex-shrink: 0;
-    transition: color 0.2s, background-color 0.2s;
-    padding: 0;
-    margin-right: 8px; /* Добавляем отступ справа */
-}
-
-/* Стиль для поля ввода сообщения */
-.chat-input textarea {
-    flex-grow: 1;
-    height: 42px; /* Немного увеличиваем высоту */
-    max-height: 120px;
-    background-color: #333; /* Цвет фона только для самого textarea */
-    border: none;
-    border-radius: 22px;
-    padding: 11px 16px;
-    color: white;
-    resize: none;
-    outline: none;
-    font-family: inherit;
-    font-size: 15px;
-    line-height: 20px;
-    transition: background-color 0.2s, height 0.1s ease;
-}
-
-/* НОВЫЙ КОД: Полностью прозрачное поле ввода сообщений */
-/* Удаляем старые стили, связанные с chat-input */
-
-/* Основной контейнер поля ввода - полностью прозрачный */
-.chat-input-container {
-    width: 100%;
-    height: 68px;
-    display: flex;
-    align-items: center;
-    border-top: 1px solid #333;
-    background-color: transparent;
-    position: relative;
-    z-index: 10;
-}
-
-/* Внутренний контейнер с отступами по бокам */
-.chat-input-inner {
-    max-width: 880px;
-    width: 100%;
-    margin: 0 auto;
-    padding: 0 16px;
-    display: flex;
-    align-items: center;
-    gap: 8px;
-    background-color: transparent;
-}
-
-/* Кнопка смайликов */
-.emoji-button {
-    width: 40px;
-    height: 40px;
-    border-radius: 50%;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    background: transparent;
-    border: none;
-    color: #aaa;
-    cursor: pointer;
-    flex-shrink: 0;
-    transition: background-color 0.2s;
-}
-
-.emoji-button:hover {
-    background-color: rgba(255, 255, 255, 0.1);
-    color: #ddd;
-}
-
-.emoji-button svg {
-    width: 24px;
-    height: 24px;
-}
-
-/* Поле ввода текста */
-.message-input {
-    flex-grow: 1;
-    position: relative;
-}
-
-.message-input textarea {
-    width: 100%;
-    height: 42px;
-    max-height: 120px;
-    padding: 11px 16px;
-    border-radius: 22px;
-    border: none;
-    background-color: #333;
-    color: white;
-    font-size: 15px;
-    line-height: 20px;
-    resize: none;
-    outline: none;
-    font-family: inherit;
-    overflow-y: auto;
-    transition: height 0.1s ease;
-}
-
-.message-input textarea::placeholder {
-    color: #888;
-}
-
-/* Кнопка скрепки */
-.attachment-btn {
-    width: 40px;
-    height: 40px;
-    border-radius: 50%;
-    background: transparent;
-    border: none;
-    color: #aaa;
-    cursor: pointer;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    flex-shrink: 0;
-    padding: 0;
-    transition: background-color 0.2s;
-}
-
-.attachment-btn:hover {
-    background-color: rgba(255, 255, 255, 0.1);
-    color: #ddd;
-}
-
-.attachment-btn svg {
-    width: 24px;
-    height: 24px;
-}
-
-/* Кнопка отправки */
-.send-btn {
-    width: 40px;
-    height: 40px;
-    border-radius: 50%;
-    background-color: #2b5278;
-    border: none;
-    color: white;
-    cursor: pointer;
-    display: none; /* Скрыто по умолчанию */
-    align-items: center;
-    justify-content: center;
-    flex-shrink: 0;
-    transition: background-color 0.2s, transform 0.1s;
-}
-
-.send-btn.visible {
-    display: flex;
-}
-
-.send-btn:hover {
-    background-color: #366497;
-}
-
-.send-btn:active {
-    transform: scale(0.95);
-}
-
-.send-btn svg {
-    width: 22px;
-    height: 22px;
-}
-
-/* УДАЛЯЕМ ВСЕ СТАРЫЕ СТИЛИ ПОЛЕЙ ВВОДА chat-input, chat-input-container и т.д. */
-
-/* НОВЫЕ СТИЛИ ДЛЯ ПОЛЯ ВВОДА СООБЩЕНИЙ */
-.message-input-container {
-    width: 100%;
-    height: 68px;
-    border-top: 1px solid #333;
-    display: flex;
-    align-items: center;
-    padding: 0 16px;
-    box-sizing: border-box;
-    background-color: transparent; /* Полностью прозрачный фон */
-    position: relative;
-}
-
-.message-input-wrapper {
-    display: flex;
-    align-items: center;
-    width: 100%;
-    max-width: 1200px;
-    margin: 0 auto;
-}
-
-/* Стили для поля ввода */
-.message-input-field {
-    flex-grow: 1;
-    position: relative;
-    height: 40px;
-}
-
-.message-input-field textarea {
-    width: 100%;
-    height: 40px;
-    max-height: 120px;
-    padding: 10px 12px;
-    border-radius: 20px;
-    border: none;
-    background-color: #333;
-    color: #fff;
-    font-size: 15px;
-    line-height: 20px;
-    resize: none;
-    outline: none;
-    transition: height 0.1s ease;
-}
-
-.message-input-field textarea::placeholder {
-    color: #888;
-}
-
-/* Кнопка скрепки */
-.attachment-button {
-    width: 40px;
-    height: 40px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    background-color: transparent;
-    border: none;
-    color: #aaa;
-    cursor: pointer;
-    border-radius: 50%;
-    margin-left: 8px;
-}
-
-.attachment-button:hover {
-    background-color: rgba(255, 255, 255, 0.1);
-    color: #fff;
-}
-
-/* Кнопка отправки сообщения */
-.send-button {
-    width: 40px;
-    height: 40px;
-    display: none; /* По умолчанию скрыта */
-    align-items: center;
-    justify-content: center;
-    background-color: #2b5278;
-    border: none;
-    color: #fff;
-    cursor: pointer;
-    border-radius: 50%;
-    margin-left: 8px;
-    transition: background-color 0.2s;
-}
-
-.send-button:hover {
-    background-color: #366497;
-}
-
-.send-button.visible {
-    display: flex;
-}
-
-/* Стили для простого поля ввода сообщений с элементами слева и справа */
-.message-input-container {
-    width: 100%;
-    height: 52px;
-    display: flex;
-    align-items: center;
-    padding: 0 6px;
-    background-color: #212121;
-    border-top: 1px solid #333;
-}
-
-/* Кнопка скрепки (вложений) */
-.paperclip-button {
-    width: 44px;
-    height: 44px;
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    background: transparent;
-    border: none;
-    color: #aaa;
-    cursor: pointer;
-    flex-shrink: 0;
-}
-
-.paperclip-button svg {
-    width: 24px;
-    height: 24px;
-}
-
-.paperclip-button:hover {
-    color: #ddd;
-}
-
-/* Контейнер для поля ввода */
-.message-input-field {
-    flex-grow: 1;
-    margin: 0 8px;
-}
-
-/* Текстовое поле ввода сообщения */
-.message-input-field input {
-    width: 100%;
-    height: 36px;
-    padding: 0 12px;
-    border-radius: 18px;
-    border: none;
-    background-color: #303030;
-    color: white;
-    font-size: 15px;
-}
-
-.message-input-field input:focus {
-    outline: none;
-}
-
-.message-input-field input::placeholder {
-    color: #888;
-}
-
-/* Кнопка отправки сообщения */
-.send-button {
-    width: 44px;
-    height: 44px;
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    background: transparent;
-    border: none;
-    color: #2b5278;
-    cursor: pointer;
-    flex-shrink: 0;
-}
-
-.send-button svg {
-    width: 24px;
-    height: 24px;
-}
-
-.send-button:hover {
-    color: #366497;
-}
-
-/* Обновленные стили для поля ввода сообщений */
-.message-input-field textarea {
-    width: 100%;
-    height: 40px;
-    max-height: 100px; /* Устанавливаем максимальную высоту */
-    padding: 10px 12px;
-    border-radius: 20px;
-    border: none;
-    background-color: #333;
-    color: #fff;
-    font-size: 15px;
-    line-height: 20px;
-    resize: none;
-    outline: none;
-    transition: height 0.1s ease;
-    overflow-y: auto; /* Добавляем вертикальную прокрутку */
-    scrollbar-width: none; /* Скрываем полосу прокрутки для Firefox */
-    -ms-overflow-style: none; /* Скрываем полосу прокрутки для IE и Edge */
-}
-
-/* Скрываем полосу прокрутки для WebKit браузеров (Chrome, Safari) */
-.message-input-field textarea::-webkit-scrollbar {
-    display: none;
-    width: 0;
-    height: 0;
-}
-
-/* Фиксированная высота контейнера поля ввода */
-.message-input-container {
-    width: 100%;
-    height: 68px; /* Фиксированная высота */
-    border-top: 1px solid #333;
-    display: flex;
-    align-items: center;
-    padding: 0 16px;
-    box-sizing: border-box;
-    background-color: #212121;
-    position: relative;
-}
-
-/* Обновленные стили для поля ввода сообщений */
-.message-input-container {
-    width: 100%;
-    height: 68px; /* Увеличиваем высоту с 52px до 68px */
-    display: flex;
-    align-items: center;
-    padding: 0 12px; /* Увеличиваем боковые отступы */
-    background-color: #212121;
-    border-top: 1px солид #333;
-    position: relative;
-    z-index: 10;
-}
-
-/* Кнопка скрепки (вложений) - увеличиваем и центрируем вертикально */
-.paperclip-button {
-    width: 44px;
-    height: 44px;
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    background: transparent;
-    border: none;
-    color: #aaa;
-    cursor: pointer;
-    flex-shrink: 0;
-    margin-right: 4px; /* Добавляем небольшой отступ справа */
-}
-
-.paperclip-button svg {
-    width: 24px;
-    height: 24px;
-}
-
-.paperclip-button:hover {
-    color: #ddd;
-}
-
-/* Контейнер для поля ввода */
-.message-input-field {
-    flex-grow: 1;
-    margin: 0 8px;
-    display: flex; /* Добавляем для лучшего выравнивания */
-    align-items: center;
-}
-
-/* Текстовое поле ввода сообщения */
-.message-input-field input {
-    width: 100%;
-    height: 42px; /* Увеличиваем высоту с 36px до 42px */
-    padding: 0 16px; /* Увеличиваем горизонтальные отступы */
-    border-radius: 21px; /* Половина высоты для круглых углов */
-    border: none;
-    background-color: #303030;
-    color: white;
-    font-size: 15px;
-}
-
-.message-input-field input:focus {
-    outline: none;
-    background-color: #404040; /* Немного светлее при фокусе */
-}
-
-.message-input-field input::placeholder {
-    color: #888;
-}
-
-/* Кнопка отправки сообщения */
-.send-button {
-    width: 44px;
-    height: 44px;
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    background: transparent;
-    border: none;
-    color: #888; /* Серый цвет по умолчанию */
-    cursor: pointer;
-    flex-shrink: 0;
-    margin-left: 4px; /* Добавляем небольшой отступ слева */
-}
-
-/* Активное состояние кнопки отправки - синий цвет */
-.send-button.active {
-    color: #2b5278; /* Синий цвет при наличии текста */
-}
-
-.send-button svg {
-    width: 24px;
-    height: 24px;
-}
-
-.send-button:hover {
-    color: #366497;
-}
-
-/* Обновленные стили для поля ввода сообщений с правильным позиционированием */
-.message-input-container {
-    width: 100%;
-    height: 68px;
-    display: flex;
-    align-items: center;
-    padding: 0 16px;
-    background-color: #212121;
-    border-top: 1px solid #333;
-    position: relative;
-    z-index: 10;
-    box-sizing: border-box;
-}
-
-/* Обертка для элементов поля ввода */
-.input-wrapper {
-    position: relative; /* Важно для абсолютного позиционирования вложенных элементов */
-    display: flex;
-    align-items: center;
-    width: 100%;
-    height: 100%;
-    padding-left: 8px; /* Добавляем небольшой отступ слева для смещения скрепки */
-}
-
-/* Контейнер для кнопки скрепки - абсолютное позиционирование */
-.clip-button-container {
-    position: absolute;
-    left: -5px; /* Уменьшаем значение, чтобы сдвинуть кнопку левее */
-    top: 50%;
-    transform: translateY(-50%);
-    z-index: 2;
-}
-
-/* Кнопка скрепки */
-.paperclip-button {
-    width: 44px;
-    height: 44px;
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    background: transparent;
-    border: none;
-    color: #aaa;
-    cursor: pointer;
-    flex-shrink: 0;
-    padding: 0;
-    margin: 0;
-}
-
-/* Скрываем все hover-эффекты для кнопки скрепки */
-.paperclip-button:hover {
-    color: #aaa; /* Тот же цвет, что и в обычном состоянии */
-    background-color: transparent;
-}
-
-/* Контейнер для поля ввода */
-.message-input-field {
-    flex-grow: 1;
-    height: 44px;
-    margin: 0 10px 0 44px;
-    display: flex;
-    align-items: center;
-}
-
-/* Текстовое поле ввода сообщения */
-.message-input-field input {
-    width: 100%;
-    height: 42px;
-    padding: 0 16px;
-    border-radius: 21px;
-    border: none;
-    background-color: #303030;
-    color: white;
-    font-size: 15px;
-}
-
-/* Кнопка отправки сообщения - настройка состояний */
-.send-button {
-    width: 50px; /* Увеличиваем размер с 44px до 50px */
-    height: 50px; /* Увеличиваем размер с 44px до 50px */
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    background: transparent;
-    border: none;
-    color: #888; /* Серый цвет по умолчанию */
-    cursor: default; /* Курсор по умолчанию (не pointer) */
-    flex-shrink: 0;
-    padding: 0;
-    margin: 0 5px 0 5px; /* Добавляем отступы по бокам */
-    opacity: 0.7; /* Уменьшаем непрозрачность для неактивного состояния */
-    pointer-events: none; /* Блокируем события мыши для неактивного состояния */
-}
-
-/* Активное состояние кнопки отправки - синий цвет */
-.send-button.active {
-    color: #2b5278; /* Синий цвет при наличии текста */
-    cursor: pointer; /* Курсор-указатель для активного состояния */
-    opacity: 1; /* Полная непрозрачность для активного состояния */
-    pointer-events: auto; /* Разрешаем события мыши для активного состояния */
-}
-
-/* Увеличиваем размер иконки внутри кнопки отправки */
-.send-button svg {
-    width: 28px; /* Увеличиваем с 24px до 28px */
-    height: 28px; /* Увеличиваем с 24px до 28px */
-}
-
-/* Скрываем все hover-эффекты для кнопки отправки */
-.send-button:hover,
-.send-button.active:hover {
-    color: inherit; /* Наследуем текущий цвет */
-    background-color: transparent;
-}
-
-/* Активное состояние кнопки отправки - синий цвет */
-.send-button.active {
-    color: #2b5278; /* Синий цвет при наличии текста */
-}
-
-.send-button svg {
-    width: 24px;
-    height: 24px;
-}
-
-.send-button:hover {
-    color: #366497;
-}
-
-/* ОПТИМИЗИРОВАННЫЕ СТИЛИ ЭЛЕМЕНТОВ ЧАТА */
-
-/* Очищаем все предыдущие определения для элементов чата */
-/* Единое определение контейнера для поля ввода сообщений */
-.message-input-container {
-    width: 100%;
-    height: 68px;
-    display: flex;
-    align-items: center;
-    padding: 0 16px;
-    background-color: #212121;
-    border-top: 1px solid #333;
-    position: relative;
-    z-index: 10;
-    box-sizing: border-box;
-}
-
-/* Обертка для элементов поля ввода */
-.input-wrapper {
-    position: relative;
-    display: flex;
-    align-items: center;
-    width: 100%;
-    height: 100%;
-    padding-left: 8px; /* Отступ для смещения скрепки */
-}
-
-/* Контейнер для кнопки скрепки - единое определение */
-.clip-button-container {
-    position: absolute;
-    left: -5px; /* Сдвигаем кнопку левее */
-    топ: 50%;
-    transform: translateY(-50%);
-    z-index: 2;
-}
-
-/* Кнопка скрепки - единое определение */
-.paperclip-button {
-    width: 44px;
-    height: 44px;
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    background: transparent;
-    border: none;
-    color: #aaa;
-    cursor: pointer;
-    flex-shrink: 0;
-    padding: 0;
-    margin: 0;
-}
-
-/* Явно убираем hover-эффект для скрепки */
-.paperclip-button:hover {
-    color: #aaa;
-    background-color: transparent;
-}
-
-/* Контейнер для поля ввода */
-.message-input-field {
-    flex-grow: 1;
-    height: 44px;
-    margin: 0 10px 0 44px;
-    display: flex;
-    align-items: center;
-}
-
-/* Текстовое поле ввода */
-.message-input-field input {
-    width: 100%;
-    height: 42px;
-    padding: 0 16px;
-    border-radius: 21px;
-    border: none;
-    background-color: #303030;
-    color: white;
-    font-size: 15px;
-}
-
-.message-input-field input:focus {
-    outline: none;
-}
-
-/* Кнопка отправки - единое определение */
-.send-button {
-    width: 50px; /* Увеличенный размер */
-    height: 50px; /* Увеличенный размер */
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    background: transparent;
-    border: none;
-    color: #888; /* Серый по умолчанию */
-    cursor: default;
-    flex-shrink: 0;
-    padding: 0;
-    margin: 0 5px 0 5px;
-    opacity: 0.7;
-    pointer-events: none; /* Блокировка кликов */
-}
-
-/* Активное состояние кнопки отправки */
-.send-button.active {
-    color: #2b5278; /* Синий цвет */
-    cursor: pointer;
-    opacity: 1;
-    pointer-events: auto; /* Разрешаем клики */
-}
-
-/* Увеличенный размер иконки */
-.send-button svg {
-    width: 28px;
-    height: 28px;
-}
-
-/* Отключаем все hover-эффекты для кнопки отправки */
-.send-button:hover,
-.send-button.active:hover {
-    color: inherit;
-    background-color: transparent;
-}
-
-/* Обновленный стиль для сообщения "Нет сообщений" */
-.no-messages {
-    color: #666;
-    text-align: center;
-    font-style: italic;
-    padding: 20px;
-    
-    /* Позиционируем текст ниже */
-    margin-top: 30%;  /* Увеличиваем отступ сверху */
-    margin-bottom: 120px;  /* Увеличиваем отступ снизу с 60px до 120px */
-    
-    /* Увеличиваем размер текста */
-    font-size: 18px;  /* Увеличиваем с 14px до 18px */
-    opacity: 0.8;
-    font-weight: 300;  /* Добавляем легкий вес шрифта для лучшей читаемости */
-}
-
-/* Новые стили для чата с абсолютным позиционированием */
-.chat-header {
-    position: relative;
-    height: 60px;
-    background-color: #212121;
-    display: flex;
-    align-items: center;
-    padding: 0 16px;
-    border-bottom: 1px solid #333;
-    box-sizing: border-box;
-}
-
-.chat-user-info {
-    display: inline-block;
-    position: relative;
-    width: auto;
-    max-width: calc(100% - 60px);
-    height: 45px;
-    margin: 0;
-    padding: 0;
-}
-
-.chat-user-avatar {
-    position: absolute;
-    left: 0;
-    top: 0;
-    width: 45px;
-    height: 45px;
-    border-radius: 50%;
-    background-color: #555;
-    overflow: hidden;
-}
-
-.chat-user-avatar img {
-    width: 100%;
-    height: 100%;
-    object-fit: cover;
-}
-
-.chat-user-avatar .avatar-initials {
-    width: 100%;
-    height: 100%;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    color: white;
-    font-size: 20px;
-}
-
-.chat-user-name {
-    position: absolute;
-    left: 57px; /* 45px (аватар) + 12px (отступ) */
-    top: 50%;
-    transform: translateY(-50%);
-    font-size: 17px;
-    font-weight: 500;
-    color: white;
-    white-space: nowrap;
-    overflow: hidden;
-    text-overflow: ellipsis;
-    max-width: calc(100% - 57px);
-}
-
-/* Полностью убираем элемент user-status везде */
-.user-status, 
-.chat-user-status, 
-.status-text,
-.user-bio,
-.chat-bio {
-    display: none !important;
-    visibility: hidden !important;
-    height: 0 !important;
-    width: 0 !important;
-    opacity: 0 !important;
-    position: absolute !important;
-    overflow: hidden !important;
-    clip: rect(0, 0, 0, 0) !important;
-    margin: -1px !important;
-    padding: 0 !important;
-    border: 0 !important;
-}
-
-.chat-menu-btn {
-    position: absolute;
-    right: 16px;
-    top: 50%;
-    transform: translateY(-50%);
-    width: 40px;
-    height: 40px;
-    background: transparent;
-    border: none;
-    color: #aaa;
-    border-radius: 50%;
-    cursor: pointer;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    padding: 0;
-    margin: 0;
-}
-
-/* Стили для отображения имени пользователя в чате */
-.chat-header {
-    position: relative;
-    height: 60px;
-    background-color: #212121;
-    display: flex;
-    align-items: center;
-    padding: 0 16px;
-    border-bottom: 1px solid #333;
-    box-sizing: border-box;
-}
-
-.chat-user-info {
-    display: inline-block;
-    position: relative;
-    width: auto;
-    max-width: calc(100% - 60px);
-    height: 45px;
-    margin: 0;
-    padding: 0;
-}
-
-.chat-user-avatar {
-    position: absolute;
-    left: 0;
-    top: 0;
-    width: 45px;
-    height: 45px;
-    border-radius: 50%;
-    background-color: #555;
-    overflow: hidden;
-}
-
-.chat-user-avatar img {
-    width: 100%;
-    height: 100%;
-    object-fit: cover;
-}
-
-.chat-user-avatar .avatar-initials {
-    width: 100%;
-    height: 100%;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    color: white;
-    font-size: 20px;
-}
-
-.chat-user-name {
-    position: absolute;
-    left: 57px; /* 45px (аватар) + 12px (отступ) */
-    top: 50%;
-    transform: translateY(-50%);
-    font-size: 17px;
-    font-weight: 500;
-    color: white;
-    white-space: nowrap;
-    overflow: hidden;
-    text-overflow: ellipsis;
-    max-width: calc(100% - 57px);
-}
-
-/* Скрываем информацию пользователя ТОЛЬКО в чате, а не в боковом меню */
-.chat-header .chat-user-status,
-.chat-header .status-text,
-.chat-header .user-bio,
-.chat-header .chat-bio {
-    display: none !important;
-}
-
-/* Правильные стили для user-status в боковом меню */
-.user-status {
-    color: #888;
-    font-size: 14px;
-    margin-top: 4px;
-    white-space: nowrap;
-    overflow: hidden;
-    text-overflow: ellipsis;
-}
-
-.side-menu .user-info h3 {
-    margin: 0;
-    color: white;
-    font-size: 18px;
-    font-weight: 500;
-    margin-bottom: 4px; /* Добавляем небольшой отступ для user-status */
-    white-space: nowrap;
-    overflow: hidden;
-    text-overflow: ellipsis;
-}
-
-/* РАДИКАЛЬНОЕ РЕШЕНИЕ: УДАЛЯЕМ СТАРЫЕ СТИЛИ */
-/* Удаляем все старые стили, связанные со статусом пользователя */
-
-/* НОВЫЕ СТИЛИ ДЛЯ БОКОВОГО МЕНЮ */
-/* Контейнер пользовательской информации в боковом меню */
-.side-menu .user-profile {
-    display: flex;
-    align-items: center;
-    width: 100%;
-    padding-top: 0;
-    margin-bottom: 10px;
-}
-
-/* Аватар пользователя в боковом меню */
-.side-menu .avatar-placeholder {
-    width: 60px;
-    height: 60px;
-    border-radius: 50%;
-    background-color: #706c6c;
-    margin-right: 15px;
-    position: relative;
-    cursor: pointer;
-    overflow: hidden;
-    flex-shrink: 0;
-}
-
-/* Информация о пользователе в боковом меню */
-.side-menu .user-info {
-    flex-grow: 1;
-    min-width: 0;
-    padding-right: 5px;
-    display: flex;
-    flex-direction: column;
-}
-
-/* Имя пользователя в боковом меню */
-.side-menu .user-info h3 {
-    margin: 0;
-    color: white;
-    font-size: 18px;
-    font-weight: 500;
-    margin-bottom: 5px; /* Добавляем отступ для статуса */
-    white-space: nowrap;
-    overflow: hidden;
-    text-overflow: ellipsis;
-    margin-top: -15px; /* Отрицательный отступ сверху для поднятия имени выше */
-    position: relative; /* Добавляем для лучшего контроля позиции */
-}
-
-/* Статус пользователя в боковом меню - ЯВНО ПОКАЗЫВАЕМ */
-.side-menu .user-status {
-    display: block !important; /* Принудительно показываем */
-    color: #888;
-    font-size: 14px;
-    margin: 0;
-    white-space: nowrap;
-    overflow: hidden;
-    text-overflow: ellipsis;
-    max-width: 100%;
-    visibility: visible !important;
-    position: static !important;
-    height: auto !important;
-    width: auto !important;
-    opacity: 1 !important;
-}
-
-/* НОВЫЕ СТИЛИ ДЛЯ ЗАГОЛОВКА ЧАТА */
-/* Структура заголовка чата */
-.chat-header {
-    position: relative;
-    height: 60px;
-    background-color: #212121;
-    display: flex;
-    align-items: center;
-    padding: 0 16px;
-    border-bottom: 1px solid #333;
-    box-sizing: border-box;
-}
-
-/* Информация о пользователе в чате */
-.chat-header .chat-user-info {
-    display: flex;
-    align-items: center;
-    flex-grow: 1;
-    max-width: calc(100% - 60px);
-    height: 100%;
-}
-
-/* Аватар пользователя в чате */
-.chat-header .chat-user-avatar {
-    width: 45px;
-    height: 45px;
-    border-radius: 50%;
-    background-color: #555;
-    margin-right: 12px;
-    overflow: hidden;
-    position: relative;
-    flex-shrink: 0;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-}
-
-/* Имя пользователя в чате */
-.chat-header .chat-user-name {
-    color: white;
-    font-size: 17px;
-    font-weight: 500;
-    white-space: nowrap;
-    overflow: hidden;
-    text-overflow: ellipsis;
-    max-width: calc(100% - 57px);
-}
-
-/* Полностью скрываем элемент user-status ТОЛЬКО в чате */
-.chat-header .user-status,
-.chat-header .chat-user-status,
-.chat-header .status-text {
-    display: none !important;
-}
-
-/* УДАЛЯЕМ глобальное правило, которое скрывает все статусы пользователя */
-/* Следующие правила нужно удалить или закомментировать: */
-/*
-.user-status {
-    display: none !important;
-}
-
-.user-status, 
-.chat-user-status, 
-.status-text,
-.user-bio,
-.chat-bio {
-    display: none !important;
-    visibility: hidden !important;
-    height: 0 !important;
-    width: 0 !important;
-    opacity: 0 !important;
-    position: absolute !important;
-    overflow: hidden !important;
-    clip: rect(0, 0, 0, 0) !important;
-    margin: -1px !important;
-    padding: 0 !important;
-    border: 0 !important;
-}
-*/
-
-/* Скрываем информацию пользователя ТОЛЬКО в чате, но НЕ в боковом меню */
-.chat-header .user-status,
-.chat-header .chat-user-status,
-.chat-header .status-text,
-.chat-header .user-bio,
-.chat-header .chat-bio {
-    display: none !important;
-}
-
-/* Стили для аватара и информации в боковом меню */
-.side-menu .user-profile {
-    display: flex;
-    align-items: center;
-    width: 100%;
-    padding-top: 0;
-    margin-bottom: 10px;
-}
-
-.side-menu .avatar-placeholder {
-    width: 60px;
-    height: 60px;
-    border-radius: 50%;
-    background-color: #706c6c;
-    margin-right: 15px;
-    position: relative;
-    cursor: pointer;
-    overflow: hidden;
-    flex-shrink: 0;
-}
-
-.side-menu .user-info {
-    flex-grow: 1;
-    min-width: 0;
-    padding-right: 5px;
-    display: flex;
-    flex-direction: column;
-}
-
-.side-menu .user-info h3 {
-    margin: 0;
-    color: white;
-    font-size: 18px;
-    font-weight: 500;
-    margin-bottom: 5px; /* Добавляем отступ для статуса */
-    white-space: nowrap;
-    overflow: hidden;
-    text-overflow: ellipsis;
-}
-
-/* Специфичные стили для статуса в боковом меню */
-.side-menu .user-status {
-    display: block !important; /* Принудительно показываем */
-    color: #888;
-    font-size: 14px;
-    margin: 0;
-    white-space: nowrap;
-    overflow: hidden;
-    text-overflow: ellipsis;
-    max-width: 100%;
-}
-
-/* Скрываем bio в контактах в левой панели */
-.contact-bio {
-    display: none; /* Полностью скрываем элемент с биографией в списке контактов */
-}
-
-/* Убираем отступ снизу у имени контакта, так как биографии больше нет */
-.contact-name {
-    margin-bottom: 0; /* Раньше было 4px, создавало отступ для bio */
-    line-height: 48px; /* Выравниваем по вертикали с аватаром */
-}
-
-/* Изменяем вертикальное выравнивание контактов */
-.contact-info {
-    display: flex;
-    align-items: center; /* Центрируем вертикально */
-    height: 48px; /* Фиксированная высота для согласования с аватаром */
-}
-
-/* Изменяем положение имени пользователя в заголовке чата - поднимаем выше */
-.chat-user-name {
-    transform: translateY(-70%); /* Было -50%, поднимаем выше */
-    top: 50%; /* Сохраняем эту позицию */
-}
-
-/* Альтернативный способ поднятия имени пользователя */
-.chat-header .chat-user-info {
-    padding-top: 0; /* Убираем лишний отступ сверху */
-    align-items: flex-start; /* Выравниваем элементы по верхнему краю */
-    padding-bottom: 0; /* Убираем лишний отступ снизу */
-}
-
-.chat-header .chat-user-avatar {
-    margin-top: 7px; /* Небольшой отступ сверху для аватарки */
-}
-
-/* Возвращаем имя пользователя в боковой панели на прежнюю высоту */
-.side-menu .user-info h3 {
-    margin: 0;
-    color: white;
-    font-size: 18px;
-    font-weight: 500;
-    margin-bottom: 5px; /* Возвращаем отступ снизу как было раньше */
-    white-space: nowrap;
-    overflow: hidden;
-    text-overflow: ellipsis;
-}
-
-/* При этом сохраняем статус скрытым */
-.side-menu .user-status {
-    display: none !important;
-}
-
-/* Возвращаем имя пользователя в боковой панели на прежнюю высоту */
-.side-menu .user-profile {
-    display: flex;
-    align-items: flex-start;
-    width: 100%;
-    padding-top: 10; /* Убираем верхний отступ */
-    margin-bottom: 10px;
-}
-
-.side-menu .user-info {
-    flex-grow: 1;
-    min-width: 0;
-    padding-right: 5px;
-    display: flex;
-    flex-direction: column;
-    justify-content: center; /* Центрируем содержимое по вертикали */
-}
-
-.side-menu .user-info h3 {
-    margin: 0;
-    color: white;
-    font-size: 18px;
-    font-weight: 500;
-    margin-bottom: 0; /* Возвращаем к исходному значению, было 5px */
-    white-space: nowrap;
-    overflow: hidden;
-    text-overflow: ellipsis;
-}
-
-/* Сохраняем позиционирование статуса в боковой панели */
-.side-menu .user-status {
-    display: block !important;
-    color: #888;
-    font-size: 14px;
-    margin-top: 5px; /* Добавляем отступ сверху вместо отступа снизу у имени */
-    white-space: nowrap;
-    overflow: hidden;
-    text-overflow: ellipsis;
-    max-width: 100%;
-    visibility: visible !important;
-    position: static !important;
-    height: auto !important;
-    width: auto !important;
-    opacity: 1 !important;
-}
-
-/* Сохраняем изменения для чата (имя пользователя выше) */
-.chat-user-name {
-    transform: translateY(-70%);
-    top: 50%;
-}
-
-.chat-header .chat-user-info {
-    padding-top: 0;
-    align-items: flex-start;
-    padding-bottom: 0;
-}
-
-.chat-header .chat-user-avatar {
-    margin-top: 7px;
-}
-
-/* Структурное решение для боковой панели и позиционирования имени пользователя */
-.side-menu .user-profile {
-    display: flex;
-    align-items: flex-start; /* Меняем на flex-start для вертикального выравнивания сверху */
-    width: 100%;
-    padding-top: 0;
-    margin-bottom: 10px;
-    height: 60px; /* Фиксированная высота для всего профиля */
-}
-
-.side-menu .avatar-placeholder {
-    width: 60px;
-    height: 60px;
-    border-radius: 50%;
-    background-color: #706c6c;
-    margin-right: 15px;
-    position: relative;
-    cursor: pointer;
-    overflow: hidden;
-    flex-shrink: 0;
-}
-
-.side-menu .user-info {
-    flex-grow: 1;
-    min-width: 0;
-    padding-right: 5px;
-    display: flex;
-    flex-direction: column;
-    height: 60px; /* Фиксированная высота */
-    padding-top: 10px; /* Отступ сверху для правильного позиционирования имени */
-}
-
-.side-menu .user-info h3 {
-    margin: 0;
-    color: white;
-    font-size: 18px;
-    font-weight: 500;
-    white-space: nowrap;
-    overflow: hidden;
-    text-overflow: ellipsis;
-    line-height: 1.2; /* Уменьшенная высота строки */
-}
-
-/* Создаем пустое пространство под именем вместо статуса */
-.side-menu .user-info::after {
-    content: '';
-    display: block;
-    height: 18px; /* Высота будущего места для последнего сообщения */
-}
-
-/* Полностью скрываем элемент user-status */
-.side-menu .user-status {
-    display: none !important;
-    visibility: hidden !important;
-    height: 0 !important;
-    opacity: 0 !important;
 }
