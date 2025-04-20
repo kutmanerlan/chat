@@ -342,11 +342,11 @@ button:hover {
     overflow: hidden;
     text-overflow: ellipsis;
     max-width: calc(100% - 20px);
-    position: relative; /* Меняем с absolute на relative */
-    left: 0; /* Удаляем сдвиг влево */
-    top: 0; /* Удаляем сдвиг вверх */
-    transform: none; /* Убираем трансформацию */
-    margin: 0; /* Сбрасываем все отступы */
+    position: relative;
+    left: 0;
+    top: -4px; /* Move username up by 4px to be higher than center */
+    transform: none;
+    margin: 0;
 }
 
 .chat-menu-btn {
@@ -653,6 +653,8 @@ button:hover {
     overflow: hidden;
     text-overflow: ellipsis;
     line-height: normal;
+    position: relative;
+    top: -2px; /* Slight upward shift for contact names as well */
 }
 
 /* Hide contact bio */
@@ -1250,7 +1252,7 @@ button:hover {
     text-overflow: ellipsis !important;
     line-height: 1.2 !important;
     position: relative !important;
-    top: -10px !important; /* Сдвигаем имя вверх */
+    top: -12px !important; /* Increase negative top value from -10px to -12px */
     margin-bottom: 18px !important; /* Добавляем отступ до статуса */
 }
 
