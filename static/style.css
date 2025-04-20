@@ -305,8 +305,8 @@ button:hover {
 }
 
 .chat-user-avatar {
-    width: 45px;
-    height: 45px;
+    width: 40px;
+    height: 40px;
     border-radius: 50%;
     background-color: #555;
     margin-right: 12px;
@@ -317,7 +317,6 @@ button:hover {
     justify-content: center;
 }
 
-/* Радикально меняем позиционирование имени пользователя */
 .chat-user-name {
     font-size: 17px;
     font-weight: 500;
@@ -325,7 +324,7 @@ button:hover {
     white-space: nowrap;
     overflow: hidden;
     text-overflow: ellipsis;
-    max-width: calc(100% - 12px);
+    max-width: calc(100% - 20px);
     position: relative; /* Меняем с absolute на relative */
     left: 0; /* Удаляем сдвиг влево */
     top: 0; /* Удаляем сдвиг вверх */
@@ -659,8 +658,8 @@ button:hover {
     display: flex;
     justify-content: space-between;
     align-items: center;
-    padding: 15px 0;
-    margin-bottom: 20px;
+    padding: 10px 0 15px; /* Уменьшаем вертикальные отступы */
+    margin-bottom: 15px;
     border-bottom: 1px solid #333;
 }
 
@@ -676,14 +675,14 @@ button:hover {
 }
 
 .side-menu .avatar-placeholder {
-    width: 60px;
-    height: 60px;
+    width: 46px; /* Уменьшаем размер с 60px до 46px */
+    height: 46px; /* Уменьшаем размер с 60px до 46px */
     border-radius: 50%;
     background-color: #706c6c;
     display: flex;
     align-items: center;
     justify-content: center;
-    margin-right: 15px;
+    margin-right: 12px;
     position: relative;
     cursor: pointer;
     overflow: hidden;
@@ -702,15 +701,15 @@ button:hover {
 .side-menu .user-info h3 {
     margin: 0;
     color: white;
-    font-size: 18px;
+    font-size: 16px;
     font-weight: 500;
     white-space: nowrap;
     overflow: hidden;
     text-overflow: ellipsis;
     line-height: 1.2;
-    position: relative;
-    top: -10px; /* Сдвигаем имя вверх */
-    margin-bottom: 18px; /* Добавляем отступ до статуса */
+    position: static; /* Убираем относительное позиционирование */
+    top: auto; /* Убираем сдвиг вверх */
+    margin-bottom: 3px; /* Небольшой отступ до статуса */
 }
 
 /* Стили для статуса пользователя */
@@ -719,8 +718,8 @@ button:hover {
     padding: 0;
     color: #888;
     font-size: 13px;
-    position: relative;
-    top: -8px; /* Сдвигаем статус вверх тоже */
+    position: static; /* Убираем относительное позиционирование */
+    top: auto; /* Убираем сдвиг вверх */
     width: 100%;
     white-space: nowrap;
     overflow: hidden;
