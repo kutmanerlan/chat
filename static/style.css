@@ -2816,3 +2816,64 @@ body {
     border: 0 !important;
 }
 */
+
+/* Скрываем информацию пользователя ТОЛЬКО в чате, но НЕ в боковом меню */
+.chat-header .user-status,
+.chat-header .chat-user-status,
+.chat-header .status-text,
+.chat-header .user-bio,
+.chat-header .chat-bio {
+    display: none !important;
+}
+
+/* Стили для аватара и информации в боковом меню */
+.side-menu .user-profile {
+    display: flex;
+    align-items: center;
+    width: 100%;
+    padding-top: 0;
+    margin-bottom: 10px;
+}
+
+.side-menu .avatar-placeholder {
+    width: 60px;
+    height: 60px;
+    border-radius: 50%;
+    background-color: #706c6c;
+    margin-right: 15px;
+    position: relative;
+    cursor: pointer;
+    overflow: hidden;
+    flex-shrink: 0;
+}
+
+.side-menu .user-info {
+    flex-grow: 1;
+    min-width: 0;
+    padding-right: 5px;
+    display: flex;
+    flex-direction: column;
+}
+
+.side-menu .user-info h3 {
+    margin: 0;
+    color: white;
+    font-size: 18px;
+    font-weight: 500;
+    margin-bottom: 5px; /* Добавляем отступ для статуса */
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+/* Специфичные стили для статуса в боковом меню */
+.side-menu .user-status {
+    display: block !important; /* Принудительно показываем */
+    color: #888;
+    font-size: 14px;
+    margin: 0;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    max-width: 100%;
+}

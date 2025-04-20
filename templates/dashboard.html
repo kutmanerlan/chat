@@ -59,8 +59,9 @@
         
         <div class="user-info">
           <h3>{{ session.get('user_name', 'User') }}</h3>
-          <!-- ВАЖНО: Используем правильный класс и добавляем инлайн-стиль для гарантии отображения -->
-          <div class="user-status" style="display: block !important;">{{ user.bio if user and user.bio else 'Нет информации' }}</div>
+          <p class="user-status" style="display: block !important; visibility: visible !important;">
+            {{ user.bio if user and user.bio else 'Нет информации' }}
+          </p>
         </div>
       </div>
       <!-- Кнопка редактирования профиля -->
