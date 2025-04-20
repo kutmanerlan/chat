@@ -5,9 +5,10 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Главное окно</title>
   <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
-  <!-- Используем только один файл JavaScript для меню -->
-  <script src="{{ url_for('static', filename='sidebar_menu.js') }}" defer></script>
-  <!-- Удаляем дублирующие стили, так как они уже есть в style.css -->
+  <link rel="stylesheet" href="{{ url_for('static', filename='styles/notification.css') }}">
+  
+  <!-- Replace the old script with our new, improved chat.js -->
+  <script src="{{ url_for('static', filename='chat.js') }}" defer></script>
 </head>
 <body>
   <!-- Боковая панель -->

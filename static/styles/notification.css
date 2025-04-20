@@ -1,0 +1,76 @@
+/**
+ * Notification styles for chat application
+ */
+
+.notification {
+  position: fixed;
+  top: 20px;
+  right: 20px;
+  padding: 12px 20px;
+  border-radius: 4px;
+  color: white;
+  font-size: 14px;
+  z-index: 9999;
+  max-width: 300px;
+  box-shadow: 0 3px 6px rgba(0, 0, 0, 0.16), 0 3px 6px rgba(0, 0, 0, 0.23);
+  animation: notification-slide-in 0.3s ease-out forwards;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.notification.success {
+  background-color: #43a047;
+}
+
+.notification.error {
+  background-color: #e53935;
+}
+
+.notification.info {
+  background-color: #1e88e5;
+}
+
+.notification.hide {
+  animation: notification-slide-out 0.3s ease-in forwards;
+}
+
+.notification-close {
+  background: transparent;
+  border: none;
+  color: white;
+  font-size: 18px;
+  margin-left: 10px;
+  cursor: pointer;
+  padding: 0;
+  line-height: 1;
+  margin-bottom: 2px;
+  opacity: 0.7;
+  transition: opacity 0.2s;
+}
+
+.notification-close:hover {
+  opacity: 1;
+}
+
+@keyframes notification-slide-in {
+  from {
+    transform: translateX(100%);
+    opacity: 0;
+  }
+  to {
+    transform: translateX(0);
+    opacity: 1;
+  }
+}
+
+@keyframes notification-slide-out {
+  from {
+    transform: translateX(0);
+    opacity: 1;
+  }
+  to {
+    transform: translateX(100%);
+    opacity: 0;
+  }
+}
