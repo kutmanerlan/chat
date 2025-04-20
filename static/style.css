@@ -692,7 +692,7 @@ button:hover {
 .close-menu-btn {
     position: absolute;
     top: 15px;
-    right: 15px;
+    left: 15px; /* Changed from right: 15px to left: 15px */
     width: 32px;
     height: 32px;
     display: flex;
@@ -942,11 +942,12 @@ button:hover {
     padding: 8px 14px;
     margin-left: 0; /* Remove left margin */
     position: absolute; /* Position absolutely within menu-items */
-    bottom: 20px; /* Position at bottom with some padding */
+    bottom: 5px; /* Changed from bottom: 20px to match version text */
     left: 0; /* Position at left */
     align-items: center;
     justify-content: flex-start; /* Align text to left */
     z-index: 2;
+    margin-bottom: 5px; /* Add same margin as version text */
 }
 
 /* Add version text at bottom right */
