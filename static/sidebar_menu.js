@@ -562,8 +562,32 @@ document.addEventListener('DOMContentLoaded', function() {
         function openChatWithContact(contactId, contactName) {
             console.log(`Открываем чат с контактом: ${contactName} (ID: ${contactId})`);
             
-            // Используем ту же функцию для открытия чата
-            openChat(contactId, contactName);
+            // Highlight the active contact in the sidebar
+            document.querySelectorAll('.contact-item').forEach(item => {
+                item.classList.remove('active');
+            });
+            
+            // Find and highlight the clicked contact
+            const contactElement = document.querySelector(`.contact-item[data-contact-id="${contactId}"]`);
+            if (contactElement) {
+                contactElement.classList.add('active');
+            }
+            
+            // Get user info for chat display
+            fetch(`/get_user_info?user_id=${contactId}`, {
+                method: 'GET',
+                headers: {
+                    'Content-Type': 'application/json'
+                }
+            })
+            .then(response => response.json())
+            .then(userData => {
+                // Create or update the chat interface
+                createChatInterface(userData);
+            })
+            .catch(error => {
+                console.error('Ошибка при получении информации о пользователе:', error);
+            });
         }
         
         // Общая функция для открытия чата

@@ -612,7 +612,20 @@ button:hover {
     position: relative;
 }
 
-/* Add explicit styles for contact avatar */
+/* Add styling for active/selected contact */
+.contact-item.active {
+    background-color: #333333; /* Dark gray background for active contact */
+}
+
+.contact-item:hover {
+    background-color: #292929; /* Slightly lighter than active for hover state */
+}
+
+/* Ensure active state has priority over hover */
+.contact-item.active:hover {
+    background-color: #333333;
+}
+
 .contact-avatar {
     width: 40px;
     height: 40px;
