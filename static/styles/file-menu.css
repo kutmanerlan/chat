@@ -1,8 +1,9 @@
 /**
- * File upload menu styling
+ * File upload menu and dropdown menu styling
  */
 
-.file-upload-menu {
+/* Common styles for all popup menus */
+.file-upload-menu, .dropdown-menu {
   background-color: #212121;
   border-radius: 8px;
   box-shadow: 0 4px 12px rgba(0, 0, 0, 0.4);
@@ -10,10 +11,11 @@
   display: none;
   overflow: hidden;
   animation: menu-fade-in 0.2s ease-out;
-  position: fixed; /* Use fixed positioning */
-  z-index: 10000; /* Higher z-index to ensure it appears on top */
+  position: fixed;
+  z-index: 10000;
 }
 
+/* File menu specific styles */
 .file-menu-options {
   display: flex;
   flex-direction: column;
@@ -40,6 +42,37 @@
 }
 
 .file-option-label {
+  color: #fff;
+  font-size: 15px;
+}
+
+/* Dropdown menu specific styles */
+.dropdown-menu-options {
+  display: flex;
+  flex-direction: column;
+}
+
+.dropdown-option {
+  display: flex;
+  align-items: center;
+  padding: 12px 16px;
+  cursor: pointer;
+  transition: background-color 0.2s;
+}
+
+.dropdown-option:hover {
+  background-color: #383838;
+}
+
+.dropdown-option-icon {
+  margin-right: 12px;
+  color: #aaa;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.dropdown-option-label {
   color: #fff;
   font-size: 15px;
 }

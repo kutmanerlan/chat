@@ -467,51 +467,13 @@ function createChatInterface(user) {
     </svg>
   `;
   
-  // Dropdown menu for contact actions
-  const dropdownMenu = document.createElement('div');
-  dropdownMenu.className = 'chat-dropdown-menu';
-  dropdownMenu.style.display = 'none';
-  
-  // Check contact status
-  checkContactStatus(user.id)
-    .then(isContact => {
-      if (isContact) {
-        dropdownMenu.innerHTML = `
-          <div class="dropdown-item remove-contact" data-user-id="${user.id}">
-            Remove from contacts
-          </div>
-        `;
-      } else {
-        dropdownMenu.innerHTML = `
-          <div class="dropdown-item add-contact" data-user-id="${user.id}">
-            Add to contacts
-          </div>
-        `;
-      }
-      
-      // Add event listeners to dropdown items
-      dropdownMenu.querySelectorAll('.dropdown-item').forEach(item => {
-        item.addEventListener('click', (e) => {
-          e.stopPropagation();
-          if (item.classList.contains('add-contact')) {
-            addToContacts(user.id, user.name);
-          } else if (item.classList.contains('remove-contact')) {
-            removeFromContacts(user.id);
-          }
-          dropdownMenu.style.display = 'none';
-        });
-      });
-    });
+  // Remove the dropdown from being created here
+  // Instead, we'll handle it in a separate function
   
   // Menu button click handler
-  menuButton.addEventListener('click', (e) => {
+  menuButton.addEventListener('click', function(e) {
     e.stopPropagation();
-    dropdownMenu.style.display = dropdownMenu.style.display === 'none' ? 'block' : 'none';
-  });
-  
-  // Close dropdown when clicking elsewhere
-  document.addEventListener('click', () => {
-    dropdownMenu.style.display = 'none';
+    showContactMenu(menuButton, user);
   });
   
   // Messages area
@@ -599,7 +561,6 @@ function createChatInterface(user) {
   
   chatHeader.appendChild(userInfo);
   chatHeader.appendChild(menuButton);
-  chatHeader.appendChild(dropdownMenu);
   
   clipButtonContainer.appendChild(paperclipButton);
   messageInputField.appendChild(inputField);
@@ -619,6 +580,86 @@ function createChatInterface(user) {
   
   // Focus input field
   setTimeout(() => inputField.focus(), 0);
+}
+
+/**
+ * Show contact menu when chat menu button is clicked
+ */
+function showContactMenu(menuButton, user) {
+  // Create menu if it doesn't exist
+  let contactMenu = document.getElementById('contactDropdownMenu');
+  if (!contactMenu) {
+    contactMenu = document.createElement('div');
+    contactMenu.id = 'contactDropdownMenu';
+    contactMenu.className = 'dropdown-menu';
+    document.body.appendChild(contactMenu);
+    
+    // Close menu when clicking outside
+    document.addEventListener('click', function(e) {
+      if (contactMenu && !contactMenu.contains(e.target) && 
+          !e.target.classList.contains('chat-menu-btn') && 
+          !e.target.closest('.chat-menu-btn')) {
+        contactMenu.style.display = 'none';
+      }
+    });
+  }
+  
+  // Get the button position
+  const buttonRect = menuButton.getBoundingClientRect();
+  
+  // Check if user is a contact before showing the menu
+  checkContactStatus(user.id)
+    .then(isContact => {
+      // Update menu content
+      contactMenu.innerHTML = `
+        <div class="dropdown-menu-options">
+          ${isContact ? 
+            `<div class="dropdown-option" id="removeContactOption">
+              <div class="dropdown-option-icon">
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                  <path d="M17 7l-10 10"></path>
+                  <path d="M7 7l10 10"></path>
+                </svg>
+              </div>
+              <div class="dropdown-option-label">Remove from contacts</div>
+            </div>` : 
+            `<div class="dropdown-option" id="addContactOption">
+              <div class="dropdown-option-icon">
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                  <path d="M12 5v14"></path>
+                  <path d="M5 12h14"></path>
+                </svg>
+              </div>
+              <div class="dropdown-option-label">Add to contacts</div>
+            </div>`
+          }
+        </div>
+      `;
+      
+      // Position the menu
+      contactMenu.style.display = 'block';
+      contactMenu.style.position = 'fixed';
+      contactMenu.style.left = `${buttonRect.left - contactMenu.offsetWidth + buttonRect.width}px`;
+      contactMenu.style.top = `${buttonRect.bottom + 5}px`;
+      contactMenu.style.zIndex = '10000';
+      
+      // Add event listeners
+      if (isContact) {
+        document.getElementById('removeContactOption').addEventListener('click', function() {
+          removeFromContacts(user.id);
+          contactMenu.style.display = 'none';
+        });
+      } else {
+        document.getElementById('addContactOption').addEventListener('click', function() {
+          addToContacts(user.id, user.name);
+          contactMenu.style.display = 'none';
+        });
+      }
+    })
+    .catch(error => {
+      console.error('Error checking contact status:', error);
+      contactMenu.style.display = 'none';
+    });
 }
 
 /**
