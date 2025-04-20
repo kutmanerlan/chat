@@ -2579,3 +2579,95 @@ body {
     padding: 0;
     margin: 0;
 }
+
+/* Стили для отображения имени пользователя в чате */
+.chat-header {
+    position: relative;
+    height: 60px;
+    background-color: #212121;
+    display: flex;
+    align-items: center;
+    padding: 0 16px;
+    border-bottom: 1px solid #333;
+    box-sizing: border-box;
+}
+
+.chat-user-info {
+    display: inline-block;
+    position: relative;
+    width: auto;
+    max-width: calc(100% - 60px);
+    height: 45px;
+    margin: 0;
+    padding: 0;
+}
+
+.chat-user-avatar {
+    position: absolute;
+    left: 0;
+    top: 0;
+    width: 45px;
+    height: 45px;
+    border-radius: 50%;
+    background-color: #555;
+    overflow: hidden;
+}
+
+.chat-user-avatar img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+}
+
+.chat-user-avatar .avatar-initials {
+    width: 100%;
+    height: 100%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: white;
+    font-size: 20px;
+}
+
+.chat-user-name {
+    position: absolute;
+    left: 57px; /* 45px (аватар) + 12px (отступ) */
+    top: 50%;
+    transform: translateY(-50%);
+    font-size: 17px;
+    font-weight: 500;
+    color: white;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    max-width: calc(100% - 57px);
+}
+
+/* Скрываем информацию пользователя ТОЛЬКО в чате, а не в боковом меню */
+.chat-header .chat-user-status,
+.chat-header .status-text,
+.chat-header .user-bio,
+.chat-header .chat-bio {
+    display: none !important;
+}
+
+/* Правильные стили для user-status в боковом меню */
+.user-status {
+    color: #888;
+    font-size: 14px;
+    margin-top: 4px;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.side-menu .user-info h3 {
+    margin: 0;
+    color: white;
+    font-size: 18px;
+    font-weight: 500;
+    margin-bottom: 4px; /* Добавляем небольшой отступ для user-status */
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}

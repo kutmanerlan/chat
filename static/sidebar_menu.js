@@ -55,7 +55,11 @@ document.addEventListener('DOMContentLoaded', function() {
                     el.textContent = data.user_name;
                 });
                 
-                // Удаляем обновление статуса пользователя, так как мы больше не показываем этот элемент
+                // Восстанавливаем обновление статуса пользователя
+                const userStatusElements = document.querySelectorAll('.user-status');
+                userStatusElements.forEach(el => {
+                    el.textContent = data.bio || 'Нет информации';
+                });
                 
                 // Также обновляем информацию в форме редактирования
                 const profileNameInput = document.getElementById('profileName');
