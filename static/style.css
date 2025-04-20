@@ -260,9 +260,12 @@ body {
 
 .chat-user-info {
     display: flex;
-    align-items: center;
+    align-items: flex-start; /* Изменено с center для верхнего выравнивания */
+    flex-direction: column;
+    justify-content: center;
     flex-grow: 1;
     height: 100%;
+    padding-top: 8px; /* Добавляем отступ сверху для смещения текста выше */
 }
 
 .chat-user-avatar {
@@ -297,8 +300,9 @@ body {
 
 .chat-user-name {
     color: white;
-    font-size: 17px; /* Увеличенный размер шрифта */
+    font-size: 17px;
     font-weight: 500;
+    margin-top: -10px; /* Негативный отступ для поднятия имени выше */
 }
 
 /* Вертикальные три точки вместо горизонтальных */
@@ -880,8 +884,9 @@ body {
     text-overflow: ellipsis; /* Добавляем многоточие для длинного текста */
 }
 
+/* Полностью удаляем элемент user-status */
 .user-status {
-    display: none; /* Hide the user status completely */
+    display: none;
 }
 
 /* Стили для боковой панели редактирования профиля */

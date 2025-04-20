@@ -55,11 +55,7 @@ document.addEventListener('DOMContentLoaded', function() {
                     el.textContent = data.user_name;
                 });
                 
-                // Обновляем информацию о пользователе
-                const userStatusElements = document.querySelectorAll('.user-status');
-                userStatusElements.forEach(el => {
-                    el.textContent = data.bio || 'Нет информации';
-                });
+                // Удаляем обновление статуса пользователя, так как мы больше не показываем этот элемент
                 
                 // Также обновляем информацию в форме редактирования
                 const profileNameInput = document.getElementById('profileName');
@@ -594,12 +590,12 @@ document.addEventListener('DOMContentLoaded', function() {
                 userAvatar.innerHTML = `<div class="avatar-initials">${user.name.charAt(0)}</div>`;
             }
             
-            // User name - only display name, no additional info
+            // User name - создаем с модифицированным классом для правильного позиционирования
             const userName = document.createElement('div');
             userName.className = 'chat-user-name';
             userName.textContent = user.name;
             
-            // Add elements to user info
+            // Добавляем элементы в правильном порядке
             userInfo.appendChild(userAvatar);
             userInfo.appendChild(userName);
             
