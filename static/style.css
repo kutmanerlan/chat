@@ -342,11 +342,6 @@ body {
     margin: 0; /* Убираем все отступы */
 }
 
-/* Полностью скрываем элемент user-status без исключений */
-.user-status {
-    display: none !important; /* Используем !important для перезаписи любых других стилей */
-}
-
 /* Вертикальные три точки вместо горизонтальных */
 .chat-menu-btn {
     width: 40px;
@@ -2124,7 +2119,7 @@ body {
     align-items: center;
     padding: 0 12px; /* Увеличиваем боковые отступы */
     background-color: #212121;
-    border-top: 1px solid #333;
+    border-top: 1px солид #333;
     position: relative;
     z-index: 10;
 }
