@@ -604,11 +604,11 @@ button:hover {
 .contact-item {
     display: flex;
     align-items: center;
-    padding: 10px 15px;
+    padding: 12px 15px; /* Slightly increased from 10px 15px */
     cursor: pointer;
     transition: background-color 0.2s;
     border-radius: 5px;
-    margin: 2px 8px;
+    margin: 3px 8px; /* Slightly increased top/bottom margin */
     position: relative;
 }
 
@@ -627,11 +627,11 @@ button:hover {
 }
 
 .contact-avatar {
-    width: 40px;
-    height: 40px;
+    width: 50px; /* Increased from 40px to 50px */
+    height: 50px; /* Increased from 40px to 50px */
     border-radius: 50%;
     background-color: var(--avatar-background);
-    margin-right: 12px;
+    margin-right: 15px; /* Increased from 12px to give more spacing */
     display: flex;
     align-items: center;
     justify-content: center;
@@ -646,7 +646,7 @@ button:hover {
 }
 
 .contact-avatar .avatar-initials {
-    font-size: 16px;
+    font-size: 20px; /* Increased from 16px */
     color: white;
     font-weight: 500;
 }
@@ -655,19 +655,20 @@ button:hover {
     display: flex;
     flex-direction: column;
     justify-content: center;
-    height: 48px;
+    height: 50px; /* Increased from 48px to match avatar height */
 }
 
 .contact-name {
-    font-size: 15px;
+    font-size: 17px; /* Increased from 15px */
     color: white;
+    font-weight: 500; /* Added to make the name more prominent */
     margin-bottom: 0;
     white-space: nowrap;
     overflow: hidden;
     text-overflow: ellipsis;
     line-height: normal;
     position: relative;
-    top: -10px; /* Increased from -2px to -4px to position higher */
+    top: -10px;
 }
 
 /* Hide contact bio */
