@@ -377,13 +377,14 @@ document.addEventListener('DOMContentLoaded', function() {
     }
 
     // Добавляем обработчик клика на body для закрытия меню
-    document.body.addEventListener('click', function() {
-        if (sideMenu && sideMenu.classList.contains('active')) {
+    document.body.addEventListener('click', function(e) {
+        if (sideMenu && !sideMenu.contains(e.target) && sideMenu.classList.contains('active')) {
             sideMenu.classList.remove('active');
             overlay.classList.remove('active');
         }
         
-        if (editProfileSidebar && editProfileSidebar.classList.contains('active')) {
+        if (editProfileSidebar && !editProfileSidebar.contains(e.target) && 
+            editProfileSidebar.classList.contains('active')) {
             editProfileSidebar.classList.remove('active');
             overlay.classList.remove('active');
         }
