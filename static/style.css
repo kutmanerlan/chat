@@ -840,6 +840,7 @@ button:hover {
 .menu-items {
     margin-top: auto;
     padding-bottom: 20px;
+    position: relative; /* Added for positioning the version text */
 }
 
 .menu-item {
@@ -862,8 +863,22 @@ button:hover {
     text-align: center;
 }
 
+/* Modify logout button to highlight just the text */
 .menu-item.logout {
     color: #e74c3c;
+    display: inline-flex; /* Change to inline-flex */
+    padding: 8px 14px; /* Adjust padding to be tighter around text */
+    margin-left: 10px; /* Add some margin to the left */
+}
+
+/* Add version text at bottom right */
+.version-text {
+    position: absolute;
+    bottom: 0;
+    right: 10px;
+    font-size: 11px;
+    color: #555; /* Dark gray color */
+    margin-bottom: 5px;
 }
 
 /* Overlay styles */
