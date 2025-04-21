@@ -790,6 +790,38 @@ def update_profile():
 @app.route('/get_contacts')
 def get_contacts():
     if 'user_id' not in session:
+        return jsonify({'success': False, 'error': 'Not authenticated'}), 401
+    
+    try:
+        user_id = session['user_id']
+        
+        # Запрашиваем контакты пользователя
+        contacts_query = Contact.query.filter_by(user_id=user_id).join(
+            Contact.contact_user
+        ).order_by(User.name)
+        
+        contacts = []
+        for contact in contacts_query.all():
+            user = contact.contact_user
+            contacts.append({
+                'id': user.id,
+                'name': user.name,
+                'avatar_path': user.avatar_path if hasattr(user, 'avatar_path') else None,
+                'bio': user.bio if hasattr(user, 'bio') else None
+            })
+        
+        return jsonify({
+            'success': True,
+            'contacts': contacts
+        })
+    except Exception as e:
+        logging.error(f"Ошибка при получении контактов: {str(e)}")
+        return jsonify({'success': False, 'error': 'Server error'}), 500
+
+# Маршрут для получения списка контактов пользователя
+@app.route('/get_contacts')
+def get_contacts():
+    if 'user_id' not in session:
         return jsonify({'error': 'Unauthorized'}), 401
     
     try:
