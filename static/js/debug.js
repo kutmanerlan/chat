@@ -19,7 +19,11 @@ function initDebugPanel() {
   const urlParams = new URLSearchParams(window.location.search);
   ChatDebug.enabled = urlParams.get('debug') === 'true';
   
-  if (!ChatDebug.enabled) return;
+  if (!ChatDebug.enabled) {
+    // Even if debug panel is not enabled, add basic click debugging
+    setupClickDebugging();
+    return;
+  }
   
   console.log('Debug mode enabled');
   
@@ -68,6 +72,38 @@ function initDebugPanel() {
     ChatDebug.newMessageCount = 0;
     ChatDebug.blockCheckCount = 0;
     updateDebugDisplay();
+  });
+}
+
+/**
+ * Setup basic click debugging
+ */
+function setupClickDebugging() {
+  // Add global click handler to log contact clicks
+  document.addEventListener('click', function(e) {
+    // Check if clicked element or its parent is a contact item
+    let target = e.target;
+    let contactItem = null;
+    
+    // Search up to 5 levels up for a contact item
+    for (let i = 0; i < 5; i++) {
+      if (!target) break;
+      
+      if (target.classList && target.classList.contains('contact-item')) {
+        contactItem = target;
+        break;
+      }
+      
+      target = target.parentElement;
+    }
+    
+    if (contactItem) {
+      console.log('Contact item clicked:', {
+        userId: contactItem.dataset.userId,
+        contactId: contactItem.dataset.contactId,
+        classList: contactItem.className
+      });
+    }
   });
 }
 

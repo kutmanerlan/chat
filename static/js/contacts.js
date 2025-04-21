@@ -235,8 +235,10 @@ function createChatElement(chat) {
   chatItem.appendChild(userAvatar);
   chatItem.appendChild(userInfo);
   
-  // Add click handler
-  chatItem.addEventListener('click', () => {
+  // Add click handler with debugging
+  chatItem.addEventListener('click', function(e) {
+    console.log('Chat item clicked:', chat.user_id, chat.name);
+    e.stopPropagation(); // Prevent event bubbling
     openChatWithUser(chat.user_id, chat.name);
   });
   

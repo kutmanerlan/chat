@@ -6,12 +6,16 @@
  * Open a chat with a user
  */
 function openChatWithUser(userId, userName) {
+  console.log('Opening chat with user:', userId, userName); // Debug log
+  
   // Store active chat info
   ChatApp.activeChat = { id: userId, name: userName };
   
   // Get user info and check block status
   Promise.all([getUserInfo(userId), checkBlockStatus(userId)])
     .then(([userData, blockStatus]) => {
+      console.log('Got user data and block status:', userData, blockStatus); // Debug log
+      
       // Create the chat interface with block status
       createChatInterface(userData, blockStatus);
       
@@ -493,108 +497,103 @@ function startMessagePolling(userId) {
     clearInterval(ChatApp.messagePollingInterval);
   }
   
-  // Set the polling interval - increased from 3000ms to 5000ms for PythonAnywhere
+  // Store the last poll time to implement adaptive polling
+  ChatApp.lastPollTime = Date.now();
+  ChatApp.pollInterval = 5000; // Start with 5 seconds
+  ChatApp.maxPollInterval = 15000; // Max interval of 15 seconds
+  ChatApp.minPollInterval = 5000; // Min interval of 5 seconds
+  ChatApp.inactiveTime = 0;
+  
+  // Track user activity to adjust polling frequency
+  document.addEventListener('mousemove', resetInactiveTime);
+  document.addEventListener('keydown', resetInactiveTime);
+  document.addEventListener('click', resetInactiveTime);
+  
+  function resetInactiveTime() {
+    if (ChatApp.inactiveTime > 10000) { // If user was inactive for more than 10s
+      // User is back, do an immediate poll
+      if (ChatApp.activeChat && ChatApp.activeChat.id == userId) {
+        checkForNewMessages(userId);
+        checkForBlockUpdates(userId);
+      }
+    }
+    ChatApp.inactiveTime = 0;
+    ChatApp.pollInterval = ChatApp.minPollInterval; // Reset to fastest polling
+  }
+  
+  // Set the polling interval with dynamic adjustment
   ChatApp.messagePollingInterval = setInterval(() => {
-    // Only poll if chat is still activewith 5 seconds
+    // Only poll if chat is still active
     if (ChatApp.activeChat && ChatApp.activeChat.id == userId) {
-      checkForNewMessages(userId);// Min interval of 5 seconds
+      // Increase inactive time
+      ChatApp.inactiveTime += ChatApp.pollInterval;
+      
+      // Slow down polling if user is inactive
+      if (ChatApp.inactiveTime > 30000) { // After 30s of inactivity
+        ChatApp.pollInterval = Math.min(ChatApp.pollInterval * 1.5, ChatApp.maxPollInterval);
+      }
+      
+      checkForNewMessages(userId);
       checkForBlockUpdates(userId);
       
-      // Update debug info if enabledlling frequency
-      if (typeof updateDebugInfo === 'function') {tiveTime);
-        updateDebugInfo('Automatic poll');etInactiveTime);
-      }ent.addEventListener('click', resetInactiveTime);
+      // Update debug info if enabled
+      if (typeof updateDebugInfo === 'function') {
+        updateDebugInfo(`Poll (interval: ${ChatApp.pollInterval}ms)`);
+      }
     } else {
       // Stop polling if chat is no longer active
-      clearInterval(ChatApp.messagePollingInterval);as inactive for more than 10s
+      clearInterval(ChatApp.messagePollingInterval);
       ChatApp.messagePollingInterval = null;
-    } if (ChatApp.activeChat && ChatApp.activeChat.id == userId) {
-  }, 5000); // Check every 5 seconds (increased from 3s for PythonAnywhere)
-        checkForBlockUpdates(userId);
+      
+      // Remove activity listeners
+      document.removeEventListener('mousemove', resetInactiveTime);
+      document.removeEventListener('keydown', resetInactiveTime);
+      document.removeEventListener('click', resetInactiveTime);
+    }
+  }, ChatApp.pollInterval);
+  
   console.log(`Started message polling for user ${userId}`);
-}   }
-    ChatApp.inactiveTime = 0;
-/** ChatApp.pollInterval = ChatApp.minPollInterval; // Reset to fastest polling
+}
+
+/**
  * Check for new messages
  */
-function checkForNewMessages(userId) {amic adjustment
-  // Find the last message ID in the chaterval(() => {
+function checkForNewMessages(userId) {
+  // Find the last message ID in the chat
   const messages = document.querySelectorAll('.message');
-  let lastMessageId = 0;at && ChatApp.activeChat.id == userId) {
-      // Increase inactive time
-  if (messages.length > 0) {= ChatApp.pollInterval;
+  let lastMessageId = 0;
+  
+  if (messages.length > 0) {
     const lastMessage = messages[messages.length - 1];
     lastMessageId = lastMessage.dataset.messageId;
-  }   if (ChatApp.inactiveTime > 30000) { // After 30s of inactivity
-        ChatApp.pollInterval = Math.min(ChatApp.pollInterval * 1.5, ChatApp.maxPollInterval);
+  }
+  
   // Fetch new messages
   fetchNewMessages(userId, lastMessageId)
-    .then(data => {ssages(userId);
+    .then(data => {
       if (data.success && data.messages && data.messages.length > 0) {
         // Add new messages to chat
         const chatMessages = document.querySelector('.chat-messages');
-        if (chatMessages) {gInfo === 'function') {
-          data.messages.forEach(message => {hatApp.pollInterval}ms)`);
+        if (chatMessages) {
+          data.messages.forEach(message => {
             addMessageToChat(message, chatMessages, true);
           });
-          top polling if chat is no longer active
+          
           // Update sidebar to reflect the latest message
-          loadSidebar();lingInterval = null;
+          loadSidebar();
           
           // Add to debug counter if enabled
-          if (typeof logNewMessages === 'function') {InactiveTime);
-            logNewMessages(data.messages.length);etInactiveTime);
-          }ent.removeEventListener('click', resetInactiveTime);
+          if (typeof logNewMessages === 'function') {
+            logNewMessages(data.messages.length);
+          }
         }
-      }atApp.pollInterval);
+      }
     })
-    .catch(error => {d message polling for user ${userId}`);
+    .catch(error => {
       console.error('Error checking for new messages:', error);
     });
-}**
- * Check for new messages
-/**
- * Check for block status updatesId) {
- *// Find the last message ID in the chat
-function checkForBlockUpdates(userId) {orAll('.message');
-  checkBlockStatus(userId)
-    .then(blockStatus => {
-      // Get current block state
-      const currentBlockState = {messages.length - 1];
-        isBlocked: document.querySelector('.blocking-message') !== null,
-        blockMessage: document.querySelector('.blocking-message span')?.textContent || ''
-      };
-      etch new messages
-      // Determine if block state changed
-      const blockStateChanged = 
-        (blockStatus.isBlocked || blockStatus.hasBlockedYou) !== currentBlockState.isBlocked;
-        // Add new messages to chat
-      // Update debug counter if enablederySelector('.chat-messages');
-      if (typeof logBlockCheck === 'function') {
-        logBlockCheck(blockStateChanged);> {
-      }     addMessageToChat(message, chatMessages, true);
-          });
-      // Update block indicators in the sidebar regardless of changes
-      if (typeof updateBlockIndicators === 'function') { reflect the latest message
-        updateBlockIndicators(userId, blockStatus);
-      }
-      nter if enabled
-      // Update UI if block state changed
-      if (blockStateChanged) {essages.length);
-        // Reopen the chat with updated block status
-        getUserInfo(userId) }
-          .then(userData => {}
-            createChatInterface(userData, blockStatus);
-            loadMessages(userId);
-          });onsole.error('Error checking for new messages:', error);
-      }   });
-    })}
+}
 
-
-
-
-
-}    });      console.error('Error checking block status:', error);    .catch(error => {
 /**
  * Check for block status updates
  */
@@ -614,6 +613,11 @@ function checkForBlockUpdates(userId) {
       // Update debug counter if enabled
       if (typeof logBlockCheck === 'function') {
         logBlockCheck(blockStateChanged);
+      }
+      
+      // Update block indicators in the sidebar regardless of changes
+      if (typeof updateBlockIndicators === 'function') {
+        updateBlockIndicators(userId, blockStatus);
       }
       
       // Update UI if block state changed

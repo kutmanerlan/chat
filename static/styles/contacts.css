@@ -32,6 +32,8 @@
     border-radius: 5px;
     margin: 3px 8px;
     position: relative;
+    pointer-events: auto; /* Ensure clicks are registered */
+    z-index: 5; /* Add a z-index to ensure it's clickable */
 }
 
 .contact-item.active {
@@ -79,6 +81,7 @@
     height: 50px;
     width: calc(100% - 80px); /* Reduced width to leave space for the contact indicator */
     overflow: hidden; /* Ensure content doesn't overflow */
+    pointer-events: none; /* Allow clicks to pass through to parent */
 }
 
 .contact-name {
@@ -124,6 +127,7 @@
   border-radius: 4px;
   z-index: 10; /* Maintain original z-index */
   cursor: help; /* Change cursor to indicate there's additional information */
+  pointer-events: auto; /* Make sure tooltip triggers still work */
 }
 
 /* Block indicator */
@@ -138,6 +142,7 @@
   border-radius: 4px;
   z-index: 10;
   cursor: help;
+  pointer-events: auto; /* Make sure tooltip triggers still work */
 }
 
 /* Blocked by you indicator (red) */
