@@ -152,3 +152,56 @@ function logBlockCheck(changed) {
   ChatDebug.blockCheckCount++;
   updateDebugInfo(`Block check: ${changed ? 'Status changed' : 'No change'}`);
 }
+
+/**
+ * Additional debugging for indicators
+ */
+
+// Check for indicators display issue
+function debugIndicators() {
+  console.log("Debugging indicators display...");
+  
+  // Find all contact items
+  const contactItems = document.querySelectorAll('.contact-item');
+  
+  contactItems.forEach(item => {
+    const userId = item.dataset.userId;
+    const userName = item.querySelector('.contact-name')?.textContent || 'Unknown';
+    
+    // Check for indicators
+    const contactIndicator = item.querySelector('.contact-indicator');
+    const blockIndicator = item.querySelector('.block-indicator');
+    
+    console.log(`Contact item ${userName} (${userId}):`, {
+      hasContactIndicator: !!contactIndicator,
+      hasBlockIndicator: !!blockIndicator,
+      indicatorClasses: blockIndicator ? blockIndicator.className : (contactIndicator ? contactIndicator.className : 'none')
+    });
+    
+    // Get computed styles to check visibility
+    if (contactIndicator || blockIndicator) {
+      const indicator = contactIndicator || blockIndicator;
+      const style = window.getComputedStyle(indicator);
+      console.log(`Indicator styles for ${userName}:`, {
+        display: style.display,
+        visibility: style.visibility,
+        opacity: style.opacity,
+        zIndex: style.zIndex,
+        width: style.width,
+        height: style.height,
+        right: style.right,
+        top: style.top
+      });
+    }
+  });
+}
+
+// Add to window for easy console access
+window.debugIndicators = debugIndicators;
+
+// Call debug function on page load with a slight delay
+document.addEventListener('DOMContentLoaded', () => {
+  setTimeout(() => {
+    debugIndicators();
+  }, 2000);
+});

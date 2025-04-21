@@ -191,6 +191,13 @@ function createChatElement(chat) {
     chatItem.appendChild(unreadBadge);
   }
   
+  // Log contact status for debugging
+  console.log(`Chat item for ${chat.name} (${chat.user_id}):`, {
+    is_contact: chat.is_contact,
+    is_blocked_by_you: chat.is_blocked_by_you,
+    has_blocked_you: chat.has_blocked_you
+  });
+  
   // Priority: Show block indicator first, then contact indicator if not blocked
   if (chat.is_blocked_by_you) {
     const blockIndicator = document.createElement('span');
@@ -203,6 +210,7 @@ function createChatElement(chat) {
     blockIndicator.addEventListener('mouseleave', hideTooltip);
     
     chatItem.appendChild(blockIndicator);
+    console.log(`Added block indicator (you blocked) for ${chat.name}`);
   } else if (chat.has_blocked_you) {
     const blockIndicator = document.createElement('span');
     blockIndicator.className = 'block-indicator blocked-you';
@@ -214,6 +222,7 @@ function createChatElement(chat) {
     blockIndicator.addEventListener('mouseleave', hideTooltip);
     
     chatItem.appendChild(blockIndicator);
+    console.log(`Added block indicator (blocked you) for ${chat.name}`);
   } else if (chat.is_contact) {
     // Only show contact indicator if not blocked
     const contactIndicator = document.createElement('span');
@@ -226,6 +235,7 @@ function createChatElement(chat) {
     contactIndicator.addEventListener('mouseleave', hideTooltip);
     
     chatItem.appendChild(contactIndicator);
+    console.log(`Added contact indicator for ${chat.name}`);
   }
   
   // Assemble elements
