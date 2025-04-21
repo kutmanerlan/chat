@@ -116,6 +116,12 @@ function createChatInterface(user, blockStatus) {
   const messageInputContainer = document.createElement('div');
   messageInputContainer.className = 'message-input-container';
   
+  // IMPORTANT: Assemble the header first, regardless of block status
+  userInfo.appendChild(userAvatar);
+  userInfo.appendChild(userName);
+  chatHeader.appendChild(userInfo);
+  chatHeader.appendChild(menuButton);
+  
   if (isBlocked) {
     // Show blocked state
     messageInputContainer.innerHTML = `
@@ -187,13 +193,6 @@ function createChatInterface(user, blockStatus) {
       }
     });
     
-    // Assemble the UI
-    userInfo.appendChild(userAvatar);
-    userInfo.appendChild(userName);
-    
-    chatHeader.appendChild(userInfo);
-    chatHeader.appendChild(menuButton);
-    
     clipButtonContainer.appendChild(paperclipButton);
     messageInputField.appendChild(inputField);
     
@@ -204,6 +203,7 @@ function createChatInterface(user, blockStatus) {
     messageInputContainer.appendChild(inputWrapper);
   }
   
+  // Assemble the full UI (always include header)
   mainContent.appendChild(chatHeader);
   mainContent.appendChild(chatMessages);
   mainContent.appendChild(messageInputContainer);
@@ -211,8 +211,13 @@ function createChatInterface(user, blockStatus) {
   // Show chat content
   mainContent.style.display = 'flex';
   
-  // Focus input field
-  setTimeout(() => inputField.focus(), 0);
+  // Focus input field if not blocked
+  if (!isBlocked) {
+    const inputField = document.querySelector('.message-input-field input');
+    if (inputField) {
+      setTimeout(() => inputField.focus(), 0);
+    }
+  }
 }
 
 /**
