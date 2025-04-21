@@ -826,83 +826,80 @@ def get_contacts():
 @app.route('/get_chat_list')
 def get_chat_list():
     if 'user_id' not in session:
-        return jsonify({'success': False, 'error': 'Unauthorized'}), 401
+        return jsonify({'success': False, 'error': 'Not logged in'})
+    
+    current_user_id = session['user_id']
     
     try:
-        # Получаем уникальных пользователей, с которыми есть переписка
-        # Подзапрос для получения id пользователей, с которыми общались
-        subquery1 = db.session.query(Message.recipient_id.label('user_id')).filter(
-            Message.sender_id == session['user_id']
-        ).distinct()
+        # Get the list of deleted chat user IDs
+        deleted_chats = DeletedChat.query.filter_by(user_id=current_user_id).with_entities(DeletedChat.chat_with_user_id).all()
+        deleted_user_ids = [chat.chat_with_user_id for chat in deleted_chats]
         
-        subquery2 = db.session.query(Message.sender_id.label('user_id')).filter(
-            Message.recipient_id == session['user_id']
-        ).distinct()
+        # Get users that have conversations with the current user
+        # Excluding users with whom the current user has deleted chats
+        users_with_conversations = db.session.query(User).join(
+            Message, 
+            or_(
+                and_(Message.sender_id == User.id, Message.recipient_id == current_user_id),
+                and_(Message.recipient_id == User.id, Message.sender_id == current_user_id)
+            )
+        ).filter(User.id != current_user_id).filter(User.id.notin_(deleted_user_ids)).distinct().all()
         
-        # Объединяем подзапросы
-        chat_user_ids = subquery1.union(subquery2).all()
-        chat_user_ids = [item.user_id for item in chat_user_ids]
+        # Get contacts of the current user
+        contacts = Contact.query.filter_by(user_id=current_user_id).all()
+        contact_ids = [contact.contact_id for contact in contacts]
         
-        # Получаем пользователей из списка ID
-        chat_users = User.query.filter(User.id.in_(chat_user_ids)).all()
+        # Get blocks
+        blocks_made = Block.query.filter_by(user_id=current_user_id).all()
+        blocks_received = Block.query.filter_by(blocked_user_id=current_user_id).all()
         
-        # Формируем информацию о чатах
-        chats = []
-        for user in chat_users:
-            # Получаем последнее сообщение
+        blocked_ids = [block.blocked_user_id for block in blocks_made]
+        blocked_by_ids = [block.user_id for block in blocks_received]
+        
+        # Prepare chat list
+        chat_list = []
+        
+        for user in users_with_conversations:
+            # Get the last message between the users
             last_message = Message.query.filter(
-                ((Message.sender_id == session['user_id']) & (Message.recipient_id == user.id)) |
-                ((Message.sender_id == user.id) & (Message.recipient_id == session['user_id']))
+                or_(
+                    and_(Message.sender_id == current_user_id, Message.recipient_id == user.id),
+                    and_(Message.recipient_id == current_user_id, Message.sender_id == user.id)
+                )
             ).order_by(Message.timestamp.desc()).first()
             
-            # Считаем непрочитанные сообщения
-            unread_count = Message.query.filter(
-                (Message.sender_id == user.id) &
-                (Message.recipient_id == session['user_id']) &
-                (Message.is_read == False)
+            # Skip if there's no message (shouldn't happen, but just in case)
+            if not last_message:
+                continue
+            
+            # Count unread messages
+            unread_count = Message.query.filter_by(
+                sender_id=user.id,
+                recipient_id=current_user_id,
+                is_read=False
             ).count()
             
-            # Проверяем, является ли пользователь контактом
-            is_contact = Contact.query.filter_by(
-                user_id=session['user_id'],
-                contact_id=user.id
-            ).first() is not None
-            
-            # Check if any blocks exist between users
-            is_blocked_by_you = Block.query.filter_by(
-                user_id=session['user_id'],
-                blocked_user_id=user.id
-            ).first() is not None
-            
-            has_blocked_you = Block.query.filter_by(
-                user_id=user.id,
-                blocked_user_id=session['user_id']
-            ).first() is not None
-            
-            # Добавляем информацию о чате
-            chat_info = {
+            # Add user to chat list
+            chat_list.append({
                 'user_id': user.id,
                 'name': user.name,
-                'avatar_path': user.avatar_path if hasattr(user, 'avatar_path') else None,
-                'last_message': last_message.content if last_message else "",
-                'last_timestamp': last_message.timestamp.isoformat() if last_message else None,
+                'avatar_path': user.avatar_path,
+                'last_message': last_message.content if last_message else '',
+                'last_message_time': last_message.timestamp.isoformat() if last_message else '',
                 'unread_count': unread_count,
-                'is_contact': is_contact,
-                'is_blocked_by_you': is_blocked_by_you,
-                'has_blocked_you': has_blocked_you
-            }
-            chats.append(chat_info)
+                'is_contact': user.id in contact_ids,
+                'is_blocked_by_you': user.id in blocked_ids,
+                'has_blocked_you': user.id in blocked_by_ids
+            })
         
-        # Сортируем чаты по времени последнего сообщения (новые сверху)
-        chats.sort(key=lambda x: x['last_timestamp'] if x['last_timestamp'] else "", reverse=True)
+        # Sort by last message time
+        chat_list.sort(key=lambda x: x['last_message_time'], reverse=True)
         
-        return jsonify({
-            'success': True,
-            'chats': chats
-        })
+        return jsonify({'success': True, 'chats': chat_list})
+    
     except Exception as e:
-        logging.error(f"Ошибка при получении списка чатов: {str(e)}")
-        return jsonify({'success': False, 'error': 'Failed to retrieve chat list'}), 500
+        logging.error(f"Error getting chat list: {str(e)}")
+        return jsonify({'success': False, 'error': str(e)})
 
 # Маршрут для добавления пользователя в контакты
 @app.route('/add_contact', methods=['POST'])
@@ -1467,6 +1464,10 @@ def delete_chat():
             
             db.session.add(deleted_chat)
             db.session.commit()
+            
+            logging.info(f"User {current_user_id} deleted chat with {user_id}")
+        else:
+            logging.info(f"Chat between {current_user_id} and {user_id} already deleted")
         
         return jsonify({'success': True})
     

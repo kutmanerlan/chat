@@ -244,12 +244,15 @@ function fetchRecentConversations() {
 }
 
 /**
- * Get chat list (filtered to exclude deleted chats)
+ * Get chat list
  */
 function fetchChatList() {
-  return fetch('/get_chat_list_with_deleted', {  // Updated endpoint name
+  return fetch('/get_chat_list', {
     method: 'GET',
-    headers: { 'Content-Type': 'application/json' }
+    headers: {
+      'Content-Type': 'application/json',
+      'Cache-Control': 'no-cache, no-store, must-revalidate' // Prevent caching
+    }
   })
   .then(response => {
     if (!response.ok) throw new Error('Failed to load chat list');
