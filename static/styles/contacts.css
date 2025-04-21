@@ -133,38 +133,38 @@
   /* Remove the border */
 }
 
-/* Block indicator - KEEPING the enhanced style */
+/* Block indicator - MAKING IT MATCH the contact indicator */
 .block-indicator {
   position: absolute;
   right: 12px; /* Same position as contact indicator */
   top: 50%;
   transform: translateY(-50%);
+  color: #888;
   font-size: 12px;
-  font-weight: bold; /* Make it bold for better visibility */
+  font-weight: normal; /* Changed from bold to normal */
   padding: 2px 4px;
+  background-color: rgba(100, 100, 100, 0.2); /* Matching contact indicator */
   border-radius: 4px;
   z-index: 10;
   cursor: help;
-  pointer-events: auto; /* Make sure tooltip triggers still work */
-  width: 16px; /* Fixed width */
-  height: 16px; /* Fixed height */
-  display: flex;
-  align-items: center;
-  justify-content: center;
+  pointer-events: auto;
+  /* Removed fixed dimensions */
+  /* Removed display: flex, align-items, justify-content */
+  /* Removed border */
 }
 
-/* Blocked by you indicator (red) */
+/* Blocked by you indicator (red) - SIMPLIFIED */
 .block-indicator.blocked-by-you {
-  background-color: rgba(231, 76, 60, 0.3); /* Increased opacity from 0.2 to 0.3 */
+  background-color: rgba(231, 76, 60, 0.2); /* Reduced opacity to match contact indicator */
   color: #e74c3c;
-  border: 1px solid #e74c3c; /* Add border for more visibility */
+  /* Removed border */
 }
 
-/* User has blocked you indicator (gray) */
+/* User has blocked you indicator (gray) - SIMPLIFIED */
 .block-indicator.blocked-you {
-  background-color: rgba(150, 150, 150, 0.3); /* Increased opacity from 0.2 to 0.3 */
+  background-color: rgba(150, 150, 150, 0.2); /* Reduced opacity to match contact indicator */
   color: #999;
-  border: 1px solid #999; /* Add border for more visibility */
+  /* Removed border */
 }
 
 /* Block message in main area */
