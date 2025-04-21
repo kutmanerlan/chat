@@ -400,7 +400,7 @@ function showDeleteChatConfirmation(userId, userName) {
   confirmBtn.parentNode.replaceChild(newConfirmBtn, confirmBtn);
   
   newConfirmBtn.addEventListener('click', function() {
-    // Actually execute the deletion
+    // Execute the deletion without depending on server-side implementation
     executeDeleteChat(userId, userName);
     deleteChatModal.classList.remove('active');
     document.getElementById('overlay').classList.remove('active');
