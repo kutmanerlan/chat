@@ -89,6 +89,7 @@
     line-height: normal;
     position: relative;
     top: -10px;
+    max-width: calc(100% - 30px); /* Leave space for the indicator */
 }
 
 .contact-bio {
@@ -108,15 +109,16 @@
 /* Contact indicator */
 .contact-indicator {
   position: absolute;
-  right: 15px;
+  right: 10px; /* Moved closer to the edge */
   top: 50%;
   transform: translateY(-50%);
   color: #888;
   font-size: 12px;
   font-weight: normal;
-  padding: 0 3px;
-  background-color: rgba(100, 100, 100, 0.1);
+  padding: 2px 4px; /* Slightly increased padding for better visibility */
+  background-color: rgba(100, 100, 100, 0.2); /* Slightly darker background */
   border-radius: 4px;
+  z-index: 10; /* Ensure it displays above other elements */
 }
 
 /* Conversations and recents */
