@@ -2,7 +2,7 @@ import sys
 import os
 import logging
 
-# Настройка логирования
+# Configure logging
 logging.basicConfig(
     filename='/tmp/wsgi_error.log',
     level=logging.DEBUG,
@@ -10,41 +10,30 @@ logging.basicConfig(
 )
 
 try:
-    logging.info("Запуск WSGI скрипта")
+    logging.info("Starting WSGI script")
     
-    # Добавляем путь к проекту
+    # Add project path
     path = '/home/tymeer/chat'
     if path not in sys.path:
         sys.path.insert(0, path)
     
-    logging.info(f"Добавлен путь: {path}")
-    logging.info(f"sys.path: {sys.path}")
+    logging.info(f"Added path: {path}")
     
-    # Проверка существования файла app.py
-    app_path = os.path.join(path, 'app.py')
-    logging.info(f"Проверка файла app.py по пути: {app_path}")
-    if os.path.exists(app_path):
-        logging.info("Файл app.py найден")
-    else:
-        logging.error(f"Файл app.py НЕ найден по пути: {app_path}")
-    
-    # Установка переменных окружения
+    # Set environment variables
     os.environ['FLASK_ENV'] = 'production'
-    # Важно: установка SERVER_NAME через переменную окружения
     os.environ['PYTHONANYWHERE_HOST'] = 'tymeer.pythonanywhere.com'
     
-    # Импортируем Flask-приложение
-    from app import app as application
-    logging.info("Приложение Flask успешно импортировано")
+    # Import Flask application - note the new import from app package
+    from app import create_app
+    application = create_app()
     
-    # Проверяем, установлен ли SERVER_NAME
-    logging.info(f"SERVER_NAME в конфигурации: {application.config.get('SERVER_NAME', 'Не установлен')}")
+    logging.info("Flask application successfully imported")
     
 except Exception as e:
-    logging.error(f"Ошибка при инициализации WSGI: {str(e)}")
+    logging.error(f"Error initializing WSGI: {str(e)}")
     import traceback
     logging.error(traceback.format_exc())
-    # Создаем простое приложение для отладки
+    
     def application(environ, start_response):
         status = '200 OK'
         output = b'WSGI error! Check logs at /tmp/wsgi_error.log'
