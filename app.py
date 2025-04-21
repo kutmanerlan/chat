@@ -1029,69 +1029,6 @@ def get_messages():
         logging.error(f"Error getting messages: {str(e)}")
         return jsonify({'success': False, 'error': 'Server error'}), 500
 
-# Route for getting chat list (users you've exchanged messages with)
-@app.route('/get_chat_list')
-def get_chat_list():
-    if 'user_id' not in session:
-        return jsonify({'success': False, 'error': 'Not authenticated'}), 401
-    
-    try:
-        user_id = session['user_id']
-        
-        # Find all users the current user has exchanged messages with
-        query = """
-            SELECT 
-                u.id, 
-                u.name, 
-                u.avatar_path, 
-                u.bio, 
-                m.content as last_message, 
-                m.timestamp,
-                (SELECT COUNT(*) FROM message 
-                 WHERE sender_id = u.id AND recipient_id = :user_id AND is_read = 0) as unread_count,
-                (SELECT COUNT(*) FROM contact 
-                 WHERE user_id = :user_id AND contact_id = u.id) as is_contact
-            FROM user u
-            JOIN (
-                SELECT 
-                    CASE 
-                        WHEN sender_id = :user_id THEN recipient_id 
-                        ELSE sender_id 
-                    END as user_id,
-                    MAX(timestamp) as max_time
-                FROM message
-                WHERE sender_id = :user_id OR recipient_id = :user_id
-                GROUP BY user_id
-            ) latest ON latest.user_id = u.id
-            JOIN message m ON ((m.sender_id = u.id AND m.recipient_id = :user_id) OR 
-                               (m.sender_id = :user_id AND m.recipient_id = u.id)) 
-                          AND m.timestamp = latest.max_time
-            ORDER BY m.timestamp DESC
-        """
-        
-        result = db.session.execute(text(query), {'user_id': user_id})
-        
-        chats = []
-        for row in result:
-            chats.append({
-                'user_id': row.id,
-                'name': row.name,
-                'avatar_path': row.avatar_path,
-                'bio': row.bio,
-                'last_message': row.last_message,
-                'timestamp': row.timestamp.isoformat() if row.timestamp else None,
-                'unread_count': row.unread_count,
-                'is_contact': row.is_contact > 0
-            })
-        
-        return jsonify({
-            'success': True,
-            'chats': chats
-        })
-    except Exception as e:
-        logging.error(f"Error getting chat list: {str(e)}")
-        return jsonify({'success': False, 'error': 'Server error'}), 500
-
 # Route for getting recent conversations (users you've messaged with)
 @app.route('/get_recent_conversations')
 def get_recent_conversations():
