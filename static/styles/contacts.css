@@ -122,26 +122,27 @@
   padding: 2px 4px;
   background-color: rgba(100, 100, 100, 0.2);
   border-radius: 4px;
-  z-index: 9999;
+  z-index: 10; /* Maintain original z-index */
   cursor: help; /* Change cursor to indicate there's additional information */
-  /* Removed the duplicate 'position: relative' that was causing the issue */
 }
 
 /* Tooltip styles */
 .contact-indicator[data-tooltip]:hover::after {
   content: attr(data-tooltip); /* Use the data-tooltip attribute content */
-  position: absolute;
-  right: -5px;
-  bottom: 100%; /* Position above the indicator */
-  transform: translateX(25%);
-  margin-bottom: 5px;
+  position: fixed !important; /* Use fixed instead of absolute to break out of stacking context */
+  right: auto; /* Reset right position */
+  left: 50%; /* Position based on cursor instead */
+  transform: translateX(-50%); /* Center horizontally */
+  bottom: auto; /* Reset bottom position */
+  top: 30%; /* Position near top of screen */
+  margin-bottom: 0;
   background-color: #333;
   color: white;
   padding: 5px 10px;
   border-radius: 4px;
   font-size: 12px;
   white-space: nowrap;
-  z-index: 9999; /* Increased from 20 to 9999 to ensure it's above everything */
+  z-index: 99999 !important; /* Increased and added !important */
   box-shadow: 0 2px 5px rgba(0, 0, 0, 0.2);
   pointer-events: none; /* Prevent tooltip from blocking hover */
 }
@@ -149,15 +150,15 @@
 /* Create a small triangle/arrow */
 .contact-indicator[data-tooltip]:hover::before {
   content: '';
-  position: absolute;
-  right: 9px;
-  bottom: 100%;
+  position: fixed !important; /* Use fixed positioning to match the tooltip */
+  left: 50%;
+  transform: translateX(-50%) rotate(180deg); /* Center horizontally and rotate */
+  top: calc(30% + 28px); /* Position below tooltip */
   border-width: 5px;
   border-style: solid;
-  border-color: transparent transparent #333 transparent;
-  transform: rotate(180deg);
+  border-color: #333 transparent transparent transparent; /* Point downward */
   pointer-events: none;
-  z-index: 9999; /* Also add z-index to the arrow */
+  z-index: 99999 !important; /* Match tooltip z-index */
 }
 
 /* Conversations and recents */
