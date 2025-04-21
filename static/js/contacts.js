@@ -132,16 +132,28 @@ function createContactElement(contact) {
  * Load recent conversations
  */
 function loadRecentConversations() {
-  return fetchRecentConversations()
-    .then(data => {
-      if (!data.conversations) return;
-      
-      ChatApp.conversations = data.conversations;
-      renderConversations(data.conversations);
-    })
-    .catch(error => {
-      console.error('Error loading conversations:', error);
-    });
+  console.log('Loading recent conversations...');
+  return fetch('/get_recent_conversations', {
+    method: 'GET',
+    headers: {
+      'Cache-Control': 'no-cache',
+      'Content-Type': 'application/json'
+    }
+  })
+  .then(response => {
+    if (!response.ok) throw new Error('Failed to load conversations');
+    return response.json();
+  })
+  .then(data => {
+    console.log('Recent conversations loaded:', data);
+    if (!data.conversations) return;
+    
+    ChatApp.conversations = data.conversations;
+    renderConversations(data.conversations);
+  })
+  .catch(error => {
+    console.error('Error loading conversations:', error);
+  });
 }
 
 /**
