@@ -1438,6 +1438,118 @@ def refresh_sidebar():
         logging.error(f"Error refreshing sidebar: {str(e)}")
         return jsonify({'success': False, 'error': str(e)})
 
+@app.route('/delete_chat', methods=['POST'])
+def delete_chat():
+    if 'user_id' not in session:
+        return jsonify({'success': False, 'error': 'Not logged in'})
+    
+    current_user_id = session['user_id']
+    data = request.json
+    
+    if not data or 'user_id' not in data:
+        return jsonify({'success': False, 'error': 'User ID is required'})
+    
+    user_id = data['user_id']
+    
+    try:
+        # Check if chat is already deleted
+        existing_deleted = DeletedChat.query.filter_by(
+            user_id=current_user_id, 
+            chat_with_user_id=user_id
+        ).first()
+        
+        if not existing_deleted:
+            # Mark chat as deleted
+            deleted_chat = DeletedChat(
+                user_id=current_user_id,
+                chat_with_user_id=user_id
+            )
+            
+            db.session.add(deleted_chat)
+            db.session.commit()
+        
+        return jsonify({'success': True})
+    
+    except Exception as e:
+        db.session.rollback()
+        logging.error(f"Error deleting chat: {str(e)}")
+        return jsonify({'success': False, 'error': str(e)})
+
+# Update get_chat_list to filter out deleted chats
+@app.route('/get_chat_list')
+def get_chat_list():
+    if 'user_id' not in session:
+        return jsonify({'success': False, 'error': 'Not logged in'})
+    
+    current_user_id = session['user_id']
+    
+    try:
+        # Get the list of users the current user has deleted chats with
+        deleted_chats = DeletedChat.query.filter_by(user_id=current_user_id).with_entities(DeletedChat.chat_with_user_id).all()
+        deleted_user_ids = [chat.chat_with_user_id for chat in deleted_chats]
+        
+        # Get users that have conversations with the current user
+        # Filter out users with whom the current user has deleted chats
+        users_with_conversations = db.session.query(User).join(
+            Message, 
+            or_(
+                and_(Message.sender_id == User.id, Message.recipient_id == current_user_id),
+                and_(Message.recipient_id == User.id, Message.sender_id == current_user_id)
+            )
+        ).filter(User.id != current_user_id).filter(User.id.notin_(deleted_user_ids)).distinct().all()
+        
+        # Get contacts of the current user
+        contacts = Contact.query.filter_by(user_id=current_user_id).all()
+        contact_ids = [contact.contact_id for contact in contacts]
+        
+        # Get blocks
+        blocks_made = Block.query.filter_by(user_id=current_user_id).all()
+        blocks_received = Block.query.filter_by(blocked_user_id=current_user_id).all()
+        
+        blocked_ids = [block.blocked_user_id for block in blocks_made]
+        blocked_by_ids = [block.user_id for block in blocks_received]
+        
+        # Prepare chat list
+        chat_list = []
+        
+        for user in users_with_conversations:
+            # Get the last message between the users
+            last_message = Message.query.filter(
+                or_(
+                    and_(Message.sender_id == current_user_id, Message.recipient_id == user.id),
+                    and_(Message.recipient_id == current_user_id, Message.sender_id == user.id)
+                )
+            ).order_by(Message.timestamp.desc()).first()
+            
+            # Count unread messages
+            unread_count = Message.query.filter_by(
+                sender_id=user.id,
+                recipient_id=current_user_id,
+                is_read=False
+            ).count()
+            
+            # Add user to chat list
+            chat_list.append({
+                'user_id': user.id,
+                'name': user.name,
+                'avatar_path': user.avatar_path,
+                'last_message': last_message.content if last_message else '',
+                'last_message_time': last_message.timestamp.isoformat() if last_message else '',
+                'unread_count': unread_count,
+                'is_contact': user.id in contact_ids,
+                'is_blocked_by_you': user.id in blocked_ids,
+                'has_blocked_you': user.id in blocked_by_ids
+            })
+        
+        # Sort by last message time
+        chat_list.sort(key=lambda x: x['last_message_time'], reverse=True)
+        
+        return jsonify({'success': True, 'chats': chat_list})
+    
+    except Exception as e:
+        logging.error(f"Error getting chat list: {str(e)}")
+        return jsonify({'success': False, 'error': str(e)})
+
 if __name__ == '__main__':
     # Инициализация базы данных в контексте приложения
     with app.app_context():

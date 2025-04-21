@@ -291,6 +291,17 @@ function showContactMenu(menuButton, user) {
               ${blockStatus.isBlocked ? 'Unblock user' : 'Block user'}
             </div>
           </div>
+          
+          <!-- Delete Chat option (new) -->
+          <div class="dropdown-option delete-chat-option" id="deleteChatOption">
+            <div class="dropdown-option-icon">
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#e74c3c" stroke-width="2">
+                <polyline points="3 6 5 6 21 6"></polyline>
+                <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path>
+              </svg>
+            </div>
+            <div class="dropdown-option-label" style="color: #e74c3c">Delete Chat</div>
+          </div>
         </div>
       `;
       
@@ -326,11 +337,62 @@ function showContactMenu(menuButton, user) {
           contactMenu.style.display = 'none';
         });
       }
+      
+      // Add delete chat event listener
+      document.getElementById('deleteChatOption').addEventListener('click', function() {
+        deleteChatHandler(user.id, user.name);
+        contactMenu.style.display = 'none';
+      });
     })
     .catch(error => {
       console.error('Error checking contact/block status:', error);
       contactMenu.style.display = 'none';
     });
+}
+
+/**
+ * Handler for deleting a chat
+ */
+function deleteChatHandler(userId, userName) {
+  console.log(`Deleting chat with user ${userId} (${userName})`);
+  
+  // Show a confirmation dialog
+  const confirmDelete = confirm(`Delete chat with ${userName}? This will remove the chat from your sidebar only.`);
+  
+  if (confirmDelete) {
+    deleteChat(userId)
+      .then(data => {
+        if (data.success) {
+          showNotification(`Chat with ${userName} deleted`, 'delete-chat');
+          
+          // Reset main content area
+          const mainContent = document.querySelector('.main-content');
+          if (mainContent) {
+            mainContent.innerHTML = '';
+            
+            // Show a placeholder message
+            const emptyChat = document.createElement('div');
+            emptyChat.className = 'empty-chat-container';
+            emptyChat.innerHTML = '<div class="empty-chat-message">Select a chat to start messaging</div>';
+            
+            mainContent.appendChild(emptyChat);
+          }
+          
+          // Reset active chat
+          ChatApp.activeChat = null;
+          
+          // Reload sidebar to reflect the deletion
+          loadSidebar();
+          
+          // Stop any active polling
+          cleanupPolling();
+        }
+      })
+      .catch(error => {
+        console.error('Error deleting chat:', error);
+        showErrorNotification('Failed to delete chat. Please try again.');
+      });
+  }
 }
 
 /**

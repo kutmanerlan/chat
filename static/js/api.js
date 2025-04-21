@@ -329,3 +329,20 @@ function removeFromContacts(userId) {
     return response.json();
   });
 }
+
+/**
+ * Delete a chat with a user (hide from sidebar)
+ */
+function deleteChat(userId) {
+  return fetch('/delete_chat', {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json'
+    },
+    body: JSON.stringify({ user_id: userId })
+  })
+  .then(response => {
+    if (!response.ok) throw new Error('Failed to delete chat');
+    return response.json();
+  });
+}
