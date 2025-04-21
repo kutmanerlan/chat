@@ -3,9 +3,34 @@
  */
 
 /**
- * Load user contacts
+ * Load user contacts and chats
  */
-function loadContacts() {
+function loadSidebar() {
+  // Load both contacts and chats
+  Promise.all([fetchContacts(), fetchChatList()])
+    .then(([contactsData, chatsData]) => {
+      // Store data in app state
+      if (contactsData.contacts) {
+        ChatApp.contacts = contactsData.contacts;
+      }
+      
+      if (chatsData.chats) {
+        ChatApp.chats = chatsData.chats;
+      }
+      
+      // Render sidebar items
+      renderSidebar(ChatApp.contacts, ChatApp.chats);
+    })
+    .catch(error => {
+      console.error('Error loading sidebar data:', error);
+      showErrorNotification('Failed to load contacts and chats');
+    });
+}
+
+/**
+ * Fetch contacts from the server
+ */
+function fetchContacts() {
   return fetch('/get_contacts', {
     method: 'GET',
     headers: {
@@ -16,70 +41,97 @@ function loadContacts() {
   .then(response => {
     if (!response.ok) throw new Error('Failed to load contacts');
     return response.json();
-  })
-  .then(data => {
-    if (!data.contacts) return;
-    
-    ChatApp.contacts = data.contacts;
-    renderContacts(data.contacts);
-  })
-  .catch(error => {
-    console.error('Error loading contacts:', error);
   });
 }
 
 /**
- * Render contacts in the sidebar
+ * Fetch chat list from the server
  */
-function renderContacts(contacts) {
+function fetchChatList() {
+  return fetch('/get_chat_list', {
+    method: 'GET',
+    headers: {
+      'Cache-Control': 'no-cache',
+      'Content-Type': 'application/json'
+    }
+  })
+  .then(response => {
+    if (!response.ok) throw new Error('Failed to load chats');
+    return response.json();
+  });
+}
+
+/**
+ * Render the sidebar with contacts and chats
+ */
+function renderSidebar(contacts, chats) {
   const contactsList = document.getElementById('contactsList');
   const noContactsMessage = document.querySelector('.no-contacts-message');
   
   if (!contactsList) return;
   
-  // Remove existing contacts but keep the no-contacts message
-  Array.from(contactsList.children).forEach(child => {
-    if (!child.classList.contains('no-contacts-message') && 
-        !child.classList.contains('conversations-section')) {
-      contactsList.removeChild(child);
-    }
-  });
+  // Clear existing items
+  contactsList.innerHTML = '';
   
-  if (contacts && contacts.length > 0) {
+  // Create chats section
+  const chatSection = document.createElement('div');
+  chatSection.className = 'sidebar-section chats-section';
+  
+  const chatTitle = document.createElement('div');
+  chatTitle.className = 'section-title';
+  chatTitle.textContent = 'Chats';
+  chatSection.appendChild(chatTitle);
+  
+  // Add chats
+  if (chats && chats.length > 0) {
+    chats.forEach(chat => {
+      const chatItem = createChatElement(chat);
+      chatSection.appendChild(chatItem);
+    });
+    contactsList.appendChild(chatSection);
+    
     // Hide "no contacts" message
     if (noContactsMessage) noContactsMessage.style.display = 'none';
-    
-    // Sort contacts by name
-    contacts.sort((a, b) => a.name.localeCompare(b.name));
-    
-    // Create a container for contacts if needed
-    let contactsSection = document.querySelector('.contacts-section');
-    if (!contactsSection) {
-      contactsSection = document.createElement('div');
-      contactsSection.className = 'contacts-section';
-      
-      const sectionTitle = document.createElement('div');
-      sectionTitle.className = 'section-title';
-      sectionTitle.textContent = 'Contacts';
-      contactsSection.appendChild(sectionTitle);
-      
-      // Add it after conversations section or at the beginning
-      const conversationsSection = document.querySelector('.conversations-section');
-      if (conversationsSection) {
-        contactsList.insertBefore(contactsSection, conversationsSection.nextSibling);
-      } else {
-        contactsList.appendChild(contactsSection);
-      }
-    }
-    
-    // Create and add contact elements
+  } else {
+    // If no chats, show a message in the section
+    const noChatsMsg = document.createElement('div');
+    noChatsMsg.className = 'no-items-message';
+    noChatsMsg.textContent = 'No chats yet';
+    chatSection.appendChild(noChatsMsg);
+    contactsList.appendChild(chatSection);
+  }
+  
+  // Add a separator
+  const separator = document.createElement('div');
+  separator.className = 'sidebar-separator';
+  contactsList.appendChild(separator);
+  
+  // Create contacts section
+  const contactsSection = document.createElement('div');
+  contactsSection.className = 'sidebar-section contacts-section';
+  
+  const contactsTitle = document.createElement('div');
+  contactsTitle.className = 'section-title';
+  contactsTitle.textContent = 'Contacts';
+  contactsSection.appendChild(contactsTitle);
+  
+  // Add contacts
+  if (contacts && contacts.length > 0) {
     contacts.forEach(contact => {
       const contactItem = createContactElement(contact);
       contactsSection.appendChild(contactItem);
     });
+    contactsList.appendChild(contactsSection);
+    
+    // Hide "no contacts" message
+    if (noContactsMessage) noContactsMessage.style.display = 'none';
   } else {
-    // Show "no contacts" message
-    if (noContactsMessage) noContactsMessage.style.display = 'block';
+    // If no contacts, show a message in the section
+    const noContactsMsg = document.createElement('div');
+    noContactsMsg.className = 'no-items-message';
+    noContactsMsg.textContent = 'No contacts yet';
+    contactsSection.appendChild(noContactsMsg);
+    contactsList.appendChild(contactsSection);
   }
 }
 
@@ -107,15 +159,12 @@ function createContactElement(contact) {
   
   const contactName = document.createElement('div');
   contactName.className = 'contact-name';
-  contactName.textContent = contact.name;
   
-  const contactBio = document.createElement('div');
-  contactBio.className = 'contact-bio';
-  contactBio.textContent = contact.bio || '';
+  // Add "C" indicator for contacts
+  contactName.innerHTML = `${contact.name} <span class="contact-indicator">C</span>`;
   
-  // Assemble the elements
+  // Assemble elements
   contactInfo.appendChild(contactName);
-  contactInfo.appendChild(contactBio);
   
   contactItem.appendChild(contactAvatar);
   contactItem.appendChild(contactInfo);
@@ -129,101 +178,21 @@ function createContactElement(contact) {
 }
 
 /**
- * Load recent conversations
+ * Create a chat element
  */
-function loadRecentConversations() {
-  console.log('Loading recent conversations...');
-  return fetch('/get_recent_conversations', {
-    method: 'GET',
-    headers: {
-      'Cache-Control': 'no-cache',
-      'Content-Type': 'application/json'
-    }
-  })
-  .then(response => {
-    if (!response.ok) throw new Error('Failed to load conversations');
-    return response.json();
-  })
-  .then(data => {
-    console.log('Recent conversations loaded:', data);
-    if (!data.conversations) return;
-    
-    ChatApp.conversations = data.conversations;
-    renderConversations(data.conversations);
-  })
-  .catch(error => {
-    console.error('Error loading conversations:', error);
-  });
-}
-
-/**
- * Render conversations in the sidebar
- */
-function renderConversations(conversations) {
-  const contactsList = document.getElementById('contactsList');
-  if (!contactsList) return;
-  
-  // Create or find the conversations section
-  let conversationsSection = document.querySelector('.conversations-section');
-  if (!conversationsSection) {
-    conversationsSection = document.createElement('div');
-    conversationsSection.className = 'conversations-section';
-    
-    const sectionTitle = document.createElement('div');
-    sectionTitle.className = 'section-title';
-    sectionTitle.textContent = 'Recent Chats';
-    conversationsSection.appendChild(sectionTitle);
-    
-    // Add at the beginning
-    if (contactsList.firstChild) {
-      contactsList.insertBefore(conversationsSection, contactsList.firstChild);
-    } else {
-      contactsList.appendChild(conversationsSection);
-    }
-  }
-  
-  // Remove existing conversations but keep the title
-  Array.from(conversationsSection.children).forEach(child => {
-    if (!child.classList.contains('section-title')) {
-      conversationsSection.removeChild(child);
-    }
-  });
-  
-  if (conversations && conversations.length > 0) {
-    // Hide the no contacts message
-    const noContactsMessage = document.querySelector('.no-contacts-message');
-    if (noContactsMessage) noContactsMessage.style.display = 'none';
-    
-    // Add conversations
-    conversations.forEach(conversation => {
-      const conversationItem = createConversationElement(conversation);
-      conversationsSection.appendChild(conversationItem);
-    });
-
-    // Make the section visible even if there are no formal contacts
-    conversationsSection.style.display = 'block';
-  } else {
-    // If no conversations, hide the section
-    conversationsSection.style.display = 'none';
-  }
-}
-
-/**
- * Create a conversation element
- */
-function createConversationElement(conversation) {
-  const conversationItem = document.createElement('div');
-  conversationItem.className = 'contact-item conversation-item';
-  conversationItem.dataset.userId = conversation.user_id;
+function createChatElement(chat) {
+  const chatItem = document.createElement('div');
+  chatItem.className = 'contact-item chat-item';
+  chatItem.dataset.userId = chat.user_id;
   
   // Avatar
   const userAvatar = document.createElement('div');
   userAvatar.className = 'contact-avatar';
   
-  if (conversation.avatar_path) {
-    userAvatar.innerHTML = `<img src="${conversation.avatar_path}" alt="${conversation.name}">`;
+  if (chat.avatar_path) {
+    userAvatar.innerHTML = `<img src="${chat.avatar_path}" alt="${chat.name}">`;
   } else {
-    userAvatar.innerHTML = `<div class="avatar-initials">${conversation.name.charAt(0)}</div>`;
+    userAvatar.innerHTML = `<div class="avatar-initials">${chat.name.charAt(0)}</div>`;
   }
   
   // User info
@@ -232,40 +201,46 @@ function createConversationElement(conversation) {
   
   const userName = document.createElement('div');
   userName.className = 'contact-name';
-  userName.textContent = conversation.name;
+  
+  // Show contact indicator if this user is a contact
+  if (chat.is_contact) {
+    userName.innerHTML = `${chat.name} <span class="contact-indicator">C</span>`;
+  } else {
+    userName.textContent = chat.name;
+  }
   
   // Last message preview
   const lastMessage = document.createElement('div');
   lastMessage.className = 'last-message';
   
   // Truncate message if needed
-  let messagePreview = conversation.last_message;
+  let messagePreview = chat.last_message;
   if (messagePreview.length > 25) {
     messagePreview = messagePreview.substring(0, 25) + '...';
   }
   lastMessage.textContent = messagePreview;
   
   // Unread badge
-  if (conversation.unread_count > 0) {
+  if (chat.unread_count > 0) {
     const unreadBadge = document.createElement('div');
     unreadBadge.className = 'unread-badge';
-    unreadBadge.textContent = conversation.unread_count;
-    conversationItem.appendChild(unreadBadge);
+    unreadBadge.textContent = chat.unread_count;
+    chatItem.appendChild(unreadBadge);
   }
   
   // Assemble elements
   userInfo.appendChild(userName);
   userInfo.appendChild(lastMessage);
   
-  conversationItem.appendChild(userAvatar);
-  conversationItem.appendChild(userInfo);
+  chatItem.appendChild(userAvatar);
+  chatItem.appendChild(userInfo);
   
   // Add click handler
-  conversationItem.addEventListener('click', () => {
-    openChatWithUser(conversation.user_id, conversation.name);
+  chatItem.addEventListener('click', () => {
+    openChatWithUser(chat.user_id, chat.name);
   });
   
-  return conversationItem;
+  return chatItem;
 }
 
 /**
@@ -276,7 +251,7 @@ function addContactHandler(userId, userName) {
     .then(data => {
       if (data.success) {
         showSuccessNotification(`${userName} added to contacts`);
-        loadContacts();
+        loadSidebar(); // Reload to show updated contacts
         
         // Update menu in chat interface
         updateContactMenu(userId, true);
@@ -295,7 +270,7 @@ function removeContactHandler(userId) {
     .then(data => {
       if (data.success) {
         showNotification('Contact removed', 'remove-contact');
-        loadContacts();
+        loadSidebar(); // Reload to show updated contacts
         
         // Update menu in chat interface
         updateContactMenu(userId, false);

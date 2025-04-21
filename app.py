@@ -885,104 +885,145 @@ def add_contact():
 @app.route('/send_message', methods=['POST'])
 def send_message():
     if 'user_id' not in session:
-        return jsonify({'error': 'Unauthorized'}), 401
+        return jsonify({'success': False, 'error': 'Not authenticated'}), 401
     
     try:
         data = request.get_json()
-        logging.info(f"Received message data: {data}")
-        
         recipient_id = data.get('recipient_id')
         content = data.get('content')
         
         if not recipient_id or not content:
-            logging.warning(f"Missing required fields. recipient_id: {recipient_id}, content length: {len(content) if content else 0}")
-            return jsonify({'error': 'Recipient ID and content are required'}), 400
+            return jsonify({'success': False, 'error': 'Missing required fields'}), 400
         
-        # Verify the users exist
-        sender = User.query.get(session['user_id'])
+        # Check if recipient exists
         recipient = User.query.get(recipient_id)
-        
-        if not sender:
-            logging.error(f"Sender with ID {session['user_id']} not found")
-            return jsonify({'error': 'Invalid sender'}), 400
-            
         if not recipient:
-            logging.error(f"Recipient with ID {recipient_id} not found")
-            return jsonify({'error': 'Invalid recipient'}), 400
+            return jsonify({'success': False, 'error': 'Recipient not found'}), 404
         
-        logging.info(f"Creating message from {sender.name} to {recipient.name}")
-        
-        # Create a new message
+        # Create new message
         new_message = Message(
             sender_id=session['user_id'],
             recipient_id=recipient_id,
-            content=content
+            content=content,
+            is_read=False
         )
         
-        # Add to session and commit with detailed logging
         db.session.add(new_message)
-        logging.info(f"Message added to session, committing...")
         db.session.commit()
-        logging.info(f"Message committed successfully with ID: {new_message.id}")
         
-        # Convert to dictionary for response
-        message_dict = new_message.to_dict()
-        logging.info(f"Returning message: {message_dict}")
-        
+        # Return formatted message data
         return jsonify({
             'success': True,
-            'message': message_dict
+            'message': new_message.to_dict()
         })
     except Exception as e:
         db.session.rollback()
-        error_msg = f"Error sending message: {str(e)}"
-        logging.error(error_msg)
-        logging.exception(e)  # This logs the full stack trace
-        return jsonify({'error': error_msg}), 500
+        logging.error(f"Error sending message: {str(e)}")
+        return jsonify({'success': False, 'error': 'Server error'}), 500
 
 # Route for getting message history between two users
 @app.route('/get_messages')
 def get_messages():
     if 'user_id' not in session:
-        return jsonify({'error': 'Unauthorized'}), 401
+        return jsonify({'success': False, 'error': 'Not authenticated'}), 401
     
     try:
-        user_id = session['user_id']
-        other_user_id = request.args.get('user_id')
+        user_id = request.args.get('user_id')
         
-        if not other_user_id:
-            return jsonify({'error': 'Missing user_id parameter'}), 400
+        if not user_id:
+            return jsonify({'success': False, 'error': 'Missing user_id'}), 400
         
-        # Query messages between the two users (in both directions)
-        messages = Message.query.filter(
-            ((Message.sender_id == user_id) & (Message.recipient_id == other_user_id)) |
-            ((Message.sender_id == other_user_id) & (Message.recipient_id == user_id))
-        ).order_by(Message.timestamp).all()
+        # Get messages between users
+        messages_query = Message.query.filter(
+            ((Message.sender_id == session['user_id']) & (Message.recipient_id == user_id)) |
+            ((Message.sender_id == user_id) & (Message.recipient_id == session['user_id']))
+        ).order_by(Message.timestamp.asc())
         
-        # Mark messages as read if current user is the recipient
+        messages = [message.to_dict() for message in messages_query.all()]
+        
+        # Mark messages as read
         unread_messages = Message.query.filter_by(
-            recipient_id=user_id, 
-            sender_id=other_user_id,
+            sender_id=user_id,
+            recipient_id=session['user_id'],
             is_read=False
         ).all()
         
-        for msg in unread_messages:
-            msg.is_read = True  # Set message as read
+        for message in unread_messages:
+            message.is_read = True
         
-        db.session.commit()  # Make sure changes are committed
-        
-        # Convert messages to dictionaries
-        message_list = [msg.to_dict() for msg in messages]
+        db.session.commit()
         
         return jsonify({
             'success': True,
-            'messages': message_list
+            'messages': messages
         })
     except Exception as e:
-        logging.error(f"Error retrieving messages: {str(e)}")
-        logging.exception(e)  # Add stack trace for better debugging
-        db.session.rollback()  # Rollback on error
-        return jsonify({'success': False, 'error': str(e)}), 500
+        logging.error(f"Error getting messages: {str(e)}")
+        return jsonify({'success': False, 'error': 'Server error'}), 500
+
+# Route for getting chat list (users you've exchanged messages with)
+@app.route('/get_chat_list')
+def get_chat_list():
+    if 'user_id' not in session:
+        return jsonify({'success': False, 'error': 'Not authenticated'}), 401
+    
+    try:
+        user_id = session['user_id']
+        
+        # Find all users the current user has exchanged messages with
+        # This subquery finds the latest message timestamp for each conversation
+        query = """
+            SELECT 
+                u.id, 
+                u.name, 
+                u.avatar_path, 
+                u.bio, 
+                m.content as last_message, 
+                m.timestamp,
+                (SELECT COUNT(*) FROM message 
+                 WHERE sender_id = u.id AND recipient_id = :user_id AND is_read = 0) as unread_count,
+                (SELECT COUNT(*) FROM contact 
+                 WHERE user_id = :user_id AND contact_id = u.id) as is_contact
+            FROM user u
+            JOIN (
+                SELECT 
+                    CASE 
+                        WHEN sender_id = :user_id THEN recipient_id 
+                        ELSE sender_id 
+                    END as user_id,
+                    MAX(timestamp) as max_time
+                FROM message
+                WHERE sender_id = :user_id OR recipient_id = :user_id
+                GROUP BY user_id
+            ) latest ON latest.user_id = u.id
+            JOIN message m ON ((m.sender_id = u.id AND m.recipient_id = :user_id) OR 
+                               (m.sender_id = :user_id AND m.recipient_id = u.id)) 
+                          AND m.timestamp = latest.max_time
+            ORDER BY m.timestamp DESC
+        """
+        
+        result = db.session.execute(text(query), {'user_id': user_id})
+        
+        chats = []
+        for row in result:
+            chats.append({
+                'user_id': row.id,
+                'name': row.name,
+                'avatar_path': row.avatar_path,
+                'bio': row.bio,
+                'last_message': row.last_message,
+                'timestamp': row.timestamp.isoformat() if row.timestamp else None,
+                'unread_count': row.unread_count,
+                'is_contact': row.is_contact > 0
+            })
+        
+        return jsonify({
+            'success': True,
+            'chats': chats
+        })
+    except Exception as e:
+        logging.error(f"Error getting chat list: {str(e)}")
+        return jsonify({'success': False, 'error': 'Server error'}), 500
 
 # Route for getting recent conversations (users you've messaged with)
 @app.route('/get_recent_conversations')

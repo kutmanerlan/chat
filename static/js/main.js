@@ -7,3 +7,26 @@ document.addEventListener('DOMContentLoaded', () => {
   // Initialize the application
   initializeChat();
 });
+
+/**
+ * Initialize the chat application
+ */
+function initializeChat() {
+  console.log('Initializing chat application...');
+  
+  // Fetch current user information first
+  fetchCurrentUser()
+    .then(() => {
+      // Load sidebar with contacts and chats
+      loadSidebar();
+      
+      // Setup event listeners
+      setupEventListeners();
+    })
+    .catch(error => {
+      console.error('Failed to initialize chat:', error);
+      showErrorNotification('Failed to initialize chat. Please refresh the page.');
+    });
+}
+
+// ...existing code...

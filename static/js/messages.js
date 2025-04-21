@@ -402,8 +402,8 @@ function sendMessageHandler(text, recipientId, chatMessages) {
         if (sendButton) sendButton.classList.remove('active');
       }
       
-      // Refresh conversations list
-      loadRecentConversations();
+      // Refresh sidebar to show updated chat list
+      loadSidebar();
       
       return data;
     })

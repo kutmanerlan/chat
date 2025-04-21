@@ -153,6 +153,20 @@ function fetchRecentConversations() {
 }
 
 /**
+ * Get chat list
+ */
+function fetchChatList() {
+  return fetch('/get_chat_list', {
+    method: 'GET',
+    headers: { 'Content-Type': 'application/json' }
+  })
+  .then(response => {
+    if (!response.ok) throw new Error('Failed to load chat list');
+    return response.json();
+  });
+}
+
+/**
  * Update user profile
  */
 function updateProfile(formData) {
