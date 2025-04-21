@@ -107,13 +107,16 @@
 
 /* Contact indicator */
 .contact-indicator {
-  display: inline-block;
-  margin-left: 5px;
+  position: absolute;
+  right: 15px;
+  top: 50%;
+  transform: translateY(-50%);
   color: #888;
   font-size: 12px;
   font-weight: normal;
-  vertical-align: middle;
   padding: 0 3px;
+  background-color: rgba(100, 100, 100, 0.1);
+  border-radius: 4px;
 }
 
 /* Conversations and recents */
