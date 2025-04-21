@@ -8,8 +8,8 @@
     --sidebar-background: #1c1c1c;
     --chat-header-background: #212121;
     --input-background: #303030;
-    --message-sent: #2b5278;
-    --message-received: #333333;
+    --message-sent: #333333; /* Changed from #2b5278 (blue) to #333333 (dark gray) */
+    --message-received: #2b5278; /* Changed from #333333 (dark gray) to #2b5278 (blue) */
     --text-primary: #fff;
     --text-secondary: #aaa;
     --text-dimmed: #666;
