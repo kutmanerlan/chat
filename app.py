@@ -973,7 +973,6 @@ def get_chat_list():
         user_id = session['user_id']
         
         # Find all users the current user has exchanged messages with
-        # This subquery finds the latest message timestamp for each conversation
         query = """
             SELECT 
                 u.id, 
