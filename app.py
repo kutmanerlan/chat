@@ -747,7 +747,8 @@ def update_profile():
             return jsonify({
                 'success': True,
                 'user_name': user.name,
-                'bio': user.bio or 'Нет информации'
+                'bio': user.bio or 'Нет информации',
+                'avatar_path': user.avatar_path  # Make sure to include the avatar path
             })
         except Exception as db_error:
             db.session.rollback()

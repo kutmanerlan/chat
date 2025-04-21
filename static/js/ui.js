@@ -20,8 +20,11 @@ function updateUserInterface(userData) {
     el.style.visibility = 'visible';
   });
   
-  // Update avatar
-  updateAvatar(userData);
+  // Only update avatar if there's avatar data
+  // This prevents clearing the avatar when only updating the status
+  if (userData.avatar_path) {
+    updateAvatar(userData);
+  }
 }
 
 /**
