@@ -101,38 +101,7 @@ function renderSidebar(contacts, chats) {
     contactsList.appendChild(chatSection);
   }
   
-  // Add a separator
-  const separator = document.createElement('div');
-  separator.className = 'sidebar-separator';
-  contactsList.appendChild(separator);
-  
-  // Create contacts section
-  const contactsSection = document.createElement('div');
-  contactsSection.className = 'sidebar-section contacts-section';
-  
-  const contactsTitle = document.createElement('div');
-  contactsTitle.className = 'section-title';
-  contactsTitle.textContent = 'Contacts';
-  contactsSection.appendChild(contactsTitle);
-  
-  // Add contacts
-  if (contacts && contacts.length > 0) {
-    contacts.forEach(contact => {
-      const contactItem = createContactElement(contact);
-      contactsSection.appendChild(contactItem);
-    });
-    contactsList.appendChild(contactsSection);
-    
-    // Hide "no contacts" message
-    if (noContactsMessage) noContactsMessage.style.display = 'none';
-  } else {
-    // If no contacts, show a message in the section
-    const noContactsMsg = document.createElement('div');
-    noContactsMsg.className = 'no-items-message';
-    noContactsMsg.textContent = 'No contacts yet';
-    contactsSection.appendChild(noContactsMsg);
-    contactsList.appendChild(contactsSection);
-  }
+  // Removed: Separator and contacts section
 }
 
 /**
