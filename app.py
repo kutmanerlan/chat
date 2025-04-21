@@ -790,25 +790,22 @@ def update_profile():
 @app.route('/get_contacts')
 def get_contacts():
     if 'user_id' not in session:
-        return jsonify({'success': False, 'error': 'Not authenticated'}), 401
+        return jsonify({'success': False, 'error': 'Unauthorized'}), 401
     
     try:
-        user_id = session['user_id']
-        
-        # Запрашиваем контакты пользователя
-        contacts_query = Contact.query.filter_by(user_id=user_id).join(
-            Contact.contact_user
-        ).order_by(User.name)
+        # Получаем все контакты текущего пользователя
+        contacts_query = Contact.query.filter_by(user_id=session['user_id']).all()
         
         contacts = []
-        for contact in contacts_query.all():
-            user = contact.contact_user
-            contacts.append({
-                'id': user.id,
-                'name': user.name,
-                'avatar_path': user.avatar_path if hasattr(user, 'avatar_path') else None,
-                'bio': user.bio if hasattr(user, 'bio') else None
-            })
+        for contact in contacts_query:
+            contact_user = contact.contact_user
+            contact_data = {
+                'id': contact_user.id,
+                'name': contact_user.name,
+                'bio': contact_user.bio if hasattr(contact_user, 'bio') else None,
+                'avatar_path': contact_user.avatar_path if hasattr(contact_user, 'avatar_path') else None
+            }
+            contacts.append(contact_data)
         
         return jsonify({
             'success': True,
@@ -816,7 +813,76 @@ def get_contacts():
         })
     except Exception as e:
         logging.error(f"Ошибка при получении контактов: {str(e)}")
-        return jsonify({'success': False, 'error': 'Server error'}), 500
+        return jsonify({'success': False, 'error': 'Failed to retrieve contacts'}), 500
+
+# Маршрут для получения списка чатов пользователя
+@app.route('/get_chat_list')
+def get_chat_list():
+    if 'user_id' not in session:
+        return jsonify({'success': False, 'error': 'Unauthorized'}), 401
+    
+    try:
+        # Получаем уникальных пользователей, с которыми есть переписка
+        # Подзапрос для получения id пользователей, с которыми общались
+        subquery1 = db.session.query(Message.recipient_id.label('user_id')).filter(
+            Message.sender_id == session['user_id']
+        ).distinct()
+        
+        subquery2 = db.session.query(Message.sender_id.label('user_id')).filter(
+            Message.recipient_id == session['user_id']
+        ).distinct()
+        
+        # Объединяем подзапросы
+        chat_user_ids = subquery1.union(subquery2).all()
+        chat_user_ids = [item.user_id for item in chat_user_ids]
+        
+        # Получаем пользователей из списка ID
+        chat_users = User.query.filter(User.id.in_(chat_user_ids)).all()
+        
+        # Формируем информацию о чатах
+        chats = []
+        for user in chat_users:
+            # Получаем последнее сообщение
+            last_message = Message.query.filter(
+                ((Message.sender_id == session['user_id']) & (Message.recipient_id == user.id)) |
+                ((Message.sender_id == user.id) & (Message.recipient_id == session['user_id']))
+            ).order_by(Message.timestamp.desc()).first()
+            
+            # Считаем непрочитанные сообщения
+            unread_count = Message.query.filter(
+                (Message.sender_id == user.id) &
+                (Message.recipient_id == session['user_id']) &
+                (Message.is_read == False)
+            ).count()
+            
+            # Проверяем, является ли пользователь контактом
+            is_contact = Contact.query.filter_by(
+                user_id=session['user_id'],
+                contact_id=user.id
+            ).first() is not None
+            
+            # Добавляем информацию о чате
+            chat_info = {
+                'user_id': user.id,
+                'name': user.name,
+                'avatar_path': user.avatar_path if hasattr(user, 'avatar_path') else None,
+                'last_message': last_message.content if last_message else "",
+                'last_timestamp': last_message.timestamp.isoformat() if last_message else None,
+                'unread_count': unread_count,
+                'is_contact': is_contact
+            }
+            chats.append(chat_info)
+        
+        # Сортируем чаты по времени последнего сообщения (новые сверху)
+        chats.sort(key=lambda x: x['last_timestamp'] if x['last_timestamp'] else "", reverse=True)
+        
+        return jsonify({
+            'success': True,
+            'chats': chats
+        })
+    except Exception as e:
+        logging.error(f"Ошибка при получении списка чатов: {str(e)}")
+        return jsonify({'success': False, 'error': 'Failed to retrieve chat list'}), 500
 
 # Маршрут для добавления пользователя в контакты
 @app.route('/add_contact', methods=['POST'])
