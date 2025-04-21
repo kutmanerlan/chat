@@ -1,8 +1,9 @@
 /**
- * Main CSS file that imports all component-specific CSS files
+ * Main CSS file that imports all modular styles
  */
 
-/* Import base styles and variables */
+/* Import reset and base styles */
+@import url('reset.css');
 @import url('base.css');
 
 /* Import layout components */
@@ -24,3 +25,8 @@
 
 /* Import authentication pages */
 @import url('login.css');
+
+/* Import component styles */
+@import url('notification.css');
+@import url('file-menu.css');
+@import url('message-menu.css');

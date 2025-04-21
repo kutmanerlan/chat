@@ -84,6 +84,7 @@ function createMessageElement(message) {
   const isSent = parseInt(message.sender_id) === parseInt(ChatApp.currentUser.user_id);
   messageEl.className = `message ${isSent ? 'message-sent' : 'message-received'}`;
   messageEl.dataset.messageId = message.id;
+  messageEl.dataset.senderId = message.sender_id;
   
   // Format timestamp
   const timestamp = new Date(message.timestamp);
@@ -91,12 +92,285 @@ function createMessageElement(message) {
   const minutes = String(timestamp.getMinutes()).padStart(2, '0');
   
   // Add message content
-  messageEl.innerHTML = `
-    <div class="message-content">${escapeHtml(message.content)}</div>
-    <div class="message-time">${hours}:${minutes}</div>
-  `;
+  const contentHTML = `<div class="message-content">${escapeHtml(message.content)}</div>`;
+  const timeHTML = `<div class="message-time">
+    ${hours}:${minutes}
+    ${message.is_edited ? '<span class="edited-indicator">· Edited</span>' : ''}
+  </div>`;
+  
+  messageEl.innerHTML = contentHTML + timeHTML;
+  
+  // Add context menu event listener
+  messageEl.addEventListener('contextmenu', function(e) {
+    e.preventDefault();
+    showMessageContextMenu(e, message, messageEl);
+  });
   
   return messageEl;
+}
+
+/**
+ * Show message context menu
+ */
+function showMessageContextMenu(event, message, messageEl) {
+  // Remove any existing message menu
+  const existingMenu = document.getElementById('messageContextMenu');
+  if (existingMenu) {
+    existingMenu.remove();
+  }
+  
+  // Create menu element
+  const contextMenu = document.createElement('div');
+  contextMenu.id = 'messageContextMenu';
+  contextMenu.className = 'message-context-menu';
+  
+  // Determine if this is the user's own message
+  const isOwnMessage = parseInt(message.sender_id) === parseInt(ChatApp.currentUser.user_id);
+  
+  // Create menu options
+  let menuOptions = '';
+  
+  // Edit option (only for own messages)
+  if (isOwnMessage) {
+    menuOptions += `
+      <div class="menu-option edit-option">
+        <div class="menu-option-icon">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M17 3a2.828 2.828 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5L17 3z"></path>
+          </svg>
+        </div>
+        <div class="menu-option-text">Edit Message</div>
+      </div>
+    `;
+  }
+  
+  // Copy option (for all messages)
+  menuOptions += `
+    <div class="menu-option copy-option">
+      <div class="menu-option-icon">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect>
+          <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path>
+        </svg>
+      </div>
+      <div class="menu-option-text">Copy Text</div>
+    </div>
+  `;
+  
+  // Add options to menu
+  contextMenu.innerHTML = menuOptions;
+  
+  // Position menu at cursor location
+  contextMenu.style.position = 'fixed';
+  contextMenu.style.left = `${event.clientX}px`;
+  contextMenu.style.top = `${event.clientY}px`;
+  
+  // Add to document
+  document.body.appendChild(contextMenu);
+  
+  // Adjust position if menu would go off screen
+  const menuRect = contextMenu.getBoundingClientRect();
+  if (menuRect.right > window.innerWidth) {
+    contextMenu.style.left = `${window.innerWidth - menuRect.width - 5}px`;
+  }
+  if (menuRect.bottom > window.innerHeight) {
+    contextMenu.style.top = `${window.innerHeight - menuRect.height - 5}px`;
+  }
+  
+  // Add event listeners to options
+  if (isOwnMessage) {
+    const editOption = contextMenu.querySelector('.edit-option');
+    if (editOption) {
+      editOption.addEventListener('click', () => {
+        enterEditMode(messageEl, message.content);
+        contextMenu.remove();
+      });
+    }
+  }
+  
+  const copyOption = contextMenu.querySelector('.copy-option');
+  if (copyOption) {
+    copyOption.addEventListener('click', () => {
+      navigator.clipboard.writeText(message.content)
+        .then(() => {
+          showSuccessNotification('Text copied to clipboard');
+        })
+        .catch(() => {
+          showErrorNotification('Failed to copy text');
+        });
+      contextMenu.remove();
+    });
+  }
+  
+  // Close menu when clicking elsewhere
+  document.addEventListener('click', function closeMenu(e) {
+    if (!contextMenu.contains(e.target)) {
+      contextMenu.remove();
+      document.removeEventListener('click', closeMenu);
+    }
+  });
+  
+  // Close on Escape key
+  document.addEventListener('keydown', function escHandler(e) {
+    if (e.key === 'Escape') {
+      contextMenu.remove();
+      document.removeEventListener('keydown', escHandler);
+    }
+  });
+}
+
+/**
+ * Enter edit mode for a message
+ */
+function enterEditMode(messageEl, originalContent) {
+  // Get the message content element
+  const contentEl = messageEl.querySelector('.message-content');
+  if (!contentEl) return;
+  
+  // Create an input field
+  const inputEl = document.createElement('div');
+  inputEl.className = 'message-edit-input';
+  inputEl.contentEditable = 'true';
+  inputEl.textContent = originalContent;
+  inputEl.spellcheck = true;
+  
+  // Replace content with input
+  contentEl.replaceWith(inputEl);
+  
+  // Focus and position cursor at the end
+  inputEl.focus();
+  const range = document.createRange();
+  range.selectNodeContents(inputEl);
+  range.collapse(false);
+  const selection = window.getSelection();
+  selection.removeAllRanges();
+  selection.addRange(range);
+  
+  // Add buttons for save and cancel
+  const buttonContainer = document.createElement('div');
+  buttonContainer.className = 'message-edit-buttons';
+  buttonContainer.innerHTML = `
+    <button class="save-edit-btn">Save</button>
+    <button class="cancel-edit-btn">Cancel</button>
+  `;
+  messageEl.appendChild(buttonContainer);
+  
+  // Save button click handler
+  const saveBtn = buttonContainer.querySelector('.save-edit-btn');
+  saveBtn.addEventListener('click', () => {
+    saveMessageEdit(messageEl, inputEl.textContent);
+  });
+  
+  // Cancel button click handler
+  const cancelBtn = buttonContainer.querySelector('.cancel-edit-btn');
+  cancelBtn.addEventListener('click', () => {
+    cancelMessageEdit(messageEl, originalContent);
+  });
+  
+  // Handle Enter key to save
+  inputEl.addEventListener('keydown', (e) => {
+    if (e.key === 'Enter' && !e.shiftKey) {
+      e.preventDefault();
+      saveMessageEdit(messageEl, inputEl.textContent);
+    } else if (e.key === 'Escape') {
+      cancelMessageEdit(messageEl, originalContent);
+    }
+  });
+}
+
+/**
+ * Save edited message
+ */
+function saveMessageEdit(messageEl, newContent) {
+  const messageId = messageEl.dataset.messageId;
+  if (!messageId) return;
+  
+  // Don't save if content is empty
+  if (!newContent.trim()) {
+    showErrorNotification('Message cannot be empty');
+    return;
+  }
+  
+  // Show loading indicator
+  const inputEl = messageEl.querySelector('.message-edit-input');
+  const buttonContainer = messageEl.querySelector('.message-edit-buttons');
+  if (inputEl) inputEl.setAttribute('disabled', 'true');
+  if (buttonContainer) buttonContainer.classList.add('disabled');
+  
+  // Call API to update message
+  editMessage(messageId, newContent)
+    .then(data => {
+      if (data.success) {
+        updateMessageDisplay(messageEl, data.message);
+      } else {
+        throw new Error(data.error || 'Failed to edit message');
+      }
+    })
+    .catch(error => {
+      showErrorNotification(error.message || 'Failed to edit message');
+      // Restore input
+      if (inputEl) inputEl.removeAttribute('disabled');
+      if (buttonContainer) buttonContainer.classList.remove('disabled');
+    });
+}
+
+/**
+ * Cancel message editing
+ */
+function cancelMessageEdit(messageEl, originalContent) {
+  // Remove edit input and buttons
+  const inputEl = messageEl.querySelector('.message-edit-input');
+  const buttonContainer = messageEl.querySelector('.message-edit-buttons');
+  
+  if (inputEl) {
+    // Create content element
+    const contentEl = document.createElement('div');
+    contentEl.className = 'message-content';
+    contentEl.textContent = originalContent;
+    
+    // Replace input with content
+    inputEl.replaceWith(contentEl);
+  }
+  
+  if (buttonContainer) {
+    messageEl.removeChild(buttonContainer);
+  }
+}
+
+/**
+ * Update message display after edit
+ */
+function updateMessageDisplay(messageEl, message) {
+  // Remove edit input and buttons
+  const inputEl = messageEl.querySelector('.message-edit-input');
+  const buttonContainer = messageEl.querySelector('.message-edit-buttons');
+  
+  if (inputEl) {
+    // Create content element
+    const contentEl = document.createElement('div');
+    contentEl.className = 'message-content';
+    contentEl.textContent = message.content;
+    
+    // Replace input with content
+    inputEl.replaceWith(contentEl);
+  }
+  
+  if (buttonContainer) {
+    messageEl.removeChild(buttonContainer);
+  }
+  
+  // Update time element to include edited indicator
+  const timeEl = messageEl.querySelector('.message-time');
+  if (timeEl) {
+    const timestamp = new Date(message.timestamp);
+    const hours = String(timestamp.getHours()).padStart(2, '0');
+    const minutes = String(timestamp.getMinutes()).padStart(2, '0');
+    
+    timeEl.innerHTML = `
+      ${hours}:${minutes}
+      ${message.is_edited ? '<span class="edited-indicator">· Edited</span>' : ''}
+    `;
+  }
 }
 
 /**

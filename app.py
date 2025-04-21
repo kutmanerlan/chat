@@ -1032,6 +1032,47 @@ def get_recent_conversations():
             'error': 'Failed to load conversations'
         }), 500
 
+# Add a new route for editing messages
+@app.route('/edit_message', methods=['POST'])
+def edit_message():
+    if 'user_id' not in session:
+        return jsonify({'error': 'Unauthorized'}), 401
+    
+    try:
+        data = request.get_json()
+        message_id = data.get('message_id')
+        new_content = data.get('content')
+        
+        if not message_id or not new_content:
+            return jsonify({'error': 'Message ID and content are required'}), 400
+        
+        # Get the message
+        message = Message.query.get(message_id)
+        
+        if not message:
+            return jsonify({'error': 'Message not found'}), 404
+            
+        # Check if user is the sender
+        if message.sender_id != session['user_id']:
+            return jsonify({'error': 'You can only edit your own messages'}), 403
+        
+        # Update the message
+        message.content = new_content
+        message.is_edited = True
+        message.edited_at = datetime.datetime.now()
+        
+        db.session.commit()
+        
+        return jsonify({
+            'success': True,
+            'message': message.to_dict()
+        })
+        
+    except Exception as e:
+        db.session.rollback()
+        logging.error(f"Error editing message: {str(e)}")
+        return jsonify({'error': 'Server error'}), 500
+
 if __name__ == '__main__':
     # Инициализация базы данных в контексте приложения
     with app.app_context():

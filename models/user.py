@@ -70,6 +70,9 @@ class Message(db.Model):
     content = db.Column(db.Text, nullable=False)
     timestamp = db.Column(db.DateTime, default=datetime.utcnow, index=True)
     is_read = db.Column(db.Boolean, default=False)
+    # Add fields for tracking edits
+    is_edited = db.Column(db.Boolean, default=False)
+    edited_at = db.Column(db.DateTime, nullable=True)
     
     # Define relationships
     sender = db.relationship('User', foreign_keys=[sender_id], backref=db.backref('sent_messages', lazy='dynamic'))
@@ -83,5 +86,7 @@ class Message(db.Model):
             'recipient_id': self.recipient_id,
             'content': self.content,
             'timestamp': self.timestamp.isoformat(),
-            'is_read': self.is_read
+            'is_read': self.is_read,
+            'is_edited': self.is_edited,
+            'edited_at': self.edited_at.isoformat() if self.edited_at else None
         }

@@ -114,6 +114,31 @@ function sendMessage(recipientId, content) {
 }
 
 /**
+ * Edit a message
+ */
+function editMessage(messageId, content) {
+  return fetch('/edit_message', {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json'
+    },
+    body: JSON.stringify({
+      message_id: messageId,
+      content: content
+    })
+  })
+  .then(response => {
+    if (!response.ok) {
+      if (response.status === 403) {
+        throw new Error('You can only edit your own messages');
+      }
+      throw new Error('Failed to edit message');
+    }
+    return response.json();
+  });
+}
+
+/**
  * Get recent conversations
  */
 function fetchRecentConversations() {
