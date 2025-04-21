@@ -94,8 +94,51 @@ function createMessageElement(message) {
   // Check if is_edited exists, default to false if not
   const isEdited = message.is_edited === true;
   
-  // Add message content
-  const contentHTML = `<div class="message-content">${escapeHtml(message.content)}</div>`;
+  // Check if this is a file message
+  let contentHTML = '';
+  
+  if (message.content.startsWith('FILE:')) {
+    // Parse file information
+    const [prefix, filePath, fileName, isImage] = message.content.split(':');
+    const isImageFile = isImage === 'true';
+    
+    // Append file class
+    messageEl.classList.add('message-file');
+    
+    if (isImageFile) {
+      // Display image
+      contentHTML = `
+        <div class="message-content">
+          <div class="message-image">
+            <img src="${filePath}" alt="${fileName}" style="max-width: 200px; max-height: 200px; border-radius: 8px;">
+          </div>
+          <div class="message-file-name">${fileName}</div>
+        </div>
+      `;
+    } else {
+      // Create appropriate icon based on file extension
+      const fileExt = fileName.split('.').pop().toLowerCase();
+      let iconSvg = `
+        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2">
+          <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
+          <polyline points="14 2 14 8 20 8"></polyline>
+        </svg>
+      `;
+      
+      contentHTML = `
+        <div class="message-content">
+          <div class="message-file-icon">${iconSvg}</div>
+          <div class="message-file-name">
+            <a href="${filePath}" target="_blank" download="${fileName}">${fileName}</a>
+          </div>
+        </div>
+      `;
+    }
+  } else {
+    // Regular text message
+    contentHTML = `<div class="message-content">${escapeHtml(message.content)}</div>`;
+  }
+  
   const timeHTML = `<div class="message-time">
     ${hours}:${minutes}
     ${isEdited ? '<span class="edited-indicator">· Edited</span>' : ''}
@@ -492,73 +535,121 @@ function handleFileSelection(files, user) {
   const chatMessages = document.querySelector('.chat-messages');
   if (!chatMessages) return;
   
-  // Get or create messages container
-  let messagesContainer = chatMessages.querySelector('.messages-container');
-  const noMessages = chatMessages.querySelector('.no-messages');
-  if (noMessages) {
-    chatMessages.removeChild(noMessages);
-    messagesContainer = document.createElement('div');
-    messagesContainer.className = 'messages-container';
-    chatMessages.appendChild(messagesContainer);
-  }
-  
-  if (!messagesContainer) {
-    messagesContainer = document.createElement('div');
-    messagesContainer.className = 'messages-container';
-    chatMessages.appendChild(messagesContainer);
-  }
-  
   // Process each file
   Array.from(files).forEach(file => {
-    // Create message element to show the file
-    const message = document.createElement('div');
-    message.className = 'message message-sent message-file';
+    // Create a loading message placeholder
+    const loadingMessage = createLoadingFileMessage(file);
     
-    // Format timestamp
-    const now = new Date();
-    const hours = String(now.getHours()).padStart(2, '0');
-    const minutes = String(now.getMinutes()).padStart(2, '0');
-    
-    // Determine file type and create content
-    const isImage = file.type.startsWith('image/');
-    let fileContent;
-    
-    if (isImage) {
-      const imageUrl = URL.createObjectURL(file);
-      fileContent = `
-        <div class="message-image">
-          <img src="${imageUrl}" alt="${file.name}" style="max-width: 200px; max-height: 200px; border-radius: 8px;">
-        </div>
-        <div class="message-file-name">${file.name} (${formatFileSize(file.size)})</div>
-      `;
-    } else {
-      // Icon based on file type
-      let iconSvg = `
-        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2">
-          <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
-          <polyline points="14 2 14 8 20 8"></polyline>
-        </svg>
-      `;
-      
-      fileContent = `
-        <div class="message-file-icon">${iconSvg}</div>
-        <div class="message-file-name">${file.name} (${formatFileSize(file.size)})</div>
-      `;
+    // Add to chat
+    let messagesContainer = chatMessages.querySelector('.messages-container');
+    if (!messagesContainer) {
+      messagesContainer = document.createElement('div');
+      messagesContainer.className = 'messages-container';
+      chatMessages.appendChild(messagesContainer);
     }
+    messagesContainer.appendChild(loadingMessage);
     
-    // Add content to message
-    message.innerHTML = `
-      ${fileContent}
-      <div class="message-time">${hours}:${minutes}</div>
-    `;
-    
-    // Add message to container
-    messagesContainer.appendChild(message);
-    
-    // Scroll to new message
+    // Scroll to the loading message
     chatMessages.scrollTop = chatMessages.scrollHeight;
     
-    // TODO: Send file to server (implement server-side handling)
-    // This would involve using FormData and fetch to upload the file
+    // Create form data for upload
+    const formData = new FormData();
+    formData.append('file', file);
+    formData.append('recipient_id', user.id);
+    
+    // Send file to server
+    fetch('/upload_message_file', {
+      method: 'POST',
+      body: formData
+    })
+    .then(response => {
+      if (!response.ok) throw new Error('Failed to upload file');
+      return response.json();
+    })
+    .then(data => {
+      if (data.success) {
+        // Replace loading message with actual message
+        messagesContainer.removeChild(loadingMessage);
+        addMessageToChat(data.message, chatMessages);
+        
+        // Refresh sidebar
+        loadSidebar();
+      } else {
+        throw new Error(data.error || 'Failed to upload file');
+      }
+    })
+    .catch(error => {
+      console.error('Error uploading file:', error);
+      
+      // Remove loading message
+      messagesContainer.removeChild(loadingMessage);
+      
+      // Show error notification
+      showErrorNotification('Failed to upload file: ' + error.message);
+    });
   });
+}
+
+/**
+ * Create a loading message for file upload
+ */
+function createLoadingFileMessage(file) {
+  const message = document.createElement('div');
+  message.className = 'message message-sent message-file message-loading';
+  
+  // Format timestamp
+  const now = new Date();
+  const hours = String(now.getHours()).padStart(2, '0');
+  const minutes = String(now.getMinutes()).padStart(2, '0');
+  
+  // Determine file type
+  const isImage = file.type.startsWith('image/');
+  const fileExt = file.name.split('.').pop().toLowerCase();
+  
+  // Create content based on file type
+  let fileContent = '';
+  
+  if (isImage) {
+    // For images, show a preview
+    const imageUrl = URL.createObjectURL(file);
+    fileContent = `
+      <div class="message-content">
+        <div class="message-image">
+          <img src="${imageUrl}" alt="${file.name}" style="max-width: 200px; max-height: 200px; border-radius: 8px; opacity: 0.7;">
+          <div class="upload-overlay">
+            <div class="upload-spinner"></div>
+          </div>
+        </div>
+        <div class="message-file-name">${file.name} (${formatFileSize(file.size)})</div>
+      </div>
+    `;
+  } else {
+    // For other files, show appropriate icon
+    let iconSvg = `
+      <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2">
+        <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
+        <polyline points="14 2 14 8 20 8"></polyline>
+      </svg>
+    `;
+    
+    fileContent = `
+      <div class="message-content">
+        <div class="message-file-icon">
+          ${iconSvg}
+          <div class="upload-overlay">
+            <div class="upload-spinner"></div>
+          </div>
+        </div>
+        <div class="message-file-name">${file.name} (${formatFileSize(file.size)})</div>
+      </div>
+    `;
+  }
+  
+  // Add time
+  message.innerHTML = `
+    ${fileContent}
+    <div class="message-time">${hours}:${minutes} · Uploading...</div>
+  `;
+  
+  return message;
 }

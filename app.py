@@ -1307,6 +1307,89 @@ def unblock_user():
         logging.error(f"Error unblocking user: {str(e)}")
         return jsonify({'success': False, 'error': 'Failed to unblock user'}), 500
 
+import uuid
+
+# Add file upload configurations
+UPLOAD_FOLDER = os.path.join(basedir, 'static', 'uploads')
+MESSAGE_FILES_FOLDER = os.path.join(UPLOAD_FOLDER, 'message_files')
+ALLOWED_EXTENSIONS = {'png', 'jpg', 'jpeg', 'gif', 'pdf', 'doc', 'docx', 'xls', 'xlsx', 'txt', 'zip', 'rar'}
+app.config['UPLOAD_FOLDER'] = UPLOAD_FOLDER
+app.config['MAX_CONTENT_LENGTH'] = 10 * 1024 * 1024  # 10MB max
+
+# Create folders if they don't exist
+os.makedirs(MESSAGE_FILES_FOLDER, exist_ok=True)
+
+def allowed_file(filename):
+    return '.' in filename and filename.rsplit('.', 1)[1].lower() in ALLOWED_EXTENSIONS
+
+# Route for uploading files in messages
+@app.route('/upload_message_file', methods=['POST'])
+def upload_message_file():
+    if 'user_id' not in session:
+        return jsonify({'success': False, 'error': 'Not logged in'})
+    
+    # Check if recipient ID is provided
+    recipient_id = request.form.get('recipient_id')
+    if not recipient_id:
+        return jsonify({'success': False, 'error': 'Recipient ID is required'})
+    
+    # Check if file is provided
+    if 'file' not in request.files:
+        return jsonify({'success': False, 'error': 'No file provided'})
+    
+    file = request.files['file']
+    
+    # Check if file has a name
+    if file.filename == '':
+        return jsonify({'success': False, 'error': 'No file selected'})
+    
+    # Check if file type is allowed
+    if file and allowed_file(file.filename):
+        # Generate a unique filename
+        original_filename = secure_filename(file.filename)
+        file_ext = original_filename.rsplit('.', 1)[1].lower() if '.' in original_filename else ''
+        unique_filename = f"{uuid.uuid4().hex}.{file_ext}" if file_ext else f"{uuid.uuid4().hex}"
+        
+        # Save the file
+        file_path = os.path.join(MESSAGE_FILES_FOLDER, unique_filename)
+        file.save(file_path)
+        
+        # Get relative path for storage in database
+        relative_path = os.path.join('uploads', 'message_files', unique_filename).replace('\\', '/')
+        
+        # Create a message with the file information
+        sender_id = session['user_id']
+        try:
+            # Determine if this is an image
+            is_image = file_ext.lower() in ['jpg', 'jpeg', 'png', 'gif']
+            
+            # Create message content with file info
+            content = f"FILE:{relative_path}:{original_filename}:{is_image}"
+            
+            # Save message to database
+            new_message = Message(
+                sender_id=sender_id,
+                recipient_id=recipient_id,
+                content=content
+            )
+            db.session.add(new_message)
+            db.session.commit()
+            
+            # Return success response with message info
+            return jsonify({
+                'success': True,
+                'message': new_message.to_dict(),
+                'file_path': url_for('static', filename=relative_path),
+                'file_name': original_filename,
+                'is_image': is_image
+            })
+        except Exception as e:
+            db.session.rollback()
+            logging.error(f"Error saving message with file: {str(e)}")
+            return jsonify({'success': False, 'error': str(e)})
+    else:
+        return jsonify({'success': False, 'error': 'File type not allowed'})
+
 if __name__ == '__main__':
     # Инициализация базы данных в контексте приложения
     with app.app_context():

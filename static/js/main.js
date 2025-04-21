@@ -6,6 +6,11 @@
 document.addEventListener('DOMContentLoaded', () => {
   // Initialize the application
   initializeChat();
+  
+  // Initialize debug panel if available
+  if (typeof initDebugPanel === 'function') {
+    initDebugPanel();
+  }
 });
 
 /**

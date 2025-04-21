@@ -493,54 +493,108 @@ function startMessagePolling(userId) {
     clearInterval(ChatApp.messagePollingInterval);
   }
   
-  // Set the polling interval
+  // Set the polling interval - increased from 3000ms to 5000ms for PythonAnywhere
   ChatApp.messagePollingInterval = setInterval(() => {
-    // Only poll if chat is still active
+    // Only poll if chat is still activewith 5 seconds
     if (ChatApp.activeChat && ChatApp.activeChat.id == userId) {
-      checkForNewMessages(userId);
+      checkForNewMessages(userId);// Min interval of 5 seconds
       checkForBlockUpdates(userId);
+      
+      // Update debug info if enabledlling frequency
+      if (typeof updateDebugInfo === 'function') {tiveTime);
+        updateDebugInfo('Automatic poll');etInactiveTime);
+      }ent.addEventListener('click', resetInactiveTime);
     } else {
       // Stop polling if chat is no longer active
-      clearInterval(ChatApp.messagePollingInterval);
+      clearInterval(ChatApp.messagePollingInterval);as inactive for more than 10s
       ChatApp.messagePollingInterval = null;
-    }
-  }, 3000); // Check every 3 seconds
-}
-
-/**
+    } if (ChatApp.activeChat && ChatApp.activeChat.id == userId) {
+  }, 5000); // Check every 5 seconds (increased from 3s for PythonAnywhere)
+        checkForBlockUpdates(userId);
+  console.log(`Started message polling for user ${userId}`);
+}   }
+    ChatApp.inactiveTime = 0;
+/** ChatApp.pollInterval = ChatApp.minPollInterval; // Reset to fastest polling
  * Check for new messages
  */
-function checkForNewMessages(userId) {
-  // Find the last message ID in the chat
+function checkForNewMessages(userId) {amic adjustment
+  // Find the last message ID in the chaterval(() => {
   const messages = document.querySelectorAll('.message');
-  let lastMessageId = 0;
-  
-  if (messages.length > 0) {
+  let lastMessageId = 0;at && ChatApp.activeChat.id == userId) {
+      // Increase inactive time
+  if (messages.length > 0) {= ChatApp.pollInterval;
     const lastMessage = messages[messages.length - 1];
     lastMessageId = lastMessage.dataset.messageId;
-  }
-  
+  }   if (ChatApp.inactiveTime > 30000) { // After 30s of inactivity
+        ChatApp.pollInterval = Math.min(ChatApp.pollInterval * 1.5, ChatApp.maxPollInterval);
   // Fetch new messages
   fetchNewMessages(userId, lastMessageId)
-    .then(data => {
+    .then(data => {ssages(userId);
       if (data.success && data.messages && data.messages.length > 0) {
         // Add new messages to chat
         const chatMessages = document.querySelector('.chat-messages');
-        if (chatMessages) {
-          data.messages.forEach(message => {
+        if (chatMessages) {gInfo === 'function') {
+          data.messages.forEach(message => {hatApp.pollInterval}ms)`);
             addMessageToChat(message, chatMessages, true);
           });
-          
+          top polling if chat is no longer active
           // Update sidebar to reflect the latest message
-          loadSidebar();
+          loadSidebar();lingInterval = null;
+          
+          // Add to debug counter if enabled
+          if (typeof logNewMessages === 'function') {InactiveTime);
+            logNewMessages(data.messages.length);etInactiveTime);
+          }ent.removeEventListener('click', resetInactiveTime);
         }
-      }
+      }atApp.pollInterval);
     })
-    .catch(error => {
+    .catch(error => {d message polling for user ${userId}`);
       console.error('Error checking for new messages:', error);
     });
-}
+}**
+ * Check for new messages
+/**
+ * Check for block status updatesId) {
+ *// Find the last message ID in the chat
+function checkForBlockUpdates(userId) {orAll('.message');
+  checkBlockStatus(userId)
+    .then(blockStatus => {
+      // Get current block state
+      const currentBlockState = {messages.length - 1];
+        isBlocked: document.querySelector('.blocking-message') !== null,
+        blockMessage: document.querySelector('.blocking-message span')?.textContent || ''
+      };
+      etch new messages
+      // Determine if block state changed
+      const blockStateChanged = 
+        (blockStatus.isBlocked || blockStatus.hasBlockedYou) !== currentBlockState.isBlocked;
+        // Add new messages to chat
+      // Update debug counter if enablederySelector('.chat-messages');
+      if (typeof logBlockCheck === 'function') {
+        logBlockCheck(blockStateChanged);> {
+      }     addMessageToChat(message, chatMessages, true);
+          });
+      // Update block indicators in the sidebar regardless of changes
+      if (typeof updateBlockIndicators === 'function') { reflect the latest message
+        updateBlockIndicators(userId, blockStatus);
+      }
+      nter if enabled
+      // Update UI if block state changed
+      if (blockStateChanged) {essages.length);
+        // Reopen the chat with updated block status
+        getUserInfo(userId) }
+          .then(userData => {}
+            createChatInterface(userData, blockStatus);
+            loadMessages(userId);
+          });onsole.error('Error checking for new messages:', error);
+      }   });
+    })}
 
+
+
+
+
+}    });      console.error('Error checking block status:', error);    .catch(error => {
 /**
  * Check for block status updates
  */
@@ -556,6 +610,11 @@ function checkForBlockUpdates(userId) {
       // Determine if block state changed
       const blockStateChanged = 
         (blockStatus.isBlocked || blockStatus.hasBlockedYou) !== currentBlockState.isBlocked;
+      
+      // Update debug counter if enabled
+      if (typeof logBlockCheck === 'function') {
+        logBlockCheck(blockStateChanged);
+      }
       
       // Update UI if block state changed
       if (blockStateChanged) {

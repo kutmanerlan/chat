@@ -372,6 +372,66 @@ function updateContactMenu(userId, isAdded) {
 }
 
 /**
+ * Update block indicators in the sidebar
+ * @param {number} userId - The user ID to update indicators for
+ * @param {object} blockStatus - The block status object
+ */
+function updateBlockIndicators(userId, blockStatus) {
+  // Find the contact item for this user
+  const contactItem = document.querySelector(`.contact-item[data-user-id="${userId}"]`);
+  if (!contactItem) return;
+  
+  // Remove any existing indicators first
+  const existingIndicator = contactItem.querySelector('.block-indicator, .contact-indicator');
+  if (existingIndicator) {
+    existingIndicator.remove();
+  }
+  
+  // Add the appropriate indicator based on block status
+  if (blockStatus.isBlocked) {
+    // You blocked this user
+    const blockIndicator = document.createElement('span');
+    blockIndicator.className = 'block-indicator blocked-by-you';
+    blockIndicator.textContent = 'B';
+    blockIndicator.setAttribute('data-tooltip', 'You have blocked this user');
+    
+    // Add event listeners for tooltip
+    blockIndicator.addEventListener('mouseenter', showTooltip);
+    blockIndicator.addEventListener('mouseleave', hideTooltip);
+    
+    contactItem.appendChild(blockIndicator);
+  } else if (blockStatus.hasBlockedYou) {
+    // User blocked you
+    const blockIndicator = document.createElement('span');
+    blockIndicator.className = 'block-indicator blocked-you';
+    blockIndicator.textContent = 'B';
+    blockIndicator.setAttribute('data-tooltip', 'This user has blocked you');
+    
+    // Add event listeners for tooltip
+    blockIndicator.addEventListener('mouseenter', showTooltip);
+    blockIndicator.addEventListener('mouseleave', hideTooltip);
+    
+    contactItem.appendChild(blockIndicator);
+  } else {
+    // Check if this was a contact and add the contact indicator if needed
+    checkContactStatus(userId).then(isContact => {
+      if (isContact) {
+        const contactIndicator = document.createElement('span');
+        contactIndicator.className = 'contact-indicator';
+        contactIndicator.textContent = 'C';
+        contactIndicator.setAttribute('data-tooltip', 'This user is in your contacts');
+        
+        // Add event listeners for tooltip
+        contactIndicator.addEventListener('mouseenter', showTooltip);
+        contactIndicator.addEventListener('mouseleave', hideTooltip);
+        
+        contactItem.appendChild(contactIndicator);
+      }
+    });
+  }
+}
+
+/**
  * Handler for blocking a user
  */
 function blockUserHandler(userId, userName) {
@@ -379,12 +439,13 @@ function blockUserHandler(userId, userName) {
     .then(data => {
       if (data.success) {
         showNotification(`You have blocked ${userName}`, 'block-user');
-        loadSidebar(); // Reload to show updated UI
+        
+        // Update block indicator in sidebar without full reload
+        updateBlockIndicators(userId, { isBlocked: true, hasBlockedYou: false });
         
         // Redirect to main screen if currently chatting with blocked user
         if (ChatApp.activeChat && ChatApp.activeChat.id == userId) {
           // Instead of clearing the interface, reopen the chat with the blocked state
-          // This will ensure the header with avatar and name remains visible
           openChatWithUser(userId, userName);
         }
       }
@@ -403,6 +464,9 @@ function unblockUserHandler(userId, userName) {
       if (data.success) {
         // Show success notification
         showSuccessNotification(`You have unblocked ${userName}`);
+        
+        // Update block indicator in sidebar without full reload
+        updateBlockIndicators(userId, { isBlocked: false, hasBlockedYou: false });
         
         // If we're in an active chat with this user, update the interface
         if (ChatApp.activeChat && ChatApp.activeChat.id == userId) {
@@ -425,15 +489,6 @@ function unblockUserHandler(userId, userName) {
               // Reload messages
               loadMessages(userId);
             });
-        }
-        
-        // Update the contact list to reflect unblocked status
-        const contactItem = document.querySelector(`.contact-item[data-user-id="${userId}"]`);
-        if (contactItem) {
-          const blockIndicator = contactItem.querySelector('.block-indicator');
-          if (blockIndicator) {
-            blockIndicator.remove();
-          }
         }
       } else {
         showErrorNotification('Failed to unblock user. Please try again.');
