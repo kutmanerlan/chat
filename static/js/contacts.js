@@ -401,17 +401,46 @@ function unblockUserHandler(userId, userName) {
   unblockUser(userId)
     .then(data => {
       if (data.success) {
-        showSuccessNotification(`${userName} has been unblocked`);
-        loadSidebar(); // Reload to show updated UI
+        // Show success notification
+        showSuccessNotification(`You have unblocked ${userName}`);
         
-        // If we're in the block message screen, reload the chat
-        const blockMessage = document.querySelector('.block-message');
-        if (blockMessage && ChatApp.activeChat && ChatApp.activeChat.id == userId) {
-          openChatWithUser(userId, userName);
+        // If we're in an active chat with this user, update the interface
+        if (ChatApp.activeChat && ChatApp.activeChat.id == userId) {
+          // Remove any blocking message elements
+          const blockingMessage = document.querySelector('.blocking-message');
+          if (blockingMessage) {
+            blockingMessage.remove();
+          }
+          
+          // Update the chat interface with the user now unblocked
+          getUserInfo(userId)
+            .then(userData => {
+              // Get fresh block status
+              return Promise.all([userData, checkBlockStatus(userId)]);
+            })
+            .then(([userData, blockStatus]) => {
+              // Recreate the chat interface with updated block status
+              createChatInterface(userData, blockStatus);
+              
+              // Reload messages
+              loadMessages(userId);
+            });
         }
+        
+        // Update the contact list to reflect unblocked status
+        const contactItem = document.querySelector(`.contact-item[data-user-id="${userId}"]`);
+        if (contactItem) {
+          const blockIndicator = contactItem.querySelector('.block-indicator');
+          if (blockIndicator) {
+            blockIndicator.remove();
+          }
+        }
+      } else {
+        showErrorNotification('Failed to unblock user. Please try again.');
       }
     })
     .catch(error => {
+      console.error('Error unblocking user:', error);
       showErrorNotification('Failed to unblock user. Please try again.');
     });
 }
