@@ -20,6 +20,9 @@ function openChatWithUser(userId, userName) {
       
       // Highlight active contact in sidebar
       highlightActiveContact(userId);
+      
+      // Start polling for new messages
+      startMessagePolling(userId);
     })
     .catch(error => {
       console.error('Error opening chat:', error);
@@ -479,4 +482,92 @@ function showFileMenu(fileInput, user) {
     });
     fileInput.hasEventListener = true;
   }
+}
+
+/**
+ * Start polling for new messages
+ */
+function startMessagePolling(userId) {
+  // Clear any existing polling interval
+  if (ChatApp.messagePollingInterval) {
+    clearInterval(ChatApp.messagePollingInterval);
+  }
+  
+  // Set the polling interval
+  ChatApp.messagePollingInterval = setInterval(() => {
+    // Only poll if chat is still active
+    if (ChatApp.activeChat && ChatApp.activeChat.id == userId) {
+      checkForNewMessages(userId);
+      checkForBlockUpdates(userId);
+    } else {
+      // Stop polling if chat is no longer active
+      clearInterval(ChatApp.messagePollingInterval);
+      ChatApp.messagePollingInterval = null;
+    }
+  }, 3000); // Check every 3 seconds
+}
+
+/**
+ * Check for new messages
+ */
+function checkForNewMessages(userId) {
+  // Find the last message ID in the chat
+  const messages = document.querySelectorAll('.message');
+  let lastMessageId = 0;
+  
+  if (messages.length > 0) {
+    const lastMessage = messages[messages.length - 1];
+    lastMessageId = lastMessage.dataset.messageId;
+  }
+  
+  // Fetch new messages
+  fetchNewMessages(userId, lastMessageId)
+    .then(data => {
+      if (data.success && data.messages && data.messages.length > 0) {
+        // Add new messages to chat
+        const chatMessages = document.querySelector('.chat-messages');
+        if (chatMessages) {
+          data.messages.forEach(message => {
+            addMessageToChat(message, chatMessages, true);
+          });
+          
+          // Update sidebar to reflect the latest message
+          loadSidebar();
+        }
+      }
+    })
+    .catch(error => {
+      console.error('Error checking for new messages:', error);
+    });
+}
+
+/**
+ * Check for block status updates
+ */
+function checkForBlockUpdates(userId) {
+  checkBlockStatus(userId)
+    .then(blockStatus => {
+      // Get current block state
+      const currentBlockState = {
+        isBlocked: document.querySelector('.blocking-message') !== null,
+        blockMessage: document.querySelector('.blocking-message span')?.textContent || ''
+      };
+      
+      // Determine if block state changed
+      const blockStateChanged = 
+        (blockStatus.isBlocked || blockStatus.hasBlockedYou) !== currentBlockState.isBlocked;
+      
+      // Update UI if block state changed
+      if (blockStateChanged) {
+        // Reopen the chat with updated block status
+        getUserInfo(userId)
+          .then(userData => {
+            createChatInterface(userData, blockStatus);
+            loadMessages(userId);
+          });
+      }
+    })
+    .catch(error => {
+      console.error('Error checking block status:', error);
+    });
 }

@@ -155,6 +155,20 @@ function fetchMessages(userId) {
 }
 
 /**
+ * Fetch new messages since a specific message ID
+ */
+function fetchNewMessages(userId, lastMessageId) {
+  return fetch(`/get_messages?user_id=${userId}&last_message_id=${lastMessageId}`, {
+    method: 'GET',
+    headers: { 'Content-Type': 'application/json' }
+  })
+  .then(response => {
+    if (!response.ok) throw new Error('Failed to load new messages');
+    return response.json();
+  });
+}
+
+/**
  * Send a message
  */
 function sendMessage(recipientId, content) {

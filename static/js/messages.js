@@ -109,6 +109,11 @@ function createMessageElement(message) {
     showMessageContextMenu(e, message, messageEl);
   });
   
+  // Add appearance animation
+  setTimeout(() => {
+    messageEl.classList.add('message-visible');
+  }, 10);
+  
   return messageEl;
 }
 
@@ -416,8 +421,11 @@ function sendMessageHandler(text, recipientId, chatMessages) {
 
 /**
  * Add a new message to the chat
+ * @param {Object} message - The message object
+ * @param {Element} chatMessages - The chat messages container element
+ * @param {boolean} isNewMessage - Whether this is a newly received message
  */
-function addMessageToChat(message, chatMessages) {
+function addMessageToChat(message, chatMessages, isNewMessage = false) {
   // Get or create messages container
   let messagesContainer = chatMessages.querySelector('.messages-container');
   
@@ -436,10 +444,42 @@ function addMessageToChat(message, chatMessages) {
   
   // Create and add the message element
   const messageEl = createMessageElement(message);
+  
+  // If this is a new message that appeared during polling,
+  // add a special animation class
+  if (isNewMessage) {
+    messageEl.classList.add('message-new');
+    
+    // Play notification sound if message is from other user
+    if (parseInt(message.sender_id) !== parseInt(ChatApp.currentUser.user_id)) {
+      playMessageSound();
+    }
+  }
+  
   messagesContainer.appendChild(messageEl);
   
   // Scroll to the new message
   chatMessages.scrollTop = chatMessages.scrollHeight;
+}
+
+/**
+ * Play message notification sound
+ */
+function playMessageSound() {
+  // Create audio element if it doesn't exist
+  let messageSound = document.getElementById('message-notification-sound');
+  if (!messageSound) {
+    messageSound = document.createElement('audio');
+    messageSound.id = 'message-notification-sound';
+    messageSound.src = '/static/sounds/message.mp3'; // You'll need to add this file
+    messageSound.volume = 0.5;
+    document.body.appendChild(messageSound);
+  }
+  
+  // Play the sound
+  messageSound.play().catch(error => {
+    console.log('Could not play notification sound:', error);
+  });
 }
 
 /**

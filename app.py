@@ -33,7 +33,7 @@ app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 # Вместо этого явно устанавливаем или не устанавливаем значение
 if os.environ.get('FLASK_ENV') == 'production':
     # Для PythonAnywhere определяем SERVER_NAME из переменной окружения
-    if 'PYTHONANYWHERE_HOST' in os.environ:  # Fixed 'ос' to 'os'
+    if 'PYTHONANYWHERE_HOST' in ос.environ:  # Fixed 'ос' to 'os'
         app.config['SERVER_NAME'] = os.environ['PYTHONANYWHERE_HOST']
     # Иначе не устанавливаем SERVER_NAME для продакшена
 else:
@@ -1029,42 +1029,60 @@ def send_message():
 # Route for getting message history between two users
 @app.route('/get_messages')
 def get_messages():
+    user_id = request.args.get('user_id')
+    last_message_id = request.args.get('last_message_id', 0, type=int)
+    
+    if not user_id:
+        return jsonify({'success': False, 'error': 'User ID is required'})
+    
     if 'user_id' not in session:
-        return jsonify({'success': False, 'error': 'Not authenticated'}), 401
+        return jsonify({'success': False, 'error': 'Not logged in'})
+    
+    current_user_id = session['user_id']
     
     try:
-        user_id = request.args.get('user_id')
+        # Get block status
+        block_query = Block.query.filter(
+            ((Block.user_id == current_user_id) & (Block.blocked_user_id == user_id)) |
+            ((Block.user_id == user_id) & (Block.blocked_user_id == current_user_id))
+        ).first()
         
-        if not user_id:
-            return jsonify({'success': False, 'error': 'Missing user_id'}), 400
+        # Get messages - only new ones if last_message_id is provided
+        query = Message.query.filter(
+            (
+                (Message.sender_id == current_user_id) & 
+                (Message.recipient_id == user_id)
+            ) | 
+            (
+                (Message.sender_id == user_id) & 
+                (Message.recipient_id == current_user_id)
+            )
+        )
         
-        # Get messages between users
-        messages_query = Message.query.filter(
-            ((Message.sender_id == session['user_id']) & (Message.recipient_id == user_id)) |
-            ((Message.sender_id == user_id) & (Message.recipient_id == session['user_id']))
-        ).order_by(Message.timestamp.asc())
+        # Filter for only new messages if last_message_id is provided
+        if last_message_id > 0:
+            query = query.filter(Message.id > last_message_id)
         
-        messages = [message.to_dict() for message in messages_query.all()]
+        messages = query.order_by(Message.timestamp).all()
         
-        # Mark messages as read
-        unread_messages = Message.query.filter_by(
-            sender_id=user_id,
-            recipient_id=session['user_id'],
-            is_read=False
-        ).all()
+        # Convert messages to dict format
+        message_list = [message.to_dict() for message in messages]
         
-        for message in unread_messages:
-            message.is_read = True
+        # Mark received messages as read
+        for message in messages:
+            if message.recipient_id == current_user_id and not message.is_read:
+                message.is_read = True
         
         db.session.commit()
         
         return jsonify({
             'success': True,
-            'messages': messages
+            'messages': message_list
         })
+        
     except Exception as e:
         logging.error(f"Error getting messages: {str(e)}")
-        return jsonify({'success': False, 'error': 'Server error'}), 500
+        return jsonify({'success': False, 'error': str(e)})
 
 # Route for getting recent conversations (users you've messaged with)
 @app.route('/get_recent_conversations')
