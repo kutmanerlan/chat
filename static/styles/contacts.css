@@ -106,8 +106,11 @@
 }
 
 /* Conversations and recents */
-.conversations-section {
+.conversations-section,
+.contacts-section {
     margin-bottom: 15px;
+    border-bottom: 1px solid rgba(100, 100, 100, 0.2);
+    padding-bottom: 10px;
 }
 
 .section-title {
@@ -116,6 +119,7 @@
     color: var(--text-secondary);
     text-transform: uppercase;
     letter-spacing: 0.5px;
+    font-weight: 500;
 }
 
 .conversation-item {
@@ -124,6 +128,32 @@
 
 .conversation-item .contact-info {
     width: calc(100% - 65px);
+}
+
+.conversation-item .last-message {
+    display: flex;
+    justify-content: space-between;
+    width: 100%;
+}
+
+.conversation-item .message-text {
+    flex-grow: 1;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    font-size: 13px;
+    color: var(--text-dimmed);
+}
+
+.conversation-item .message-time {
+    font-size: 11px;
+    color: var(--text-dimmed);
+    margin-left: 5px;
+    white-space: nowrap;
+}
+
+.conversation-item .contact-item {
+    background-color: rgba(43, 82, 120, 0.05); /* Very subtle blue tint for chats */
 }
 
 .last-message {

@@ -988,76 +988,57 @@ def get_messages():
 @app.route('/get_recent_conversations')
 def get_recent_conversations():
     if 'user_id' not in session:
-        return jsonify({'error': 'Unauthorized'}), 401
+        return jsonify({'success': False, 'error': 'Not authenticated'}), 401
     
     try:
         user_id = session['user_id']
         
-        # This query finds the most recent message between the current user and each other user
-        # using SQLAlchemy subqueries
-        from sqlalchemy import func, distinct, desc
+        # Get users this user has exchanged messages with
+        # This query finds all users where there are messages between them and the current user
+        query = """
+            SELECT u.id, u.name, u.avatar_path, u.bio, m.content as last_message, m.timestamp, 
+                   (SELECT count(*) FROM message 
+                    WHERE sender_id = u.id AND recipient_id = :user_id AND is_read = 0) as unread_count
+            FROM user u
+            JOIN (
+                SELECT 
+                    CASE 
+                        WHEN sender_id = :user_id THEN recipient_id 
+                        ELSE sender_id 
+                    END as user_id,
+                    MAX(timestamp) as max_time
+                FROM message
+                WHERE sender_id = :user_id OR recipient_id = :user_id
+                GROUP BY user_id
+            ) latest ON latest.user_id = u.id
+            JOIN message m ON ((m.sender_id = u.id AND m.recipient_id = :user_id) OR 
+                              (m.sender_id = :user_id AND m.recipient_id = u.id)) 
+                         AND m.timestamp = latest.max_time
+            ORDER BY m.timestamp DESC
+        """
         
-        # Get the unique users who have communicated with the current user
-        users_subquery = db.session.query(
-            # If sender is current user, we want recipient, else we want sender
-            func.case([(Message.sender_id == user_id, Message.recipient_id)],
-                     else_=Message.sender_id).label('user_id'),
-            # Get the max ID (most recent message) for each conversation
-            func.max(Message.id).label('max_id')
-        ).filter(
-            # Include only messages where current user is either sender or recipient 
-            (Message.sender_id == user_id) | (Message.recipient_id == user_id)
-        ).group_by(
-            func.case([(Message.sender_id == user_id, Message.recipient_id)],
-                     else_=Message.sender_id)
-        ).subquery()
+        result = db.session.execute(text(query), {'user_id': user_id})
         
-        # Join with messages to get the most recent message for each conversation
-        recent_messages = db.session.query(
-            users_subquery.c.user_id.label('user_id'),
-            Message.content.label('last_message'),
-            Message.timestamp
-        ).join(
-            Message, Message.id == users_subquery.c.max_id
-        ).order_by(
-            desc(Message.timestamp)
-        ).limit(20).all()  # Limit to 20 most recent conversations
-        
-        # Count unread messages for each conversation
-        unread_counts = {}
-        for user_id_val in [row.user_id for row in recent_messages]:
-            count = Message.query.filter_by(
-                sender_id=user_id_val,
-                recipient_id=user_id,
-                is_read=False
-            ).count()
-            unread_counts[user_id_val] = count
-        
-        # Get user info for each conversation
         conversations = []
-        for row in recent_messages:
-            other_user = User.query.get(row.user_id)
-            if other_user:
-                conversations.append({
-                    'user_id': other_user.id,
-                    'name': other_user.name,
-                    'avatar_path': other_user.avatar_path if hasattr(other_user, 'avatar_path') else None,
-                    'last_message': row.last_message,
-                    'timestamp': row.timestamp.isoformat(),
-                    'unread_count': unread_counts.get(other_user.id, 0)
-                })
+        for row in result:
+            # Format the data for the frontend
+            conversations.append({
+                'user_id': row.id,
+                'name': row.name,
+                'avatar_path': row.avatar_path,
+                'bio': row.bio,
+                'last_message': row.last_message,
+                'timestamp': row.timestamp.isoformat() if row.timestamp else None,
+                'unread_count': row.unread_count
+            })
         
         return jsonify({
             'success': True,
             'conversations': conversations
         })
     except Exception as e:
-        logging.error(f"Error retrieving conversations: {str(e)}")
-        logging.exception(e)
-        return jsonify({
-            'success': False,
-            'error': 'Failed to load conversations'
-        }), 500
+        logging.error(f"Error getting recent conversations: {str(e)}")
+        return jsonify({'success': False, 'error': 'Server error'}), 500
 
 # Add a new route for editing messages
 @app.route('/edit_message', methods=['POST'])

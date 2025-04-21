@@ -187,6 +187,12 @@ function renderConversations(conversations) {
       const conversationItem = createConversationElement(conversation);
       conversationsSection.appendChild(conversationItem);
     });
+
+    // Make the section visible even if there are no formal contacts
+    conversationsSection.style.display = 'block';
+  } else {
+    // If no conversations, hide the section
+    conversationsSection.style.display = 'none';
   }
 }
 
