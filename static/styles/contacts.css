@@ -71,11 +71,14 @@
     font-weight: 500;
 }
 
+/* Adjust contact info width to prevent overflow into indicator area */
 .contact-info {
     display: flex;
     flex-direction: column;
     justify-content: center;
     height: 50px;
+    width: calc(100% - 80px); /* Reduced width to leave space for the contact indicator */
+    overflow: hidden; /* Ensure content doesn't overflow */
 }
 
 .contact-name {
@@ -89,7 +92,8 @@
     line-height: normal;
     position: relative;
     top: -10px;
-    width: 100%; /* Allow it to use full available width */
+    width: 100%; /* Full width of parent */
+    padding-right: 10px; /* Additional right padding */
 }
 
 .contact-bio {
@@ -206,6 +210,7 @@
     background-color: rgba(43, 82, 120, 0.05); /* Very subtle blue tint for chats */
 }
 
+/* Last message should also respect the container width */
 .last-message {
     font-size: 13px;
     color: var(--text-dimmed);
@@ -214,6 +219,7 @@
     text-overflow: ellipsis;
     max-width: 100%;
     margin-top: 3px;
+    padding-right: 10px; /* Additional right padding */
 }
 
 .unread-badge {
