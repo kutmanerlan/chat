@@ -500,22 +500,21 @@ function startMessagePolling(userId) {
   
   // Store the last poll time to implement adaptive polling
   ChatApp.lastPollTime = Date.now();
-  ChatApp.pollInterval = 3000; // Start with 3 seconds (slightly faster initial response)
-  ChatApp.maxPollInterval = 10000; // Max interval of 10 seconds (reduced from 15s)
-  ChatApp.minPollInterval = 3000; // Min interval of 3 seconds (reduced from 5s)
+  ChatApp.pollInterval = 3000; // Start with 3 seconds (faster initial response)
+  ChatApp.maxPollInterval = 8000; // Max interval of 8 seconds (reduced from 10s)
+  ChatApp.minPollInterval = 2000; // Min interval of 2 seconds (reduced from 3s)
   ChatApp.inactiveTime = 0;
-  ChatApp.consecutiveEmptyPolls = 0; // Track empty poll results
+  ChatApp.consecutiveEmptyPolls = 0;
+  
+  // Always check block status immediately when opening a chat
+  ChatApp.lastBlockCheck = 0; // Set to 0 to force immediate check
   
   const resetInactiveTime = function() {
-    if (ChatApp.inactiveTime > 5000) { // If user was inactive for more than 5s (reduced from 10s)
-      // User is back, do an immediate poll
+    if (ChatApp.inactiveTime > 3000) { // If user was inactive for more than 3s (reduced from 5s)
+      // User is back, do immediate checks
       if (ChatApp.activeChat && ChatApp.activeChat.id == userId) {
         checkForNewMessages(userId);
-        
-        // Only check block status occasionally to reduce overhead
-        if (Math.random() < 0.3) { // 30% chance to check blocks on return
-          checkForBlockUpdates(userId);
-        }
+        checkForBlockUpdates(userId); // Always check for block status when user returns
       }
     }
     ChatApp.inactiveTime = 0;
@@ -542,7 +541,7 @@ function startMessagePolling(userId) {
       ChatApp.inactiveTime += ChatApp.pollInterval;
       
       // Dynamic polling adjustment
-      if (ChatApp.inactiveTime > 20000) { // After 20s of inactivity (reduced from 30s)
+      if (ChatApp.inactiveTime > 15000) { // After 15s of inactivity (reduced from 20s)
         // Slow down polling when inactive
         ChatApp.pollInterval = Math.min(ChatApp.pollInterval * 1.2, ChatApp.maxPollInterval);
       }
@@ -561,9 +560,9 @@ function startMessagePolling(userId) {
         }
       });
       
-      // Only check block status occasionally
+      // Check block status more frequently - every 5 seconds
       const currentTime = Date.now();
-      if (currentTime - ChatApp.lastBlockCheck > 10000) { // Check blocks every 10 seconds max
+      if (currentTime - ChatApp.lastBlockCheck > 5000) { // Reduced from 10s to 5s
         ChatApp.lastBlockCheck = currentTime;
         checkForBlockUpdates(userId);
       }
@@ -578,6 +577,9 @@ function startMessagePolling(userId) {
   }, ChatApp.pollInterval);
   
   console.log(`Started message polling for user ${userId}`);
+  
+  // Force an immediate check for block status
+  checkForBlockUpdates(userId);
   ChatApp.lastBlockCheck = Date.now();
 }
 
@@ -649,8 +651,12 @@ function checkForNewMessages(userId) {
  * Check for block status updates
  */
 function checkForBlockUpdates(userId) {
+  console.log(`Checking block status for user ${userId}`);
+  
   checkBlockStatus(userId)
     .then(blockStatus => {
+      console.log(`Block status for ${userId}:`, blockStatus);
+      
       // Get current block state
       const currentBlockState = {
         isBlocked: document.querySelector('.blocking-message') !== null,
@@ -673,6 +679,8 @@ function checkForBlockUpdates(userId) {
       
       // Update UI if block state changed
       if (blockStateChanged) {
+        console.log(`Block state changed for user ${userId}, updating UI`);
+        
         // Reopen the chat with updated block status
         getUserInfo(userId)
           .then(userData => {

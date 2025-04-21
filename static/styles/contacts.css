@@ -137,24 +137,31 @@
   top: 50%;
   transform: translateY(-50%);
   font-size: 12px;
-  font-weight: normal;
+  font-weight: bold; /* Make it bold for better visibility */
   padding: 2px 4px;
   border-radius: 4px;
   z-index: 10;
   cursor: help;
   pointer-events: auto; /* Make sure tooltip triggers still work */
+  width: 16px; /* Fixed width */
+  height: 16px; /* Fixed height */
+  display: flex;
+  align-items: center;
+  justify-content: center;
 }
 
 /* Blocked by you indicator (red) */
 .block-indicator.blocked-by-you {
-  background-color: rgba(231, 76, 60, 0.2);
+  background-color: rgba(231, 76, 60, 0.3); /* Increased opacity from 0.2 to 0.3 */
   color: #e74c3c;
+  border: 1px solid #e74c3c; /* Add border for more visibility */
 }
 
 /* User has blocked you indicator (gray) */
 .block-indicator.blocked-you {
-  background-color: rgba(150, 150, 150, 0.2);
+  background-color: rgba(150, 150, 150, 0.3); /* Increased opacity from 0.2 to 0.3 */
   color: #999;
+  border: 1px solid #999; /* Add border for more visibility */
 }
 
 /* Block message in main area */

@@ -379,13 +379,19 @@ function updateContactMenu(userId, isAdded) {
  * @param {object} blockStatus - The block status object
  */
 function updateBlockIndicators(userId, blockStatus) {
-  // Find the contact item for this user
+  console.log(`Updating block indicators for user ${userId}:`, blockStatus);
+  
+  // Find the contact item for this user using more specific selector
   const contactItem = document.querySelector(`.contact-item[data-user-id="${userId}"]`);
-  if (!contactItem) return;
+  if (!contactItem) {
+    console.warn(`Contact item for user ${userId} not found in sidebar`);
+    return;
+  }
   
   // Remove any existing indicators first
   const existingIndicator = contactItem.querySelector('.block-indicator, .contact-indicator');
   if (existingIndicator) {
+    console.log(`Removing existing indicator: ${existingIndicator.className}`);
     existingIndicator.remove();
   }
   
@@ -402,6 +408,7 @@ function updateBlockIndicators(userId, blockStatus) {
     blockIndicator.addEventListener('mouseleave', hideTooltip);
     
     contactItem.appendChild(blockIndicator);
+    console.log(`Added 'you blocked' indicator for user ${userId}`);
   } else if (blockStatus.hasBlockedYou) {
     // User blocked you
     const blockIndicator = document.createElement('span');
@@ -414,6 +421,7 @@ function updateBlockIndicators(userId, blockStatus) {
     blockIndicator.addEventListener('mouseleave', hideTooltip);
     
     contactItem.appendChild(blockIndicator);
+    console.log(`Added 'blocked you' indicator for user ${userId}`);
   } else {
     // Check if this was a contact and add the contact indicator if needed
     checkContactStatus(userId).then(isContact => {
@@ -427,7 +435,11 @@ function updateBlockIndicators(userId, blockStatus) {
         contactIndicator.addEventListener('mouseenter', showTooltip);
         contactIndicator.addEventListener('mouseleave', hideTooltip);
         
-        contactItem.appendChild(contactIndicator);
+        // Make sure contact item still exists before appending
+        if (document.body.contains(contactItem)) {
+          contactItem.appendChild(contactIndicator);
+          console.log(`Added contact indicator for user ${userId}`);
+        }
       }
     });
   }
@@ -437,6 +449,8 @@ function updateBlockIndicators(userId, blockStatus) {
  * Handler for blocking a user
  */
 function blockUserHandler(userId, userName) {
+  console.log(`Blocking user ${userId} (${userName})`);
+  
   blockUser(userId)
     .then(data => {
       if (data.success) {
@@ -445,14 +459,17 @@ function blockUserHandler(userId, userName) {
         // Update block indicator in sidebar without full reload
         updateBlockIndicators(userId, { isBlocked: true, hasBlockedYou: false });
         
-        // Redirect to main screen if currently chatting with blocked user
+        // Force an immediate sidebar refresh to ensure the block shows up
+        loadSidebar();
+        
+        // If currently chatting with blocked user, reopen the chat with the blocked state
         if (ChatApp.activeChat && ChatApp.activeChat.id == userId) {
-          // Instead of clearing the interface, reopen the chat with the blocked state
           openChatWithUser(userId, userName);
         }
       }
     })
     .catch(error => {
+      console.error('Error blocking user:', error);
       showErrorNotification('Failed to block user. Please try again.');
     });
 }

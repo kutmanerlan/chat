@@ -1413,6 +1413,31 @@ def upload_message_file():
     else:
         return jsonify({'success': False, 'error': 'File type not allowed'})
 
+# Add or update this route
+@app.route('/refresh_sidebar', methods=['GET'])
+def refresh_sidebar():
+    """Force a sidebar refresh to show current block/contact status"""
+    if 'user_id' not in session:
+        return jsonify({'success': False, 'error': 'Not logged in'})
+    
+    current_user_id = session['user_id']
+    
+    try:
+        # Get chats
+        chats = get_chat_list_data(current_user_id)
+        
+        # Get contacts
+        contacts = get_contacts_data(current_user_id)
+        
+        return jsonify({
+            'success': True,
+            'chats': chats,
+            'contacts': contacts
+        })
+    except Exception as e:
+        logging.error(f"Error refreshing sidebar: {str(e)}")
+        return jsonify({'success': False, 'error': str(e)})
+
 if __name__ == '__main__':
     # Инициализация базы данных в контексте приложения
     with app.app_context():

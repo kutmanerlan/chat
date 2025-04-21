@@ -69,10 +69,14 @@ function checkContactStatus(userId) {
  * Check if the user is blocked
  */
 function checkBlockStatus(userId) {
-  return fetch('/check_block_status', {
+  // Add cache-busting parameter to ensure we get fresh data
+  const cacheBuster = Date.now();
+  
+  return fetch(`/check_block_status?_=${cacheBuster}`, {
     method: 'POST',
     headers: {
-      'Content-Type': 'application/json'
+      'Content-Type': 'application/json',
+      'Cache-Control': 'no-cache, no-store, must-revalidate'
     },
     body: JSON.stringify({ user_id: userId })
   })
@@ -81,6 +85,7 @@ function checkBlockStatus(userId) {
     return response.json();
   })
   .then(data => {
+    console.log(`Block API response for user ${userId}:`, data);
     return {
       isBlocked: data.is_blocked_by_you || false,
       hasBlockedYou: data.has_blocked_you || false
