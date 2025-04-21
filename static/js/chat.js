@@ -224,9 +224,9 @@ function showContactMenu(menuButton, user) {
   // Get the button position
   const buttonRect = menuButton.getBoundingClientRect();
   
-  // Check if user is a contact before showing the menu
-  checkContactStatus(user.id)
-    .then(isContact => {
+  // Check if user is a contact and if the user is blocked
+  Promise.all([checkContactStatus(user.id), checkBlockStatus(user.id)])
+    .then(([isContact, blockStatus]) => {
       // Update menu content
       contactMenu.innerHTML = `
         <div class="dropdown-menu-options">
@@ -250,6 +250,19 @@ function showContactMenu(menuButton, user) {
               <div class="dropdown-option-label">Add to contacts</div>
             </div>`
           }
+          
+          <!-- Block/Unblock option -->
+          <div class="dropdown-option ${blockStatus.isBlocked ? 'unblock-option' : 'block-option'}" id="${blockStatus.isBlocked ? 'unblockUserOption' : 'blockUserOption'}">
+            <div class="dropdown-option-icon">
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="${blockStatus.isBlocked ? 'currentColor' : '#e74c3c'}" stroke-width="2">
+                <circle cx="12" cy="12" r="10"></circle>
+                <line x1="4.93" y1="4.93" x2="19.07" y2="19.07"></line>
+              </svg>
+            </div>
+            <div class="dropdown-option-label" style="color: ${blockStatus.isBlocked ? 'inherit' : '#e74c3c'}">
+              ${blockStatus.isBlocked ? 'Unblock user' : 'Block user'}
+            </div>
+          </div>
         </div>
       `;
       
@@ -272,11 +285,74 @@ function showContactMenu(menuButton, user) {
           contactMenu.style.display = 'none';
         });
       }
+      
+      // Add block/unblock event listener
+      if (blockStatus.isBlocked) {
+        document.getElementById('unblockUserOption').addEventListener('click', function() {
+          unblockUserHandler(user.id, user.name);
+          contactMenu.style.display = 'none';
+        });
+      } else {
+        document.getElementById('blockUserOption').addEventListener('click', function() {
+          showBlockConfirmation(user.id, user.name);
+          contactMenu.style.display = 'none';
+        });
+      }
     })
     .catch(error => {
-      console.error('Error checking contact status:', error);
+      console.error('Error checking contact/block status:', error);
       contactMenu.style.display = 'none';
     });
+}
+
+/**
+ * Show block confirmation modal
+ */
+function showBlockConfirmation(userId, userName) {
+  // Create the modal if it doesn't exist
+  let blockModal = document.getElementById('blockUserModal');
+  if (!blockModal) {
+    blockModal = document.createElement('div');
+    blockModal.id = 'blockUserModal';
+    blockModal.className = 'modal';
+    blockModal.innerHTML = `
+      <div class="modal-content">
+        <h3>Block User</h3>
+        <p>Do you want to block <strong id="blockUserName"></strong>?</p>
+        <p class="modal-description">Blocked users won't be able to send you messages.</p>
+        <div class="modal-buttons">
+          <button id="cancelBlock" class="btn-secondary">Cancel</button>
+          <button id="confirmBlock" class="btn-primary" style="background-color: #e74c3c;">Block</button>
+        </div>
+      </div>
+    `;
+    document.body.appendChild(blockModal);
+    
+    // Cancel button handler
+    document.getElementById('cancelBlock').addEventListener('click', function() {
+      blockModal.classList.remove('active');
+      document.getElementById('overlay').classList.remove('active');
+    });
+  }
+  
+  // Update user name in the modal
+  document.getElementById('blockUserName').textContent = userName;
+  
+  // Add confirm handler
+  const confirmBtn = document.getElementById('confirmBlock');
+  // Remove existing event listeners to prevent duplicates
+  const newConfirmBtn = confirmBtn.cloneNode(true);
+  confirmBtn.parentNode.replaceChild(newConfirmBtn, confirmBtn);
+  
+  newConfirmBtn.addEventListener('click', function() {
+    blockUserHandler(userId, userName);
+    blockModal.classList.remove('active');
+    document.getElementById('overlay').classList.remove('active');
+  });
+  
+  // Show the modal
+  blockModal.classList.add('active');
+  document.getElementById('overlay').classList.add('active');
 }
 
 /**

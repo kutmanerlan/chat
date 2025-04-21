@@ -126,6 +126,68 @@
   cursor: help; /* Change cursor to indicate there's additional information */
 }
 
+/* Block indicator */
+.block-indicator {
+  position: absolute;
+  right: 32px; /* Position to the left of contact indicator if both exist */
+  top: 50%;
+  transform: translateY(-50%);
+  font-size: 12px;
+  font-weight: normal;
+  padding: 2px 4px;
+  border-radius: 4px;
+  z-index: 10;
+  cursor: help;
+}
+
+/* Blocked by you indicator (red) */
+.block-indicator.blocked-by-you {
+  background-color: rgba(231, 76, 60, 0.2);
+  color: #e74c3c;
+}
+
+/* User has blocked you indicator (gray) */
+.block-indicator.blocked-you {
+  background-color: rgba(150, 150, 150, 0.2);
+  color: #999;
+}
+
+/* Adjust positioning when both indicators are present */
+.contact-item .block-indicator + .contact-indicator {
+  right: 12px;
+}
+
+/* Block message in main area */
+.block-message {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  height: 100%;
+  color: #999;
+  text-align: center;
+  padding: 20px;
+}
+
+.block-icon {
+  margin-bottom: 20px;
+}
+
+.unblock-button {
+  margin-top: 15px;
+  padding: 8px 16px;
+  background-color: #3a3a3a;
+  color: white;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+  transition: background-color 0.2s;
+}
+
+.unblock-button:hover {
+  background-color: #4c4c4c;
+}
+
 /* Remove tooltip pseudo-elements and replace with classes for actual DOM elements */
 .dynamic-tooltip {
   position: fixed;

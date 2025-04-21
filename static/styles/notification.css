@@ -32,6 +32,11 @@
   background-color: #e53935; /* Red background for remove contact */
 }
 
+/* Special styling for block user notification */
+.notification.block-user {
+  background-color: #e53935; /* Red background for block action */
+}
+
 .notification.info {
   background-color: #1e88e5;
 }

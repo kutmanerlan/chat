@@ -66,6 +66,67 @@ function checkContactStatus(userId) {
 }
 
 /**
+ * Check if the user is blocked
+ */
+function checkBlockStatus(userId) {
+  return fetch('/check_block_status', {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json'
+    },
+    body: JSON.stringify({ user_id: userId })
+  })
+  .then(response => {
+    if (!response.ok) throw new Error('Failed to check block status');
+    return response.json();
+  })
+  .then(data => {
+    return {
+      isBlocked: data.is_blocked_by_you || false,
+      hasBlockedYou: data.has_blocked_you || false
+    };
+  })
+  .catch(error => {
+    console.error('Error checking block status:', error);
+    return { isBlocked: false, hasBlockedYou: false };
+  });
+}
+
+/**
+ * Block a user
+ */
+function blockUser(userId) {
+  return fetch('/block_user', {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json'
+    },
+    body: JSON.stringify({ user_id: userId })
+  })
+  .then(response => {
+    if (!response.ok) throw new Error('Failed to block user');
+    return response.json();
+  });
+}
+
+/**
+ * Unblock a user
+ */
+function unblockUser(userId) {
+  return fetch('/unblock_user', {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json'
+    },
+    body: JSON.stringify({ user_id: userId })
+  })
+  .then(response => {
+    if (!response.ok) throw new Error('Failed to unblock user');
+    return response.json();
+  });
+}
+
+/**
  * Search users by query
  */
 function searchUsers(query) {

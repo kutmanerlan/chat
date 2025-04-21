@@ -205,6 +205,31 @@ function createChatElement(chat) {
     chatItem.appendChild(contactIndicator);
   }
   
+  // Add block indicators if applicable
+  if (chat.is_blocked_by_you) {
+    const blockIndicator = document.createElement('span');
+    blockIndicator.className = 'block-indicator blocked-by-you';
+    blockIndicator.textContent = 'B';
+    blockIndicator.setAttribute('data-tooltip', 'You have blocked this user');
+    
+    // Add event listeners for showing/hiding tooltip
+    blockIndicator.addEventListener('mouseenter', showTooltip);
+    blockIndicator.addEventListener('mouseleave', hideTooltip);
+    
+    chatItem.appendChild(blockIndicator);
+  } else if (chat.has_blocked_you) {
+    const blockIndicator = document.createElement('span');
+    blockIndicator.className = 'block-indicator blocked-you';
+    blockIndicator.textContent = 'B';
+    blockIndicator.setAttribute('data-tooltip', 'This user has blocked you');
+    
+    // Add event listeners for showing/hiding tooltip
+    blockIndicator.addEventListener('mouseenter', showTooltip);
+    blockIndicator.addEventListener('mouseleave', hideTooltip);
+    
+    chatItem.appendChild(blockIndicator);
+  }
+  
   // Assemble elements
   userInfo.appendChild(userName);
   userInfo.appendChild(lastMessage);
@@ -346,4 +371,70 @@ function updateContactMenu(userId, isAdded) {
       dropdown.style.display = 'none';
     });
   }
+}
+
+/**
+ * Handler for blocking a user
+ */
+function blockUserHandler(userId, userName) {
+  blockUser(userId)
+    .then(data => {
+      if (data.success) {
+        showNotification(`You have blocked ${userName}`, 'block-user');
+        loadSidebar(); // Reload to show updated UI
+        
+        // Redirect to main screen if currently chatting with blocked user
+        if (ChatApp.activeChat && ChatApp.activeChat.id == userId) {
+          // Clear main area and return to empty state
+          const mainContent = document.querySelector('.main-content');
+          if (mainContent) {
+            mainContent.innerHTML = '';
+            // Optional: Show a message indicating the user is blocked
+            const blockMessage = document.createElement('div');
+            blockMessage.className = 'block-message';
+            blockMessage.innerHTML = `
+              <div class="block-icon">
+                <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="#e74c3c" stroke-width="2">
+                  <circle cx="12" cy="12" r="10"></circle>
+                  <line x1="4.93" y1="4.93" x2="19.07" y2="19.07"></line>
+                </svg>
+              </div>
+              <p>You have blocked ${userName}</p>
+              <button id="unblockBtn" class="unblock-button">Unblock</button>
+            `;
+            mainContent.appendChild(blockMessage);
+            
+            // Add unblock button handler
+            document.getElementById('unblockBtn').addEventListener('click', function() {
+              unblockUserHandler(userId, userName);
+            });
+          }
+        }
+      }
+    })
+    .catch(error => {
+      showErrorNotification('Failed to block user. Please try again.');
+    });
+}
+
+/**
+ * Handler for unblocking a user
+ */
+function unblockUserHandler(userId, userName) {
+  unblockUser(userId)
+    .then(data => {
+      if (data.success) {
+        showSuccessNotification(`${userName} has been unblocked`);
+        loadSidebar(); // Reload to show updated UI
+        
+        // If we're in the block message screen, reload the chat
+        const blockMessage = document.querySelector('.block-message');
+        if (blockMessage && ChatApp.activeChat && ChatApp.activeChat.id == userId) {
+          openChatWithUser(userId, userName);
+        }
+      }
+    })
+    .catch(error => {
+      showErrorNotification('Failed to unblock user. Please try again.');
+    });
 }
