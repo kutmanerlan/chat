@@ -91,11 +91,14 @@ function createMessageElement(message) {
   const hours = String(timestamp.getHours()).padStart(2, '0');
   const minutes = String(timestamp.getMinutes()).padStart(2, '0');
   
+  // Check if is_edited exists, default to false if not
+  const isEdited = message.is_edited === true;
+  
   // Add message content
   const contentHTML = `<div class="message-content">${escapeHtml(message.content)}</div>`;
   const timeHTML = `<div class="message-time">
     ${hours}:${minutes}
-    ${message.is_edited ? '<span class="edited-indicator">· Edited</span>' : ''}
+    ${isEdited ? '<span class="edited-indicator">· Edited</span>' : ''}
   </div>`;
   
   messageEl.innerHTML = contentHTML + timeHTML;

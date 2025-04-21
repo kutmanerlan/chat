@@ -103,6 +103,33 @@ def create_tables():
             db.create_all()
             logging.info('Таблица contact создана')
             
+        # Check if message table exists
+        if 'message' in inspector.get_table_names():
+            logging.info("Проверяем наличие новых колонок в таблице message...")
+            message_columns = [column['name'] for column in inspector.get_columns('message')]
+            
+            # Check for is_edited column
+            if 'is_edited' not in message_columns:
+                logging.info('Adding is_edited column to message table')
+                try:
+                    with db.engine.connect() as connection:
+                        connection.execute(text("ALTER TABLE message ADD COLUMN is_edited BOOLEAN DEFAULT FALSE"))
+                        connection.commit()
+                    logging.info('is_edited column added successfully')
+                except Exception as column_error:
+                    logging.error(f"Error adding is_edited column: {str(column_error)}")
+            
+            # Check for edited_at column
+            if 'edited_at' not in message_columns:
+                logging.info('Adding edited_at column to message table')
+                try:
+                    with db.engine.connect() as connection:
+                        connection.execute(text("ALTER TABLE message ADD COLUMN edited_at TIMESTAMP"))
+                        connection.commit()
+                    logging.info('edited_at column added successfully')
+                except Exception as column_error:
+                    logging.error(f"Error adding edited_at column: {str(column_error)}")
+        
         logging.info("Схема базы данных проверена и обновлена")
         return True
     except Exception as e:
@@ -1058,8 +1085,13 @@ def edit_message():
         
         # Update the message
         message.content = new_content
-        message.is_edited = True
-        message.edited_at = datetime.datetime.now()
+        
+        # Check if the new columns exist before trying to use them
+        if hasattr(message, 'is_edited'):
+            message.is_edited = True
+            
+        if hasattr(message, 'edited_at'):
+            message.edited_at = datetime.datetime.now()
         
         db.session.commit()
         

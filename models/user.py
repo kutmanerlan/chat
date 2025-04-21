@@ -80,13 +80,29 @@ class Message(db.Model):
     
     def to_dict(self):
         """Convert message to dictionary for JSON serialization"""
-        return {
+        message_dict = {
             'id': self.id,
             'sender_id': self.sender_id,
             'recipient_id': self.recipient_id,
             'content': self.content,
             'timestamp': self.timestamp.isoformat(),
             'is_read': self.is_read,
-            'is_edited': self.is_edited,
-            'edited_at': self.edited_at.isoformat() if self.edited_at else None
         }
+        
+        # Safely add new fields if they exist
+        try:
+            if hasattr(self, 'is_edited'):
+                message_dict['is_edited'] = self.is_edited
+            else:
+                message_dict['is_edited'] = False
+                
+            if hasattr(self, 'edited_at') and self.edited_at:
+                message_dict['edited_at'] = self.edited_at.isoformat()
+            else:
+                message_dict['edited_at'] = None
+        except Exception as e:
+            # If any error happens with these attributes, use defaults
+            message_dict['is_edited'] = False
+            message_dict['edited_at'] = None
+            
+        return message_dict
