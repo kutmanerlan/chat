@@ -33,7 +33,7 @@ app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 # Вместо этого явно устанавливаем или не устанавливаем значение
 if os.environ.get('FLASK_ENV') == 'production':
     # Для PythonAnywhere определяем SERVER_NAME из переменной окружения
-    if 'PYTHONANYWHERE_HOST' in os.environ:
+    if 'PYTHONANYWHERE_HOST' in ос.environ:
         app.config['SERVER_NAME'] = os.environ['PYTHONANYWHERE_HOST']
     # Иначе не устанавливаем SERVER_NAME для продакшена
 else:
@@ -973,7 +973,7 @@ def add_contact():
 @app.route('/send_message', methods=['POST'])
 def send_message():
     if 'user_id' not in session:
-        return jsonify({'success': False, 'error': 'Not authenticated'}), 401
+        return jsonify({'success': False, 'error': 'Not logged in'}), 401
     
     try:
         data = request.get_json()
@@ -983,10 +983,27 @@ def send_message():
         if not recipient_id or not content:
             return jsonify({'success': False, 'error': 'Missing required fields'}), 400
         
-        # Check if recipient exists
+        # Verify the recipient exists
         recipient = User.query.get(recipient_id)
         if not recipient:
             return jsonify({'success': False, 'error': 'Recipient not found'}), 404
+        
+        # Check if either user has blocked the other
+        blocked_by_sender = Block.query.filter_by(
+            user_id=session['user_id'],
+            blocked_user_id=recipient_id
+        ).first()
+        
+        blocked_by_recipient = Block.query.filter_by(
+            user_id=recipient_id,
+            blocked_user_id=session['user_id']
+        ).first()
+        
+        if blocked_by_sender:
+            return jsonify({'success': False, 'error': 'You cannot send messages to this user because you have blocked them'}), 403
+        
+        if blocked_by_recipient:
+            return jsonify({'success': False, 'error': 'You cannot send messages to this user because they have blocked you'}), 403
         
         # Create new message
         new_message = Message(

@@ -9,11 +9,11 @@ function openChatWithUser(userId, userName) {
   // Store active chat info
   ChatApp.activeChat = { id: userId, name: userName };
   
-  // Get user info first
-  return getUserInfo(userId)
-    .then(userData => {
-      // Create the chat interface
-      createChatInterface(userData);
+  // Get user info and check block status
+  Promise.all([getUserInfo(userId), checkBlockStatus(userId)])
+    .then(([userData, blockStatus]) => {
+      // Create the chat interface with block status
+      createChatInterface(userData, blockStatus);
       
       // Load messages
       loadMessages(userId);
@@ -50,7 +50,7 @@ function highlightActiveContact(userId) {
 /**
  * Create the chat interface
  */
-function createChatInterface(user) {
+function createChatInterface(user, blockStatus) {
   console.log('Creating chat interface for:', user);
   
   const mainContent = document.querySelector('.main-content');
@@ -61,6 +61,12 @@ function createChatInterface(user) {
   
   // Clear existing content
   mainContent.innerHTML = '';
+  
+  // Determine if messaging is blocked
+  const isBlocked = blockStatus.isBlocked || blockStatus.hasBlockedYou;
+  const blockMessage = blockStatus.isBlocked ? 
+    `You have blocked ${user.name}` : 
+    blockStatus.hasBlockedYou ? `${user.name} has blocked you` : '';
   
   // Create header
   const chatHeader = document.createElement('div');
@@ -110,83 +116,93 @@ function createChatInterface(user) {
   const messageInputContainer = document.createElement('div');
   messageInputContainer.className = 'message-input-container';
   
-  const inputWrapper = document.createElement('div');
-  inputWrapper.className = 'input-wrapper';
-  
-  // Clip button
-  const clipButtonContainer = document.createElement('div');
-  clipButtonContainer.className = 'clip-button-container';
-  
-  const paperclipButton = document.createElement('button');
-  paperclipButton.className = 'paperclip-button';
-  paperclipButton.innerHTML = `
-    <svg viewBox="0 0 24 24" width="24" height="24" stroke="currentColor" stroke-width="2" fill="none">
-      <path d="M21.44 11.05l-9.19 9.19a6 6 0 0 1-8.49-8.49l9.19-9.19a4 4 0 0 1 5.66 5.66l-9.2 9.19a2 2 0 0 1-2.83-2.83l8.49-8.48"></path>
-    </svg>
-  `;
-  
-  // Add click event to paperclip button
-  paperclipButton.addEventListener('click', function() {
-    showFileMenu(null, user);
-  });
-  
-  // Input field
-  const messageInputField = document.createElement('div');
-  messageInputField.className = 'message-input-field';
-  
-  const inputField = document.createElement('input');
-  inputField.type = 'text';
-  inputField.placeholder = 'Message';
-  
-  // Send button
-  const sendButton = document.createElement('button');
-  sendButton.className = 'send-button';
-  sendButton.innerHTML = `
-    <svg viewBox="0 0 24 24" width="24" height="24" stroke="currentColor" stroke-width="2" fill="none">
-      <line x1="22" y1="2" x2="11" y2="13"></line>
-      <polygon points="22 2 15 22 11 13 2 9 22 2"></polygon>
-    </svg>
-  `;
-  
-  // Add input event handlers
-  inputField.addEventListener('input', function() {
-    if (this.value.trim()) {
-      sendButton.classList.add('active');
-    } else {
-      sendButton.classList.remove('active');
-    }
-  });
-  
-  // Add send handlers
-  sendButton.addEventListener('click', function() {
-    if (this.classList.contains('active')) {
-      sendMessageHandler(inputField.value, user.id, chatMessages);
-    }
-  });
-  
-  // Add enter key handler
-  inputField.addEventListener('keydown', function(e) {
-    if (e.key === 'Enter' && this.value.trim()) {
-      e.preventDefault();
-      sendMessageHandler(this.value, user.id, chatMessages);
-    }
-  });
-  
-  // Assemble the UI
-  userInfo.appendChild(userAvatar);
-  userInfo.appendChild(userName);
-  
-  chatHeader.appendChild(userInfo);
-  chatHeader.appendChild(menuButton);
-  
-  clipButtonContainer.appendChild(paperclipButton);
-  messageInputField.appendChild(inputField);
-  
-  inputWrapper.appendChild(clipButtonContainer);
-  inputWrapper.appendChild(messageInputField);
-  inputWrapper.appendChild(sendButton);
-  
-  messageInputContainer.appendChild(inputWrapper);
+  if (isBlocked) {
+    // Show blocked state
+    messageInputContainer.innerHTML = `
+      <div class="blocking-message">
+        <span>${blockMessage}</span>
+      </div>
+    `;
+  } else {
+    // Regular input for non-blocked users
+    const inputWrapper = document.createElement('div');
+    inputWrapper.className = 'input-wrapper';
+    
+    // Clip button
+    const clipButtonContainer = document.createElement('div');
+    clipButtonContainer.className = 'clip-button-container';
+    
+    const paperclipButton = document.createElement('button');
+    paperclipButton.className = 'paperclip-button';
+    paperclipButton.innerHTML = `
+      <svg viewBox="0 0 24 24" width="24" height="24" stroke="currentColor" stroke-width="2" fill="none">
+        <path d="M21.44 11.05l-9.19 9.19a6 6 0 0 1-8.49-8.49l9.19-9.19a4 4 0 0 1 5.66 5.66l-9.2 9.19a2 2 0 0 1-2.83-2.83l8.49-8.48"></path>
+      </svg>
+    `;
+    
+    // Add click event to paperclip button
+    paperclipButton.addEventListener('click', function() {
+      showFileMenu(null, user);
+    });
+    
+    // Input field
+    const messageInputField = document.createElement('div');
+    messageInputField.className = 'message-input-field';
+    
+    const inputField = document.createElement('input');
+    inputField.type = 'text';
+    inputField.placeholder = 'Message';
+    
+    // Send button
+    const sendButton = document.createElement('button');
+    sendButton.className = 'send-button';
+    sendButton.innerHTML = `
+      <svg viewBox="0 0 24 24" width="24" height="24" stroke="currentColor" stroke-width="2" fill="none">
+        <line x1="22" y1="2" x2="11" y2="13"></line>
+        <polygon points="22 2 15 22 11 13 2 9 22 2"></polygon>
+      </svg>
+    `;
+    
+    // Add input event handlers
+    inputField.addEventListener('input', function() {
+      if (this.value.trim()) {
+        sendButton.classList.add('active');
+      } else {
+        sendButton.classList.remove('active');
+      }
+    });
+    
+    // Add send handlers
+    sendButton.addEventListener('click', function() {
+      if (this.classList.contains('active')) {
+        sendMessageHandler(inputField.value, user.id, chatMessages);
+      }
+    });
+    
+    // Add enter key handler
+    inputField.addEventListener('keydown', function(e) {
+      if (e.key === 'Enter' && this.value.trim()) {
+        e.preventDefault();
+        sendMessageHandler(this.value, user.id, chatMessages);
+      }
+    });
+    
+    // Assemble the UI
+    userInfo.appendChild(userAvatar);
+    userInfo.appendChild(userName);
+    
+    chatHeader.appendChild(userInfo);
+    chatHeader.appendChild(menuButton);
+    
+    clipButtonContainer.appendChild(paperclipButton);
+    messageInputField.appendChild(inputField);
+    
+    inputWrapper.appendChild(clipButtonContainer);
+    inputWrapper.appendChild(messageInputField);
+    inputWrapper.appendChild(sendButton);
+    
+    messageInputContainer.appendChild(inputWrapper);
+  }
   
   mainContent.appendChild(chatHeader);
   mainContent.appendChild(chatMessages);
