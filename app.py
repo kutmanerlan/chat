@@ -832,91 +832,100 @@ def get_chat_list():
     
     try:
         # Start timing the function for performance monitoring
-        start_time = datetime.now()
+        start_time = datetime.utcnow()
         
-        # Get the list of deleted chat user IDs - using a more efficient query
+        # Get the list of deleted chat user IDs
         deleted_user_ids = []
         deleted_chats = DeletedChat.query.filter_by(user_id=current_user_id).all()
         for chat in deleted_chats:
             deleted_user_ids.append(chat.chat_with_user_id)
         
-        # Log for debugging
-        logging.info(f"User {current_user_id} has {len(deleted_user_ids)} deleted chats")
+        # Log how many deleted chats we have
+        app.logger.info(f"User {current_user_id} has {len(deleted_user_ids)} deleted chats")
         
-        # Get all chats where there has been message exchange - MUCH simpler query
-        query = text("""
-            SELECT DISTINCT
-                u.id as user_id,
-                u.name,
-                u.avatar_path,
-                (SELECT m.content 
-                 FROM message m 
-                 WHERE (m.sender_id = u.id AND m.recipient_id = :current_user_id) 
-                    OR (m.sender_id = :current_user_id AND m.recipient_id = u.id)
-                 ORDER BY m.timestamp DESC LIMIT 1) as last_message,
-                (SELECT m.timestamp 
-                 FROM message m 
-                 WHERE (m.sender_id = u.id AND m.recipient_id = :current_user_id) 
-                    OR (m.sender_id = :current_user_id AND m.recipient_id = u.id)
-                 ORDER BY m.timestamp DESC LIMIT 1) as last_message_time,
-                (SELECT COUNT(*) 
-                 FROM message m 
-                 WHERE m.sender_id = u.id AND m.recipient_id = :current_user_id AND m.is_read = false) as unread_count
-            FROM message m
-            JOIN user u ON (m.sender_id = u.id OR m.recipient_id = u.id)
-            WHERE (m.sender_id = :current_user_id OR m.recipient_id = :current_user_id)
-                AND u.id != :current_user_id
-            ORDER BY last_message_time DESC
-        """)
+        # SIMPLIFIED APPROACH: Get all users who have exchanged messages with the current user
+        # This query finds all users where there are messages between them and the current user
+        users_with_conversations = db.session.query(User).join(
+            Message, 
+            or_(
+                and_(Message.sender_id == User.id, Message.recipient_id == current_user_id),
+                and_(Message.recipient_id == User.id, Message.sender_id == current_user_id)
+            )
+        ).filter(User.id != current_user_id).distinct().all()
         
-        result = db.session.execute(query, {"current_user_id": current_user_id})
+        # Debug info about found users
+        user_ids = [user.id for user in users_with_conversations]
+        app.logger.info(f"Found {len(users_with_conversations)} users with conversations: {user_ids}")
         
-        # Process the query results
+        # Get contacts, blocks, etc.
+        contacts = Contact.query.filter_by(user_id=current_user_id).all()
+        contact_ids = [contact.contact_id for contact in contacts]
+        
+        blocks_made = Block.query.filter_by(user_id=current_user_id).all()
+        blocks_received = Block.query.filter_by(blocked_user_id=current_user_id).all()
+        
+        blocked_ids = [block.blocked_user_id for block in blocks_made]
+        blocked_by_ids = [block.user_id for block in blocks_received]
+        
+        # Prepare chat list
         chat_list = []
-        for row in result:
+        
+        for user in users_with_conversations:
             # Skip if this is a deleted chat
-            if row.user_id in deleted_user_ids:
+            if user.id in deleted_user_ids:
+                app.logger.info(f"Skipping deleted chat with user {user.id}")
                 continue
                 
-            # Get contact status
-            is_contact = Contact.query.filter_by(
-                user_id=current_user_id, 
-                contact_id=row.user_id
-            ).first() is not None
+            # Get the last message between the users
+            last_message = Message.query.filter(
+                or_(
+                    and_(Message.sender_id == current_user_id, Message.recipient_id == user.id),
+                    and_(Message.recipient_id == current_user_id, Message.sender_id == user.id)
+                )
+            ).order_by(Message.timestamp.desc()).first()
             
-            # Get block status
-            is_blocked_by_you = Block.query.filter_by(
-                user_id=current_user_id, 
-                blocked_user_id=row.user_id
-            ).first() is not None
+            # Guard against null messages (shouldn't happen but just to be safe)
+            if not last_message:
+                app.logger.warning(f"No messages found between users {current_user_id} and {user.id} despite join result")
+                continue
             
-            has_blocked_you = Block.query.filter_by(
-                user_id=row.user_id, 
-                blocked_user_id=current_user_id
-            ).first() is not None
+            # Count unread messages
+            unread_count = Message.query.filter_by(
+                sender_id=user.id,
+                recipient_id=current_user_id,
+                is_read=False
+            ).count()
             
-            # Add to chat list
+            # Add user to chat list
             chat_list.append({
-                'user_id': row.user_id,
-                'name': row.name,
-                'avatar_path': row.avatar_path,
-                'last_message': row.last_message or '',
-                'last_message_time': row.last_message_time.isoformat() if row.last_message_time else '',
-                'unread_count': row.unread_count or 0,
-                'is_contact': is_contact,
-                'is_blocked_by_you': is_blocked_by_you,
-                'has_blocked_you': has_blocked_you
+                'user_id': user.id,
+                'name': user.name,
+                'avatar_path': user.avatar_path,
+                'last_message': last_message.content if last_message else '',
+                'last_message_time': last_message.timestamp.isoformat() if last_message else '',
+                'unread_count': unread_count,
+                'is_contact': user.id in contact_ids,
+                'is_blocked_by_you': user.id in blocked_ids,
+                'has_blocked_you': user.id in blocked_by_ids
             })
         
-        # Performance logging
-        end_time = datetime.now()
+        # Sort by last message time
+        chat_list.sort(key=lambda x: x['last_message_time'], reverse=True)
+        
+        # Performance logging and chat list content logging
+        end_time = datetime.utcnow()
         duration = (end_time - start_time).total_seconds()
-        logging.info(f"get_chat_list completed in {duration:.2f} seconds with {len(chat_list)} chats")
+        app.logger.info(f"get_chat_list completed in {duration:.2f} seconds with {len(chat_list)} chats")
+        
+        if len(chat_list) == 0:
+            app.logger.warning(f"No chats found for user {current_user_id}. Check if the user has any messages.")
+        else:
+            app.logger.info(f"Returning {len(chat_list)} chats for user {current_user_id}")
         
         return jsonify({'success': True, 'chats': chat_list})
     
     except Exception as e:
-        logging.error(f"Error getting chat list: {str(e)}")
+        app.logger.error(f"Error in get_chat_list: {str(e)}", exc_info=True)
         return jsonify({'success': False, 'error': str(e)})
 
 # Маршрут для получения списка чатов пользователя

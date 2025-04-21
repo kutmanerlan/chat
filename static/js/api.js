@@ -249,23 +249,57 @@ function fetchRecentConversations() {
 function fetchChatList() {
   console.time('fetchChatList'); // Performance measurement
   
-  return fetch('/get_chat_list', {
+  // Add a timestamp parameter to prevent caching
+  const timestamp = Date.now();
+  
+  return fetch(`/get_chat_list?_=${timestamp}`, {
     method: 'GET',
     headers: {
       'Content-Type': 'application/json',
       'Cache-Control': 'no-cache, no-store, must-revalidate' // Prevent caching
-    }
+    },
+    credentials: 'same-origin' // Ensure cookies are sent
   })
   .then(response => {
-    if (!response.ok) throw new Error('Failed to load chat list');
+    if (!response.ok) {
+      console.error(`Chat list fetch failed: ${response.status} ${response.statusText}`);
+      throw new Error('Failed to load chat list');
+    }
     return response.json();
   })
   .then(data => {
     console.timeEnd('fetchChatList'); // End timing
     
+    // Enhanced debugging
+    console.log('Raw chat list response:', data);
+    
+    // Check for chat data presence and format
+    if (!data.success) {
+      console.error('Chat list response indicates failure:', data.error);
+      throw new Error(data.error || 'Server reported failure loading chats');
+    }
+    
+    if (!data.chats) {
+      console.warn('Chat list response contains no chats array');
+      data.chats = []; // Ensure we always have an array
+    }
+    
     // Log the number of chats for debugging
-    if (data.chats) {
-      console.log(`Loaded ${data.chats.length} chats`);
+    console.log(`Loaded ${data.chats.length} chats from server`);
+    
+    // Additional checks on chat content
+    if (data.chats.length > 0) {
+      // Check first chat to ensure it has expected fields
+      const firstChat = data.chats[0];
+      console.log('First chat sample:', firstChat);
+      
+      // Verify key properties
+      const requiredProps = ['user_id', 'name', 'last_message', 'last_message_time'];
+      const missingProps = requiredProps.filter(prop => !firstChat.hasOwnProperty(prop));
+      
+      if (missingProps.length > 0) {
+        console.warn(`Chat missing required properties: ${missingProps.join(', ')}`);
+      }
     }
     
     return data;

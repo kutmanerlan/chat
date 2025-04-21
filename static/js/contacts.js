@@ -95,6 +95,16 @@ function renderSidebar(contacts, chats) {
   // Clear existing items
   contactsList.innerHTML = '';
   
+  // Debug the received data
+  console.log('Rendering sidebar with data:', {
+    contacts: contacts ? contacts.length : 0,
+    chats: chats ? chats.length : 0
+  });
+  
+  if (chats) {
+    console.log('First few chats:', chats.slice(0, 3));
+  }
+  
   // Create chats section
   const chatSection = document.createElement('div');
   chatSection.className = 'sidebar-section chats-section';
@@ -106,6 +116,7 @@ function renderSidebar(contacts, chats) {
   
   // Add chats
   if (chats && chats.length > 0) {
+    console.log(`Adding ${chats.length} chats to sidebar`);
     chats.forEach(chat => {
       const chatItem = createChatElement(chat);
       chatSection.appendChild(chatItem);
@@ -116,14 +127,14 @@ function renderSidebar(contacts, chats) {
     if (noContactsMessage) noContactsMessage.style.display = 'none';
   } else {
     // If no chats, show a message in the section
+    console.warn('No chats to display in sidebar');
+    
     const noChatsMsg = document.createElement('div');
     noChatsMsg.className = 'no-items-message';
     noChatsMsg.textContent = 'No chats yet';
     chatSection.appendChild(noChatsMsg);
     contactsList.appendChild(chatSection);
   }
-  
-  // Removed: Separator and contacts section
 }
 
 /**
