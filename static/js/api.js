@@ -244,10 +244,10 @@ function fetchRecentConversations() {
 }
 
 /**
- * Get chat list
+ * Get chat list (filtered to exclude deleted chats)
  */
 function fetchChatList() {
-  return fetch('/get_chat_list', {
+  return fetch('/get_chat_list_with_deleted', {  // Updated endpoint name
     method: 'GET',
     headers: { 'Content-Type': 'application/json' }
   })

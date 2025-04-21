@@ -1476,8 +1476,8 @@ def delete_chat():
         return jsonify({'success': False, 'error': str(e)})
 
 # Update get_chat_list to filter out deleted chats
-@app.route('/get_chat_list')
-def get_chat_list():
+@app.route('/get_chat_list_with_deleted')
+def get_chat_list_filtered():
     if 'user_id' not in session:
         return jsonify({'success': False, 'error': 'Not logged in'})
     
