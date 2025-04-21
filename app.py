@@ -41,7 +41,7 @@ else:
     app.config['SERVER_NAME'] = 'localhost:5000'
 
 # Инициализация базы данных
-from models.user import db, User, Contact, Message
+from models.user import db, User, Contact, Message, Block
 db.init_app(app)
 
 # Функция для создания таблиц базы данных
@@ -129,6 +129,13 @@ def create_tables():
                     logging.info('edited_at column added successfully')
                 except Exception as column_error:
                     logging.error(f"Error adding edited_at column: {str(column_error)}")
+        
+        # Check if block table exists
+        if 'block' not in inspector.get_table_names():
+            logging.info("Таблица block не найдена. Создаем...")
+            # Create the block table
+            db.create_all()
+            logging.info('Таблица block создана')
         
         logging.info("Схема базы данных проверена и обновлена")
         return True
@@ -861,6 +868,17 @@ def get_chat_list():
                 contact_id=user.id
             ).first() is not None
             
+            # Check if any blocks exist between users
+            is_blocked_by_you = Block.query.filter_by(
+                user_id=session['user_id'],
+                blocked_user_id=user.id
+            ).first() is not None
+            
+            has_blocked_you = Block.query.filter_by(
+                user_id=user.id,
+                blocked_user_id=session['user_id']
+            ).first() is not None
+            
             # Добавляем информацию о чате
             chat_info = {
                 'user_id': user.id,
@@ -869,7 +887,9 @@ def get_chat_list():
                 'last_message': last_message.content if last_message else "",
                 'last_timestamp': last_message.timestamp.isoformat() if last_message else None,
                 'unread_count': unread_count,
-                'is_contact': is_contact
+                'is_contact': is_contact,
+                'is_blocked_by_you': is_blocked_by_you,
+                'has_blocked_you': has_blocked_you
             }
             chats.append(chat_info)
         
@@ -1130,6 +1150,108 @@ def edit_message():
         db.session.rollback()
         logging.error(f"Error editing message: {str(e)}")
         return jsonify({'error': 'Server error'}), 500
+
+# Route to check block status
+@app.route('/check_block_status', methods=['POST'])
+def check_block_status():
+    if 'user_id' not in session:
+        return jsonify({'success': False, 'error': 'Not logged in'}), 401
+    
+    try:
+        data = request.get_json()
+        user_id = data.get('user_id')
+        
+        if not user_id:
+            return jsonify({'success': False, 'error': 'User ID required'}), 400
+        
+        # Check if the current user has blocked the target user
+        is_blocked_by_you = Block.query.filter_by(
+            user_id=session['user_id'],
+            blocked_user_id=user_id
+        ).first() is not None
+        
+        # Check if the target user has blocked the current user
+        has_blocked_you = Block.query.filter_by(
+            user_id=user_id,
+            blocked_user_id=session['user_id']
+        ).first() is not None
+        
+        return jsonify({
+            'success': True,
+            'is_blocked_by_you': is_blocked_by_you,
+            'has_blocked_you': has_blocked_you
+        })
+    except Exception as e:
+        logging.error(f"Error checking block status: {str(e)}")
+        return jsonify({'success': False, 'error': 'Failed to check block status'}), 500
+
+# Route to block a user
+@app.route('/block_user', methods=['POST'])
+def block_user():
+    if 'user_id' not in session:
+        return jsonify({'success': False, 'error': 'Not logged in'}), 401
+    
+    try:
+        data = request.get_json()
+        user_id = data.get('user_id')
+        
+        if not user_id:
+            return jsonify({'success': False, 'error': 'User ID required'}), 400
+        
+        # Validate that the user exists
+        user_to_block = User.query.get(user_id)
+        if not user_to_block:
+            return jsonify({'success': False, 'error': 'User not found'}), 404
+        
+        # Check if already blocked
+        existing_block = Block.query.filter_by(
+            user_id=session['user_id'],
+            blocked_user_id=user_id
+        ).first()
+        
+        if existing_block:
+            return jsonify({'success': True, 'message': 'User already blocked'})
+        
+        # Create new block record
+        new_block = Block(user_id=session['user_id'], blocked_user_id=user_id)
+        db.session.add(new_block)
+        db.session.commit()
+        
+        return jsonify({'success': True, 'message': 'User blocked successfully'})
+    except Exception as e:
+        db.session.rollback()
+        logging.error(f"Error blocking user: {str(e)}")
+        return jsonify({'success': False, 'error': 'Failed to block user'}), 500
+
+# Route to unblock a user
+@app.route('/unblock_user', methods=['POST'])
+def unblock_user():
+    if 'user_id' not in session:
+        return jsonify({'success': False, 'error': 'Not logged in'}), 401
+    
+    try:
+        data = request.get_json()
+        user_id = data.get('user_id')
+        
+        if not user_id:
+            return jsonify({'success': False, 'error': 'User ID required'}), 400
+        
+        # Find the block record
+        block = Block.query.filter_by(
+            user_id=session['user_id'],
+            blocked_user_id=user_id
+        ).first()
+        
+        if block:
+            db.session.delete(block)
+            db.session.commit()
+            return jsonify({'success': True, 'message': 'User unblocked successfully'})
+        else:
+            return jsonify({'success': True, 'message': 'User was not blocked'})
+    except Exception as e:
+        db.session.rollback()
+        logging.error(f"Error unblocking user: {str(e)}")
+        return jsonify({'success': False, 'error': 'Failed to unblock user'}), 500
 
 if __name__ == '__main__':
     # Инициализация базы данных в контексте приложения

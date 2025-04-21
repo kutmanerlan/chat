@@ -29,6 +29,19 @@ class User(db.Model):
                               lazy='dynamic',
                               cascade='all, delete-orphan')
     
+    # Define relationships for blocks
+    blocks_made = db.relationship('Block', 
+                                 foreign_keys='Block.user_id',
+                                 backref=db.backref('blocker', lazy='joined'),
+                                 lazy='dynamic',
+                                 cascade='all, delete-orphan')
+    
+    blocks_received = db.relationship('Block', 
+                                     foreign_keys='Block.blocked_user_id',
+                                     backref=db.backref('blocked', lazy='joined'),
+                                     lazy='dynamic',
+                                     cascade='all, delete-orphan')
+    
     def set_password(self, password):
         self.password_hash = generate_password_hash(password)
         
@@ -106,3 +119,13 @@ class Message(db.Model):
             message_dict['edited_at'] = None
             
         return message_dict
+
+# Model for storing blocked users
+class Block(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    user_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
+    blocked_user_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
+    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+    
+    # Index for fast lookup and uniqueness
+    __table_args__ = (db.UniqueConstraint('user_id', 'blocked_user_id', name='_user_blocked_uc'),)
