@@ -428,3 +428,41 @@ function deleteChat(userId) {
     throw error;
   });
 }
+
+/**
+ * Fetch debug database information
+ */
+function fetchDatabaseDebugInfo() {
+  console.log('Fetching database debug info...');
+  return fetch('/debug/database', {
+    method: 'GET',
+    headers: {
+      'Content-Type': 'application/json',
+      'Cache-Control': 'no-cache, no-store, must-revalidate'
+    },
+    credentials: 'same-origin' // Ensure cookies are sent
+  })
+  .then(response => {
+    if (!response.ok) {
+      if (response.status === 401) {
+        console.error('Not logged in for database debug');
+        throw new Error('You must be logged in to access database debug info');
+      } else if (response.status === 404) {
+        console.error('Debug endpoint not found');
+        throw new Error('Debug endpoint not found. Ensure app.py has the /debug/database route.');
+      } else {
+        console.error(`Database debug response error: ${response.status} ${response.statusText}`);
+        throw new Error(`Server error: ${response.status} ${response.statusText}`);
+      }
+    }
+    return response.json();
+  })
+  .then(data => {
+    console.log('Database debug info:', data);
+    return data;
+  })
+  .catch(error => {
+    console.error('Error fetching database debug info:', error);
+    throw error;
+  });
+}

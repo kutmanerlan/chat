@@ -104,91 +104,113 @@ function debugDatabaseState() {
   // Show a loading notification
   showNotification('Checking database state...', 'info', 2000);
   
-  // Call the debug endpoint
-  fetch('/debug/database', {
-    method: 'GET',
-    headers: {
-      'Content-Type': 'application/json',
-      'Cache-Control': 'no-cache'
-    }
-  })
-  .then(response => response.json())
-  .then(data => {
-    console.log('Database debug data:', data);
-    
-    // Show a more detailed modal with the information
-    let debugModal = document.createElement('div');
-    debugModal.className = 'modal';
-    debugModal.id = 'debugDatabaseModal';
-    
-    // Format the debug data for display
-    const messageInfo = `Messages: ${data.message_counts.total} (${data.message_counts.sent} sent, ${data.message_counts.received} received)`;
-    const deletedInfo = `Deleted chats: ${data.deleted_chats.count} (IDs: ${data.deleted_chats.user_ids.join(', ') || 'none'})`;
-    const chatUsersInfo = `Chat partners: ${data.chat_users.count}`;
-    
-    // List chat users if there are any
-    let chatUsersList = '';
-    if (data.chat_users.users && data.chat_users.users.length > 0) {
-      chatUsersList = '<ul style="text-align: left; margin: 10px 0; padding-left: 20px;">';
-      data.chat_users.users.forEach(user => {
-        const isDeleted = data.deleted_chats.user_ids.includes(user.id);
-        chatUsersList += `<li>${user.name} (ID: ${user.id})${isDeleted ? ' - <span style="color:#e74c3c">DELETED</span>' : ''}</li>`;
-      });
-      chatUsersList += '</ul>';
-    } else {
-      chatUsersList = '<p>No chat partners found</p>';
-    }
-    
-    // Create the modal content
-    debugModal.innerHTML = `
-      <div class="modal-content" style="width: 80%; max-width: 500px;">
-        <h3>Database Debug Info</h3>
-        <div style="text-align: left; margin: 15px 0;">
-          <p>${messageInfo}</p>
-          <p>${deletedInfo}</p>
-          <p>${chatUsersInfo}</p>
-          <hr style="margin: 15px 0; border-color: #444;">
-          <h4 style="margin: 10px 0;">Chat Partners:</h4>
-          ${chatUsersList}
-        </div>
-        <div class="modal-buttons">
-          <button id="testServerDeleteBtn" class="btn-secondary">Test Server Delete</button>
-          <button id="closeDebugModalBtn" class="btn-primary">Close</button>
-        </div>
-        <p style="margin-top: 15px; font-size: 12px; color: #888;">To fix missing chats, ensure the database has the DeletedChat table and messages exist.</p>
-      </div>
-    `;
-    
-    document.body.appendChild(debugModal);
-    
-    // Show the modal and overlay
-    debugModal.classList.add('active');
-    document.getElementById('overlay').classList.add('active');
-    
-    // Close button handler
-    document.getElementById('closeDebugModalBtn').addEventListener('click', function() {
-      debugModal.classList.remove('active');
-      document.getElementById('overlay').classList.remove('active');
-      setTimeout(() => {
-        debugModal.remove();
-      }, 300);
-    });
-    
-    // Test server-side deletion button
-    document.getElementById('testServerDeleteBtn').addEventListener('click', function() {
-      // Only enable if we have chat partners
+  // Call the debug endpoint with our improved fetch function
+  fetchDatabaseDebugInfo()
+    .then(data => {
+      console.log('Database debug data:', data);
+      
+      // Show a more detailed modal with the information
+      let debugModal = document.createElement('div');
+      debugModal.className = 'modal';
+      debugModal.id = 'debugDatabaseModal';
+      
+      // Extract data from the response
+      const messageInfo = `Messages: ${data.message_counts.total} (${data.message_counts.sent} sent, ${data.message_counts.received} received)`;
+      const tablesInfo = data.database_info ? `Database tables: ${data.database_info.tables.join(', ')}` : 'Database table info not available';
+      const deletedInfo = `Deleted chats: ${data.deleted_chats.count} (IDs: ${data.deleted_chats.user_ids.join(', ') || 'none'})`;
+      const chatUsersInfo = `Chat partners: ${data.chat_users.count}`;
+      
+      // List chat users if there are any
+      let chatUsersList = '';
       if (data.chat_users.users && data.chat_users.users.length > 0) {
-        const firstUser = data.chat_users.users[0];
-        testServerDelete(firstUser.id, firstUser.name);
+        chatUsersList = '<ul style="text-align: left; margin: 10px 0; padding-left: 20px;">';
+        data.chat_users.users.forEach(user => {
+          const isDeleted = data.deleted_chats.user_ids.includes(user.id);
+          chatUsersList += `<li>${user.name} (ID: ${user.id})${isDeleted ? ' - <span style="color:#e74c3c">DELETED</span>' : ''}</li>`;
+        });
+        chatUsersList += '</ul>';
       } else {
-        showErrorNotification('No chat partners to test deletion with');
+        chatUsersList = '<p>No chat partners found</p>';
       }
+      
+      // Create the modal content
+      debugModal.innerHTML = `
+        <div class="modal-content" style="width: 80%; max-width: 600px; max-height: 80vh; overflow-y: auto;">
+          <h3>Database Debug Info</h3>
+          <div style="text-align: left; margin: 15px 0;">
+            <p>${messageInfo}</p>
+            <p style="font-size: 12px; color: #999; word-break: break-all;">${tablesInfo}</p>
+            <p>${deletedInfo}</p>
+            <p>${chatUsersInfo}</p>
+            <hr style="margin: 15px 0; border-color: #444;">
+            <h4 style="margin: 10px 0;">Chat Partners:</h4>
+            ${chatUsersList}
+          </div>
+          <div class="modal-buttons">
+            <button id="testServerDeleteBtn" class="btn-secondary">Test Server Delete</button>
+            <button id="repairTablesBtn" class="btn-secondary">Repair Tables</button>
+            <button id="closeDebugModalBtn" class="btn-primary">Close</button>
+          </div>
+          <p style="margin-top: 15px; font-size: 12px; color: #888;">
+            Debug Info: Check if DeletedChat table exists and if messages have appropriate associations.
+          </p>
+        </div>
+      `;
+      
+      document.body.appendChild(debugModal);
+      
+      // Show the modal and overlay
+      debugModal.classList.add('active');
+      document.getElementById('overlay').classList.add('active');
+      
+      // Close button handler
+      document.getElementById('closeDebugModalBtn').addEventListener('click', function() {
+        debugModal.classList.remove('active');
+        document.getElementById('overlay').classList.remove('active');
+        setTimeout(() => {
+          debugModal.remove();
+        }, 300);
+      });
+      
+      // Test server-side deletion button
+      document.getElementById('testServerDeleteBtn').addEventListener('click', function() {
+        // Only enable if we have chat partners
+        if (data.chat_users.users && data.chat_users.users.length > 0) {
+          const firstUser = data.chat_users.users[0];
+          testServerDelete(firstUser.id, firstUser.name);
+        } else {
+          showErrorNotification('No chat partners to test deletion with');
+        }
+      });
+      
+      // Repair tables button - force db.create_all()
+      document.getElementById('repairTablesBtn').addEventListener('click', function() {
+        fetch('/repair_tables', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json'
+          }
+        })
+        .then(response => response.json())
+        .then(data => {
+          if (data.success) {
+            showSuccessNotification('Database tables repaired');
+            // Close the modal
+            debugModal.classList.remove('active');
+            document.getElementById('overlay').classList.remove('active');
+          } else {
+            showErrorNotification('Failed to repair tables: ' + (data.error || 'Unknown error'));
+          }
+        })
+        .catch(error => {
+          showErrorNotification('Error repairing tables: ' + error.message);
+        });
+      });
+    })
+    .catch(error => {
+      console.error('Error getting database debug info:', error);
+      showErrorNotification('Failed to get database information: ' + error.message);
     });
-  })
-  .catch(error => {
-    console.error('Error getting database debug info:', error);
-    showErrorNotification('Failed to get database information');
-  });
 }
 
 /**

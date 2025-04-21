@@ -1662,58 +1662,101 @@ def debug_database():
         sent_messages = Message.query.filter_by(sender_id=current_user_id).count()
         received_messages = Message.query.filter_by(recipient_id=current_user_id).count()
         
-        # Check for deleted chats
+        # Check for deleted chats (safely handle if table doesn't exist)
         deleted_chats = DeletedChat.query.filter_by(user_id=current_user_id).all()
         deleted_chat_ids = [dc.chat_with_user_id for dc in deleted_chats]
-        
-        # Get users who have exchanged messages with this user
+            deleted_chats = DeletedChat.query.filter_by(user_id=current_user_id).all()
+        # Get users who have exchanged messages with this user deleted_chats]
         chat_users_query = db.session.query(User.id, User.name).distinct().filter(
-            User.id != current_user_id,
-            or_(
+            User.id != current_user_id,erying DeletedChat: {str(e)}")
+            or_(ted_chats = []
                 and_(Message.sender_id == User.id, Message.recipient_id == current_user_id),
                 and_(Message.recipient_id == User.id, Message.sender_id == current_user_id)
-            )
-        )
-        chat_users = chat_users_query.all()
-        
+            )users = []
+        )ry:
+        chat_users = chat_users_query.all()y current user
+            sent_to_users = db.session.query(User.id, User.name).join(
         # Important: Try simplest query to see all messages and chat partners
-        return jsonify({
+        return jsonify({sage.sender_id == current_user_id).distinct().all()
             'user_id': current_user_id,
-            'message_counts': {
-                'sent': sent_messages,
-                'received': received_messages,
-                'total': sent_messages + received_messages
+            'message_counts': {ages received by current user
+                'sent': sent_messages,ession.query(User.id, User.name).join(
+                'received': received_messages,User.id
+                'total': sent_messages + received_messagesid).distinct().all()
             },
-            'deleted_chats': {
+            'deleted_chats': {s and remove duplicates
                 'count': len(deleted_chats),
-                'user_ids': deleted_chat_ids
-            },
+                'user_ids': deleted_chat_idso_users + received_from_users:
+            },  user_dict[user_id] = user_name
             'chat_users': {
-                'count': len(chat_users),
+                'count': len(chat_users), 'name': name} for user_id, name in user_dict.items() 
                 'users': [{'id': u.id, 'name': u.name} for u in chat_users]
-            }
-        })
+            }t Exception as e:
+        })  app.logger.error(f"Error getting chat users: {str(e)}")
     except Exception as e:
-        app.logger.error(f"Error in debug endpoint: {str(e)}")
-        return jsonify({'error': str(e)}), 500
+        app.logger.error(f"Error in debug endpoint: {str(e)}")ta
+        return jsonify({'error': str(e)}), 500db.metadata.tables.values()]
+        
+@app.route('/repair_tables', methods=['POST']) information
+def repair_tables():
+    """Force recreation of missing tables"""ent_user_id,
+    if 'user_id' not in session:nfo': {
+        return jsonify({'success': False, 'error': 'Not logged in'})
+    
+    try:
+        # Log the repair attempt
+        app.logger.info(f"Attempting to repair database tables")           'received': received_messages,
+        ived_messages
+        # Create all tables that don't exist    },
+        db.create_all()
+        app.logger.info("Database tables created/repaired successfully")eted_chats),
+        
+        return jsonify({'success': True, 'message': 'Tables repaired successfully'})
+    except Exception as e:
+        app.logger.error(f"Error repairing tables: {str(e)}")   'count': len(chat_users),
+        return jsonify({'success': False, 'error': str(e)})
 
 if __name__ == '__main__':
     # Инициализация базы данных в контексте приложения
-    with app.app_context():
+    with app.app_context(): endpoint: {str(e)}")
         create_tables()
     # Временно отключаем SERVER_NAME для локального запуска
     app.config['SERVER_NAME'] = None
-    # Устанавливаем host='0.0.0.0', чтобы приложение было доступно извне
+    # Устанавливаем host='0.0.0.0', чтобы приложение было доступно извнеция базы данных в контексте приложения
     app.run(debug=True, host='0.0.0.0')
 else:
     # Для запуска через WSGI (PythonAnywhere)
     try:
-        with app.app_context():
+        with app.app_context():аем host='0.0.0.0', чтобы приложение было доступно извне
             logging.basicConfig(
                 filename='/tmp/flask_app_error.log', 
                 level=logging.DEBUG,
                 format='%(asctime)s - %(уровень)s - %(message)s'
-            )
+            )xt():
+            logging.info("Запускаем приложение через WSGI")cConfig(
+            try:
+                # Защищенный вызов create_tables
+                create_tables_success = create_tables()вень)s - %(message)s'
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+            f.write(traceback.format_exc())            f.write(f"Критическая ошибка: {str(e)}\n")        with open('/tmp/flask_startup_error.log', 'w') as f:        import traceback    except Exception as e:                logging.error("Приложение может работать некорректно!")                logging.error(f"Ошибка при запуске приложения: {str(e)}")            except Exception as e:                logging.info("Приложение успешно запущено на PythonAnywhere")                                    logging.info(f"Создана папка для аватаров: {app.config['UPLOAD_FOLDER']}")                    os.makedirs(app.config['UPLOAD_FOLDER'], exist_ok=True)                if not os.path.exists(app.config['UPLOAD_FOLDER']):                # Проверка наличия папки для аватаров                                    logging.warning("Не удалось обновить схему базы данных, но приложение продолжит работу")                else:                    logging.info("Схема базы данных успешно обновлена")                if create_tables_success:            )
             logging.info("Запускаем приложение через WSGI")
             try:
                 # Защищенный вызов create_tables
