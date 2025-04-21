@@ -58,6 +58,14 @@
   font-size: 12px;
   border: none;
   cursor: pointer;
+  /* Fixed button size */
+  width: 70px;
+  height: 28px;
+  text-align: center;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: background-color 0.2s, opacity 0.2s;
 }
 
 .message-edit-buttons .save-edit-btn {
@@ -65,9 +73,17 @@
   color: white;
 }
 
+.message-edit-buttons .save-edit-btn:hover {
+  background-color: #5888bd;
+}
+
 .message-edit-buttons .cancel-edit-btn {
   background-color: #3a3a3a;
   color: #eaeaea;
+}
+
+.message-edit-buttons .cancel-edit-btn:hover {
+  background-color: #4c4c4c;
 }
 
 .message-edit-buttons.disabled button {
