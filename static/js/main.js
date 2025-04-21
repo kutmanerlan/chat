@@ -19,6 +19,11 @@ document.addEventListener('DOMContentLoaded', () => {
 function initializeChat() {
   console.log('Initializing chat application...');
   
+  // Add debug button
+  if (typeof addDebugButton === 'function') {
+    addDebugButton();
+  }
+  
   // Fetch current user information first
   fetchCurrentUser()
     .then(() => {

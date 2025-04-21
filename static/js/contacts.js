@@ -18,25 +18,8 @@ function loadSidebar() {
     contactsList.innerHTML = '<div class="loading-sidebar">Loading chats...</div>';
   }
   
-  // Add debug button if we're having issues
-  if (contactsList) {
-    const debugBtn = document.createElement('div');
-    debugBtn.className = 'debug-db-btn';
-    debugBtn.textContent = 'Debug Database';
-    debugBtn.style.padding = '8px';
-    debugBtn.style.margin = '10px 0';
-    debugBtn.style.textAlign = 'center';
-    debugBtn.style.background = '#333';
-    debugBtn.style.borderRadius = '4px';
-    debugBtn.style.cursor = 'pointer';
-    debugBtn.style.fontSize = '12px';
-    debugBtn.addEventListener('click', function() {
-      debugDatabaseState();
-    });
-    
-    // Add to DOM
-    contactsList.appendChild(debugBtn);
-  }
+  // Add debug button to the sidebar (not inside the contacts list)
+  addDebugButton();
   
   // Load both contacts and chats
   Promise.all([fetchContacts(), fetchChatList()])
@@ -67,6 +50,51 @@ function loadSidebar() {
       
       showErrorNotification('Failed to load contacts and chats');
     });
+}
+
+/**
+ * Add debug button to the sidebar
+ */
+function addDebugButton() {
+  // Remove existing button if it exists
+  const existingBtn = document.getElementById('debugDatabaseBtn');
+  if (existingBtn) {
+    existingBtn.remove();
+  }
+  
+  // Create fixed debug button container
+  const debugBtnContainer = document.createElement('div');
+  debugBtnContainer.className = 'debug-btn-container';
+  debugBtnContainer.style.position = 'fixed';
+  debugBtnContainer.style.bottom = '10px';
+  debugBtnContainer.style.left = '10px';
+  debugBtnContainer.style.zIndex = '1000';
+  debugBtnContainer.style.width = '120px';
+  
+  // Create debug button
+  const debugBtn = document.createElement('div');
+  debugBtn.id = 'debugDatabaseBtn';
+  debugBtn.className = 'debug-db-btn';
+  debugBtn.textContent = 'Debug Database';
+  debugBtn.style.padding = '8px';
+  debugBtn.style.textAlign = 'center';
+  debugBtn.style.background = '#333';
+  debugBtn.style.borderRadius = '4px';
+  debugBtn.style.cursor = 'pointer';
+  debugBtn.style.fontSize = '12px';
+  debugBtn.style.color = '#fff';
+  debugBtn.style.boxShadow = '0 2px 5px rgba(0,0,0,0.3)';
+  
+  // Add click event
+  debugBtn.addEventListener('click', function() {
+    debugDatabaseState();
+  });
+  
+  // Add to container
+  debugBtnContainer.appendChild(debugBtn);
+  
+  // Add to document body
+  document.body.appendChild(debugBtnContainer);
 }
 
 /**
