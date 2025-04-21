@@ -129,7 +129,7 @@
 /* Block indicator */
 .block-indicator {
   position: absolute;
-  right: 32px; /* Position to the left of contact indicator if both exist */
+  right: 12px; /* Same position as contact indicator */
   top: 50%;
   transform: translateY(-50%);
   font-size: 12px;
@@ -150,11 +150,6 @@
 .block-indicator.blocked-you {
   background-color: rgba(150, 150, 150, 0.2);
   color: #999;
-}
-
-/* Adjust positioning when both indicators are present */
-.contact-item .block-indicator + .contact-indicator {
-  right: 12px;
 }
 
 /* Block message in main area */

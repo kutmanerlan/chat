@@ -1215,6 +1215,25 @@ def block_user():
         # Create new block record
         new_block = Block(user_id=session['user_id'], blocked_user_id=user_id)
         db.session.add(new_block)
+        
+        # Remove from contacts in both directions - user_id is the contact of current user
+        contact1 = Contact.query.filter_by(
+            user_id=session['user_id'],
+            contact_id=user_id
+        ).first()
+        
+        if contact1:
+            db.session.delete(contact1)
+        
+        # current user is the contact of user_id
+        contact2 = Contact.query.filter_by(
+            user_id=user_id,
+            contact_id=session['user_id']
+        ).first()
+        
+        if contact2:
+            db.session.delete(contact2)
+        
         db.session.commit()
         
         return jsonify({'success': True, 'message': 'User blocked successfully'})
@@ -1268,7 +1287,7 @@ else:
             logging.basicConfig(
                 filename='/tmp/flask_app_error.log', 
                 level=logging.DEBUG,
-                format='%(asctime)s - %(levelень)s - %(message)s'
+                format='%(asctime)s - %(уровень)s - %(message)s'
             )
             logging.info("Запускаем приложение через WSGI")
             try:

@@ -191,21 +191,7 @@ function createChatElement(chat) {
     chatItem.appendChild(unreadBadge);
   }
   
-  // Add contact indicator if this user is a contact
-  if (chat.is_contact) {
-    const contactIndicator = document.createElement('span');
-    contactIndicator.className = 'contact-indicator';
-    contactIndicator.textContent = 'C';
-    contactIndicator.setAttribute('data-tooltip', 'This user is in your contacts');
-    
-    // Add event listeners for showing/hiding tooltip
-    contactIndicator.addEventListener('mouseenter', showTooltip);
-    contactIndicator.addEventListener('mouseleave', hideTooltip);
-    
-    chatItem.appendChild(contactIndicator);
-  }
-  
-  // Add block indicators if applicable
+  // Priority: Show block indicator first, then contact indicator if not blocked
   if (chat.is_blocked_by_you) {
     const blockIndicator = document.createElement('span');
     blockIndicator.className = 'block-indicator blocked-by-you';
@@ -228,6 +214,18 @@ function createChatElement(chat) {
     blockIndicator.addEventListener('mouseleave', hideTooltip);
     
     chatItem.appendChild(blockIndicator);
+  } else if (chat.is_contact) {
+    // Only show contact indicator if not blocked
+    const contactIndicator = document.createElement('span');
+    contactIndicator.className = 'contact-indicator';
+    contactIndicator.textContent = 'C';
+    contactIndicator.setAttribute('data-tooltip', 'This user is in your contacts');
+    
+    // Add event listeners for showing/hiding tooltip
+    contactIndicator.addEventListener('mouseenter', showTooltip);
+    contactIndicator.addEventListener('mouseleave', hideTooltip);
+    
+    chatItem.appendChild(contactIndicator);
   }
   
   // Assemble elements
