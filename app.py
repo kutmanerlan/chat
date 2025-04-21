@@ -818,36 +818,6 @@ def get_contacts():
         logging.error(f"Ошибка при получении контактов: {str(e)}")
         return jsonify({'success': False, 'error': 'Server error'}), 500
 
-# Маршрут для получения списка контактов пользователя
-@app.route('/get_contacts')
-def get_contacts():
-    if 'user_id' not in session:
-        return jsonify({'error': 'Unauthorized'}), 401
-    
-    try:
-        user_id = session['user_id']
-        
-        # Запрашиваем контакты пользователя
-        contacts_query = Contact.query.filter_by(user_id=user_id).join(
-            Contact.contact_user
-        ).order_by(User.name)
-        
-        contacts = []
-        for contact in contacts_query.all():
-            contact_user = contact.contact_user
-            contacts.append({
-                'id': contact_user.id,
-                'name': contact_user.name,
-                'avatar_path': contact_user.avatar_path if hasattr(contact_user, 'avatar_path') else None,
-                'bio': contact_user.bio if hasattr(contact_user, 'bio') else None,
-                'added_at': contact.added_at.isoformat()
-            })
-        
-        return jsonify({'contacts': contacts})
-    except Exception as e:
-        logging.error(f"Ошибка при получении контактов: {str(e)}")
-        return jsonify({'error': 'Server error'}), 500
-
 # Маршрут для добавления пользователя в контакты
 @app.route('/add_contact', methods=['POST'])
 def add_contact():
