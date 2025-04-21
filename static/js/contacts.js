@@ -197,6 +197,11 @@ function createChatElement(chat) {
     contactIndicator.className = 'contact-indicator';
     contactIndicator.textContent = 'C';
     contactIndicator.setAttribute('data-tooltip', 'This user is in your contacts');
+    
+    // Add event listeners for showing/hiding tooltip
+    contactIndicator.addEventListener('mouseenter', showTooltip);
+    contactIndicator.addEventListener('mouseleave', hideTooltip);
+    
     chatItem.appendChild(contactIndicator);
   }
   
@@ -213,6 +218,47 @@ function createChatElement(chat) {
   });
   
   return chatItem;
+}
+
+/**
+ * Show tooltip when hovering over contact indicator
+ */
+function showTooltip(event) {
+  // Remove any existing tooltips
+  hideAllTooltips();
+  
+  const targetElement = event.currentTarget;
+  const tooltipText = targetElement.getAttribute('data-tooltip');
+  
+  // Create tooltip element
+  const tooltip = document.createElement('div');
+  tooltip.className = 'dynamic-tooltip';
+  tooltip.textContent = tooltipText;
+  tooltip.id = 'contact-tooltip';
+  document.body.appendChild(tooltip);
+  
+  // Position tooltip above the indicator
+  const rect = targetElement.getBoundingClientRect();
+  const centerX = rect.left + rect.width / 2;
+  tooltip.style.left = `${centerX}px`;
+  tooltip.style.top = `${rect.top - 40}px`; // Position above with some margin
+}
+
+/**
+ * Hide tooltip when not hovering
+ */
+function hideTooltip() {
+  hideAllTooltips();
+}
+
+/**
+ * Helper to remove all tooltips
+ */
+function hideAllTooltips() {
+  const existingTooltip = document.getElementById('contact-tooltip');
+  if (existingTooltip) {
+    document.body.removeChild(existingTooltip);
+  }
 }
 
 /**

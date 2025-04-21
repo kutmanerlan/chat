@@ -126,39 +126,32 @@
   cursor: help; /* Change cursor to indicate there's additional information */
 }
 
-/* Tooltip styles */
-.contact-indicator[data-tooltip]:hover::after {
-  content: attr(data-tooltip); /* Use the data-tooltip attribute content */
-  position: fixed !important; /* Use fixed instead of absolute to break out of stacking context */
-  right: auto; /* Reset right position */
-  left: 50%; /* Position based on cursor instead */
-  transform: translateX(-50%); /* Center horizontally */
-  bottom: auto; /* Reset bottom position */
-  top: 30%; /* Position near top of screen */
-  margin-bottom: 0;
+/* Remove tooltip pseudo-elements and replace with classes for actual DOM elements */
+.dynamic-tooltip {
+  position: fixed;
   background-color: #333;
   color: white;
   padding: 5px 10px;
   border-radius: 4px;
   font-size: 12px;
   white-space: nowrap;
-  z-index: 99999 !important; /* Increased and added !important */
+  z-index: 99999;
   box-shadow: 0 2px 5px rgba(0, 0, 0, 0.2);
-  pointer-events: none; /* Prevent tooltip from blocking hover */
+  pointer-events: none;
+  transform: translateX(-50%);
+  transition: opacity 0.2s;
 }
 
-/* Create a small triangle/arrow */
-.contact-indicator[data-tooltip]:hover::before {
+.dynamic-tooltip::after {
   content: '';
-  position: fixed !important; /* Use fixed positioning to match the tooltip */
+  position: absolute;
   left: 50%;
-  transform: translateX(-50%) rotate(180deg); /* Center horizontally and rotate */
-  top: calc(30% + 28px); /* Position below tooltip */
+  transform: translateX(-50%);
+  bottom: -10px;
   border-width: 5px;
   border-style: solid;
-  border-color: #333 transparent transparent transparent; /* Point downward */
+  border-color: #333 transparent transparent transparent;
   pointer-events: none;
-  z-index: 99999 !important; /* Match tooltip z-index */
 }
 
 /* Conversations and recents */
