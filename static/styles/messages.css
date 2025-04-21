@@ -18,6 +18,11 @@
     opacity: 0;
     transform: translateY(10px);
     transition: opacity 0.2s ease-out, transform 0.2s ease-out;
+    will-change: transform, opacity;
+    backface-visibility: hidden;
+    perspective: 1000px;
+    transform: translateZ(0);
+    -webkit-font-smoothing: subpixel-antialiased;
 }
 
 .message-visible {
@@ -31,15 +36,15 @@
 
 @keyframes newMessagePulse {
     0% {
-        transform: scale(0.95);
+        transform: translateZ(0) scale(0.95);
         box-shadow: 0 0 0 0 rgba(255, 255, 255, 0.1);
     }
     70% {
-        transform: scale(1);
+        transform: translateZ(0) scale(1);
         box-shadow: 0 0 0 5px rgba(255, 255, 255, 0);
     }
     100% {
-        transform: scale(1);
+        transform: translateZ(0) scale(1);
         box-shadow: 0 0 0 0 rgba(255, 255, 255, 0);
     }
 }
@@ -146,4 +151,33 @@
 
 .message-file a:hover {
   text-decoration: underline;
+}
+
+/* Pagination styles */
+.load-more-container {
+  text-align: center;
+  padding: 15px 0;
+  margin-bottom: 10px;
+}
+
+.load-more-btn {
+  padding: 8px 15px;
+  background-color: #333;
+  border: none;
+  border-radius: 4px;
+  color: white;
+  cursor: pointer;
+  font-size: 13px;
+  transition: background-color 0.2s ease;
+  opacity: 0.8;
+}
+
+.load-more-btn:hover {
+  background-color: #444;
+  opacity: 1;
+}
+
+.load-more-btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
 }

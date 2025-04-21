@@ -141,12 +141,18 @@ function searchUsers(query) {
 }
 
 /**
- * Load message history
+ * Load message history with pagination
+ * @param {number} userId - User ID to load messages for
+ * @param {number} page - Page number (starting from 1)
+ * @param {number} limit - Number of messages per page
  */
-function fetchMessages(userId) {
-  return fetch(`/get_messages?user_id=${userId}`, {
+function fetchMessages(userId, page = 1, limit = 30) {
+  return fetch(`/get_messages?user_id=${userId}&page=${page}&limit=${limit}`, {
     method: 'GET',
-    headers: { 'Content-Type': 'application/json' }
+    headers: { 
+      'Content-Type': 'application/json',
+      'Cache-Control': 'no-cache'
+    }
   })
   .then(response => {
     if (!response.ok) throw new Error('Failed to load messages');
@@ -156,11 +162,16 @@ function fetchMessages(userId) {
 
 /**
  * Fetch new messages since a specific message ID
+ * Uses cache-busting to ensure fresh data
  */
 function fetchNewMessages(userId, lastMessageId) {
-  return fetch(`/get_messages?user_id=${userId}&last_message_id=${lastMessageId}`, {
+  const cacheBuster = Date.now(); // Add timestamp to prevent caching
+  return fetch(`/get_messages?user_id=${userId}&last_message_id=${lastMessageId}&_=${cacheBuster}`, {
     method: 'GET',
-    headers: { 'Content-Type': 'application/json' }
+    headers: { 
+      'Content-Type': 'application/json',
+      'Cache-Control': 'no-cache'
+    }
   })
   .then(response => {
     if (!response.ok) throw new Error('Failed to load new messages');

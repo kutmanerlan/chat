@@ -1031,6 +1031,12 @@ def send_message():
 def get_messages():
     user_id = request.args.get('user_id')
     last_message_id = request.args.get('last_message_id', 0, type=int)
+    page = request.args.get('page', 1, type=int)
+    limit = request.args.get('limit', 30, type=int)  # Default to 30 messages per page
+    
+    # Cap the limit to prevent performance issues
+    if limit > 50:
+        limit = 50
     
     if not user_id:
         return jsonify({'success': False, 'error': 'User ID is required'})
@@ -1059,11 +1065,26 @@ def get_messages():
             )
         )
         
-        # Filter for only new messages if last_message_id is provided
         if last_message_id > 0:
+            # Filter for only new messages if last_message_id is provided
             query = query.filter(Message.id > last_message_id)
+        else:
+            # Apply pagination for regular message loads
+            # Order by most recent first, then offset for pagination
+            query = query.order_by(Message.timestamp.desc())
+            
+            # Calculate offset
+            offset = (page - 1) * limit
+            query = query.offset(offset).limit(limit)
         
-        messages = query.order_by(Message.timestamp).all()
+        # Get messages
+        if last_message_id > 0:
+            # For polling - keep in chronological order
+            messages = query.order_by(Message.timestamp).all()
+        else:
+            # For pagination - get messages and reverse to chronological order
+            messages = query.all()
+            messages = messages[::-1]  # Reverse the list
         
         # Convert messages to dict format
         message_list = [message.to_dict() for message in messages]
@@ -1077,7 +1098,9 @@ def get_messages():
         
         return jsonify({
             'success': True,
-            'messages': message_list
+            'messages': message_list,
+            'page': page,
+            'has_more': len(message_list) >= limit
         })
         
     except Exception as e:

@@ -7,7 +7,20 @@ const ChatApp = {
   currentUser: null,
   activeChat: null,
   conversations: [],
-  contacts: []
+  contacts: [],
+  messagePollingInterval: null,
+  eventListenersActive: false,
+  resetInactiveTimeFunc: null,
+  pollInterval: 5000,
+  maxPollInterval: 10000,
+  minPollInterval: 3000,
+  inactiveTime: 0,
+  consecutiveEmptyPolls: 0,
+  lastBlockCheck: 0,
+  messagePage: 1,
+  messageLimit: 30,
+  hasMoreMessages: true,
+  currentChatId: null
 };
 
 /**
@@ -62,3 +75,39 @@ function formatFileSize(bytes) {
   else if (bytes < 1048576) return (bytes / 1024).toFixed(1) + ' KB';
   else return (bytes / 1048576).toFixed(1) + ' MB';
 }
+
+/**
+ * Handle cleanup when switching chats or leaving the app
+ */
+function cleanupChatResources() {
+  // Stop polling
+  if (ChatApp.messagePollingInterval) {
+    clearInterval(ChatApp.messagePollingInterval);
+    ChatApp.messagePollingInterval = null;
+  }
+  
+  // Remove event listeners
+  if (ChatApp.eventListenersActive && ChatApp.resetInactiveTimeFunc) {
+    document.removeEventListener('mousemove', ChatApp.resetInactiveTimeFunc);
+    document.removeEventListener('keydown', ChatApp.resetInactiveTimeFunc);
+    document.removeEventListener('click', ChatApp.resetInactiveTimeFunc);
+    ChatApp.eventListenersActive = false;
+  }
+  
+  // Clear any open menus
+  const menus = document.querySelectorAll('.dropdown-menu, .file-upload-menu, .message-context-menu');
+  menus.forEach(menu => menu.remove());
+  
+  // Clear any edit states
+  const editButtons = document.querySelectorAll('.message-edit-buttons');
+  editButtons.forEach(btn => btn.remove());
+  
+  // Clear any tooltips
+  const tooltips = document.querySelectorAll('.dynamic-tooltip');
+  tooltips.forEach(tooltip => tooltip.remove());
+
+  console.log('Chat resources cleaned up');
+}
+
+// Add window unload event to clean up resources
+window.addEventListener('beforeunload', cleanupChatResources);

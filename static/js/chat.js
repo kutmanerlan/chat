@@ -495,30 +495,43 @@ function startMessagePolling(userId) {
   // Clear any existing polling interval
   if (ChatApp.messagePollingInterval) {
     clearInterval(ChatApp.messagePollingInterval);
+    ChatApp.messagePollingInterval = null;
   }
   
   // Store the last poll time to implement adaptive polling
   ChatApp.lastPollTime = Date.now();
-  ChatApp.pollInterval = 5000; // Start with 5 seconds
-  ChatApp.maxPollInterval = 15000; // Max interval of 15 seconds
-  ChatApp.minPollInterval = 5000; // Min interval of 5 seconds
+  ChatApp.pollInterval = 3000; // Start with 3 seconds (slightly faster initial response)
+  ChatApp.maxPollInterval = 10000; // Max interval of 10 seconds (reduced from 15s)
+  ChatApp.minPollInterval = 3000; // Min interval of 3 seconds (reduced from 5s)
   ChatApp.inactiveTime = 0;
+  ChatApp.consecutiveEmptyPolls = 0; // Track empty poll results
   
-  // Track user activity to adjust polling frequency
-  document.addEventListener('mousemove', resetInactiveTime);
-  document.addEventListener('keydown', resetInactiveTime);
-  document.addEventListener('click', resetInactiveTime);
-  
-  function resetInactiveTime() {
-    if (ChatApp.inactiveTime > 10000) { // If user was inactive for more than 10s
+  const resetInactiveTime = function() {
+    if (ChatApp.inactiveTime > 5000) { // If user was inactive for more than 5s (reduced from 10s)
       // User is back, do an immediate poll
       if (ChatApp.activeChat && ChatApp.activeChat.id == userId) {
         checkForNewMessages(userId);
-        checkForBlockUpdates(userId);
+        
+        // Only check block status occasionally to reduce overhead
+        if (Math.random() < 0.3) { // 30% chance to check blocks on return
+          checkForBlockUpdates(userId);
+        }
       }
     }
     ChatApp.inactiveTime = 0;
     ChatApp.pollInterval = ChatApp.minPollInterval; // Reset to fastest polling
+    ChatApp.consecutiveEmptyPolls = 0; // Reset empty poll counter
+  };
+  
+  // Add activity listeners with proper cleanup management
+  if (!ChatApp.eventListenersActive) {
+    document.addEventListener('mousemove', resetInactiveTime);
+    document.addEventListener('keydown', resetInactiveTime);
+    document.addEventListener('click', resetInactiveTime);
+    ChatApp.eventListenersActive = true;
+    
+    // Store references to remove later
+    ChatApp.resetInactiveTimeFunc = resetInactiveTime;
   }
   
   // Set the polling interval with dynamic adjustment
@@ -528,35 +541,68 @@ function startMessagePolling(userId) {
       // Increase inactive time
       ChatApp.inactiveTime += ChatApp.pollInterval;
       
-      // Slow down polling if user is inactive
-      if (ChatApp.inactiveTime > 30000) { // After 30s of inactivity
-        ChatApp.pollInterval = Math.min(ChatApp.pollInterval * 1.5, ChatApp.maxPollInterval);
+      // Dynamic polling adjustment
+      if (ChatApp.inactiveTime > 20000) { // After 20s of inactivity (reduced from 30s)
+        // Slow down polling when inactive
+        ChatApp.pollInterval = Math.min(ChatApp.pollInterval * 1.2, ChatApp.maxPollInterval);
       }
       
-      checkForNewMessages(userId);
-      checkForBlockUpdates(userId);
+      // Slow down if we keep getting no new messages
+      if (ChatApp.consecutiveEmptyPolls > 3) {
+        ChatApp.pollInterval = Math.min(ChatApp.pollInterval * 1.1, ChatApp.maxPollInterval);
+      }
+      
+      // Always check for new messages
+      checkForNewMessages(userId).then(hasNewMessages => {
+        if (hasNewMessages) {
+          ChatApp.consecutiveEmptyPolls = 0;
+        } else {
+          ChatApp.consecutiveEmptyPolls++;
+        }
+      });
+      
+      // Only check block status occasionally
+      const currentTime = Date.now();
+      if (currentTime - ChatApp.lastBlockCheck > 10000) { // Check blocks every 10 seconds max
+        ChatApp.lastBlockCheck = currentTime;
+        checkForBlockUpdates(userId);
+      }
       
       // Update debug info if enabled
       if (typeof updateDebugInfo === 'function') {
         updateDebugInfo(`Poll (interval: ${ChatApp.pollInterval}ms)`);
       }
     } else {
-      // Stop polling if chat is no longer active
-      clearInterval(ChatApp.messagePollingInterval);
-      ChatApp.messagePollingInterval = null;
-      
-      // Remove activity listeners
-      document.removeEventListener('mousemove', resetInactiveTime);
-      document.removeEventListener('keydown', resetInactiveTime);
-      document.removeEventListener('click', resetInactiveTime);
+      cleanupPolling();
     }
   }, ChatApp.pollInterval);
   
   console.log(`Started message polling for user ${userId}`);
+  ChatApp.lastBlockCheck = Date.now();
+}
+
+/**
+ * Clean up polling resources
+ */
+function cleanupPolling() {
+  // Stop polling if chat is no longer active
+  if (ChatApp.messagePollingInterval) {
+    clearInterval(ChatApp.messagePollingInterval);
+    ChatApp.messagePollingInterval = null;
+  }
+  
+  // Remove activity listeners to prevent memory leaks
+  if (ChatApp.eventListenersActive && ChatApp.resetInactiveTimeFunc) {
+    document.removeEventListener('mousemove', ChatApp.resetInactiveTimeFunc);
+    document.removeEventListener('keydown', ChatApp.resetInactiveTimeFunc);
+    document.removeEventListener('click', ChatApp.resetInactiveTimeFunc);
+    ChatApp.eventListenersActive = false;
+  }
 }
 
 /**
  * Check for new messages
+ * @returns {Promise<boolean>} Whether new messages were found
  */
 function checkForNewMessages(userId) {
   // Find the last message ID in the chat
@@ -569,9 +615,11 @@ function checkForNewMessages(userId) {
   }
   
   // Fetch new messages
-  fetchNewMessages(userId, lastMessageId)
+  return fetchNewMessages(userId, lastMessageId)
     .then(data => {
-      if (data.success && data.messages && data.messages.length > 0) {
+      const hasNewMessages = data.success && data.messages && data.messages.length > 0;
+      
+      if (hasNewMessages) {
         // Add new messages to chat
         const chatMessages = document.querySelector('.chat-messages');
         if (chatMessages) {
@@ -588,9 +636,12 @@ function checkForNewMessages(userId) {
           }
         }
       }
+      
+      return hasNewMessages;
     })
     .catch(error => {
       console.error('Error checking for new messages:', error);
+      return false;
     });
 }
 

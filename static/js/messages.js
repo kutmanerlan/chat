@@ -19,16 +19,27 @@ function loadMessages(userId) {
   loadingIndicator.style.color = '#888';
   chatMessages.appendChild(loadingIndicator);
   
-  // Fetch messages
-  return fetchMessages(userId)
+  // Store pagination info
+  ChatApp.messagePage = 1;
+  ChatApp.messageLimit = 30; // Load only 30 messages at a time
+  ChatApp.hasMoreMessages = true;
+  ChatApp.currentChatId = userId;
+  
+  // Fetch messages with pagination
+  return fetchMessages(userId, 1, ChatApp.messageLimit)
     .then(data => {
-      console.log('Messages loaded:', data);
-      
       // Clear loading indicator
       chatMessages.innerHTML = '';
       
       // Render messages
       if (data.success && data.messages && data.messages.length > 0) {
+        // Add load more button if needed
+        if (data.messages.length >= ChatApp.messageLimit) {
+          addLoadMoreButton(chatMessages, userId);
+        } else {
+          ChatApp.hasMoreMessages = false;
+        }
+        
         renderMessages(data.messages, chatMessages);
       } else {
         // Show "no messages" placeholder
@@ -56,22 +67,138 @@ function loadMessages(userId) {
 }
 
 /**
+ * Add "Load More" button for pagination
+ */
+function addLoadMoreButton(chatMessages, userId) {
+  // Create container for the button
+  const loadMoreContainer = document.createElement('div');
+  loadMoreContainer.className = 'load-more-container';
+  loadMoreContainer.style.textAlign = 'center';
+  loadMoreContainer.style.padding = '15px 0';
+  loadMoreContainer.style.marginBottom = '10px';
+  
+  // Create the button
+  const loadMoreButton = document.createElement('button');
+  loadMoreButton.className = 'load-more-btn';
+  loadMoreButton.textContent = 'Load older messages';
+  loadMoreButton.style.padding = '8px 15px';
+  loadMoreButton.style.backgroundColor = '#333';
+  loadMoreButton.style.border = 'none';
+  loadMoreButton.style.borderRadius = '4px';
+  loadMoreButton.style.color = 'white';
+  loadMoreButton.style.cursor = 'pointer';
+  
+  // Add click handler
+  loadMoreButton.addEventListener('click', function() {
+    // Change button to loading state
+    loadMoreButton.textContent = 'Loading...';
+    loadMoreButton.disabled = true;
+    
+    // Load next page of messages
+    ChatApp.messagePage++;
+    
+    fetchMessages(userId, ChatApp.messagePage, ChatApp.messageLimit)
+      .then(data => {
+        if (data.success && data.messages && data.messages.length > 0) {
+          // Get current scroll position
+          const scrollPos = chatMessages.scrollHeight - chatMessages.scrollTop;
+          
+          // Prepend messages to the beginning 
+          const messagesContainer = chatMessages.querySelector('.messages-container');
+          const oldHeight = chatMessages.scrollHeight;
+          
+          // Render messages at the top
+          const fragment = document.createDocumentFragment();
+          data.messages.forEach(message => {
+            const messageEl = createMessageElement(message);
+            messageEl.classList.add('message-visible'); // Make immediately visible
+            fragment.appendChild(messageEl);
+          });
+          
+          // Insert at the beginning, before the load more button
+          messagesContainer.insertBefore(fragment, messagesContainer.firstChild);
+          
+          // Maintain scroll position
+          chatMessages.scrollTop = chatMessages.scrollHeight - scrollPos;
+          
+          // Update load more button state
+          if (data.messages.length < ChatApp.messageLimit) {
+            // No more messages to load
+            loadMoreContainer.remove();
+            ChatApp.hasMoreMessages = false;
+          } else {
+            // Reset button state
+            loadMoreButton.textContent = 'Load older messages';
+            loadMoreButton.disabled = false;
+          }
+        } else {
+          // No more messages
+          loadMoreContainer.remove();
+          ChatApp.hasMoreMessages = false;
+        }
+      })
+      .catch(error => {
+        console.error('Error loading more messages:', error);
+        loadMoreButton.textContent = 'Failed to load. Try again';
+        loadMoreButton.disabled = false;
+      });
+  });
+  
+  // Add button to container
+  loadMoreContainer.appendChild(loadMoreButton);
+  
+  // Add to DOM
+  const messagesContainer = chatMessages.querySelector('.messages-container') || chatMessages;
+  messagesContainer.insertBefore(loadMoreContainer, messagesContainer.firstChild);
+}
+
+/**
  * Render messages in the chat
  */
 function renderMessages(messages, chatMessages) {
-  // Create messages container
-  const messagesContainer = document.createElement('div');
-  messagesContainer.className = 'messages-container';
-  chatMessages.appendChild(messagesContainer);
+  // Create messages container if it doesn't exist
+  let messagesContainer = chatMessages.querySelector('.messages-container');
+  if (!messagesContainer) {
+    messagesContainer = document.createElement('div');
+    messagesContainer.className = 'messages-container';
+    chatMessages.appendChild(messagesContainer);
+  }
   
-  // Add each message
+  // Limit the number of DOM elements for performance
+  const maxVisibleMessages = 100; // Maximum messages to keep in DOM
+  const currentMessages = messagesContainer.querySelectorAll('.message');
+  
+  // If we already have too many messages, remove oldest ones
+  if (currentMessages.length > maxVisibleMessages) {
+    for (let i = 0; i < currentMessages.length - maxVisibleMessages; i++) {
+      if (currentMessages[i] && currentMessages[i].parentNode) {
+        currentMessages[i].parentNode.removeChild(currentMessages[i]);
+      }
+    }
+  }
+  
+  // Create a document fragment for better performance
+  const fragment = document.createDocumentFragment();
+  
+  // Add each message to the fragment
   messages.forEach(message => {
     const messageEl = createMessageElement(message);
-    messagesContainer.appendChild(messageEl);
+    fragment.appendChild(messageEl);
   });
   
-  // Scroll to bottom
-  chatMessages.scrollTop = chatMessages.scrollHeight;
+  // Append all messages at once
+  messagesContainer.appendChild(fragment);
+  
+  // Use requestAnimationFrame for smoother scrolling
+  requestAnimationFrame(() => {
+    chatMessages.scrollTop = chatMessages.scrollHeight;
+    
+    // Make messages visible with a slight delay for animation
+    setTimeout(() => {
+      const newMessages = messagesContainer.querySelectorAll('.message:not(.message-visible)');
+      newMessages.forEach(msg => msg.classList.add('message-visible'));
+    }, 50);
+  });
 }
 
 /**
