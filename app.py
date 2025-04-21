@@ -975,8 +975,8 @@ def get_chat_list_filtered():
         blocks_made = Block.query.filter_by(user_id=current_user_id).all()
         blocks_received = Block.query.filter_by(blocked_user_id=current_user_id).all()
         
-        blocked_ids = [block.blocked_user_id for block in blocks_made]
-        blocked_by_ids = [block.user_id for block in blocks_received]
+        blocked_ids = [block.blocked_user_id for blocks in blocks_made]
+        blocked_by_ids = [block.user_id for blocks in blocks_received]
         
         # Prepare chat list
         chat_list = []
@@ -1645,7 +1645,7 @@ def debug_db_info():
         logging.error(f"Error in debug endpoint: {str(e)}", exc_info=True)
         return jsonify({'error': str(e)}), 500
 
-@app.route('/debug/database', methods=['GET'])
+@app.route('/debug/database')
 def debug_database():
     """Debug endpoint to check database state for the current user"""
     if 'user_id' not in session:
@@ -1663,12 +1663,12 @@ def debug_database():
         sent_messages = Message.query.filter_by(sender_id=current_user_id).count()
         received_messages = Message.query.filter_by(recipient_id=current_user_id).count()
         
-        # Check for deleted chats
+        # Check for deleted chats - FIX THE INDENTATION HERE
         deleted_chats = []
         deleted_chat_ids = []
         
         try:
-            # Use proper indentation for this code block
+            # This line had the incorrect indentation
             deleted_chats = DeletedChat.query.filter_by(user_id=current_user_id).all()
             deleted_chat_ids = [dc.chat_with_user_id for dc in deleted_chats]
         except Exception as e:
@@ -1744,47 +1744,23 @@ def repair_tables():
         return jsonify({'success': False, 'error': str(e)})
 
 if __name__ == '__main__':
-    # Инициализация базы данных в контексте приложения
+    # Initialize the database in the application context
     with app.app_context():
         create_tables()
-    # Временно отключаем SERVER_NAME для локального запуска
+    # Temporarily disable SERVER_NAME for local execution
     app.config['SERVER_NAME'] = None
-    # Устанавливаем host='0.0.0.0', чтобы приложение было доступно извнеция базы данных в контексте приложения
+    # Set host='0.0.0.0' to make the application accessible from outside
     app.run(debug=True, host='0.0.0.0')
 else:
-    # Для запуска через WSGI (PythonAnywhere)
+    # For WSGI execution (PythonAnywhere)
     try:
-        with app.app_context():аем host='0.0.0.0', чтобы приложение было доступно извне
+        with app.app_context():
             logging.basicConfig(
                 filename='/tmp/flask_app_error.log', 
                 level=logging.DEBUG,
-                format='%(asctime)s - %(уровень)s - %(message)s'
-            )xt():
-            logging.info("Запускаем приложение через WSGI")cConfig(
-            try:
-                # Защищенный вызов create_tables
-                create_tables_success = create_tables()вень)s - %(message)s'
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-            f.write(traceback.format_exc())            f.write(f"Критическая ошибка: {str(e)}\n")        with open('/tmp/flask_startup_error.log', 'w') as f:        import traceback    except Exception as e:                logging.error("Приложение может работать некорректно!")                logging.error(f"Ошибка при запуске приложения: {str(e)}")            except Exception as e:                logging.info("Приложение успешно запущено на PythonAnywhere")                                    logging.info(f"Создана папка для аватаров: {app.config['UPLOAD_FOLDER']}")                    os.makedirs(app.config['UPLOAD_FOLDER'], exist_ok=True)                if not os.path.exists(app.config['UPLOAD_FOLDER']):                # Проверка наличия папки для аватаров                                    logging.warning("Не удалось обновить схему базы данных, но приложение продолжит работу")                else:                    logging.info("Схема базы данных успешно обновлена")                if create_tables_success:            )
-            logging.info("Запускаем приложение через WSGI")
+                format='%(asctime)s - %(levelname)s - %(message)s'
+            )
+            logging.info("Starting application via WSGI")
             try:
                 # Защищенный вызов create_tables
                 create_tables_success = create_tables()
