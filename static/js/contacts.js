@@ -389,25 +389,13 @@ function blockUserHandler(userId, userName) {
           const mainContent = document.querySelector('.main-content');
           if (mainContent) {
             mainContent.innerHTML = '';
-            // Optional: Show a message indicating the user is blocked
-            const blockMessage = document.createElement('div');
-            blockMessage.className = 'block-message';
-            blockMessage.innerHTML = `
-              <div class="block-icon">
-                <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="#e74c3c" stroke-width="2">
-                  <circle cx="12" cy="12" r="10"></circle>
-                  <line x1="4.93" y1="4.93" x2="19.07" y2="19.07"></line>
-                </svg>
-              </div>
-              <p>You have blocked ${userName}</p>
-              <button id="unblockBtn" class="unblock-button">Unblock</button>
-            `;
-            mainContent.appendChild(blockMessage);
+            // Remove the block message UI completely
             
-            // Add unblock button handler
-            document.getElementById('unblockBtn').addEventListener('click', function() {
-              unblockUserHandler(userId, userName);
-            });
+            // Optional: Show a minimal message without the block UI
+            const emptyStateMessage = document.createElement('div');
+            emptyStateMessage.className = 'no-messages';
+            emptyStateMessage.textContent = 'Select a chat to start messaging';
+            mainContent.appendChild(emptyStateMessage);
           }
         }
       }
