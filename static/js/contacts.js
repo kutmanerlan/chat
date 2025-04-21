@@ -170,13 +170,7 @@ function createChatElement(chat) {
   
   const userName = document.createElement('div');
   userName.className = 'contact-name';
-  
-  // Show contact indicator if this user is a contact
-  if (chat.is_contact) {
-    userName.innerHTML = `${chat.name} <span class="contact-indicator">C</span>`;
-  } else {
-    userName.textContent = chat.name;
-  }
+  userName.textContent = chat.name;  // Just set the name text, without the indicator
   
   // Last message preview
   const lastMessage = document.createElement('div');
@@ -195,6 +189,14 @@ function createChatElement(chat) {
     unreadBadge.className = 'unread-badge';
     unreadBadge.textContent = chat.unread_count;
     chatItem.appendChild(unreadBadge);
+  }
+  
+  // Add contact indicator if this user is a contact
+  if (chat.is_contact) {
+    const contactIndicator = document.createElement('span');
+    contactIndicator.className = 'contact-indicator';
+    contactIndicator.textContent = 'C';
+    chatItem.appendChild(contactIndicator);
   }
   
   // Assemble elements
