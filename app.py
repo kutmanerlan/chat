@@ -33,7 +33,7 @@ app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 # Вместо этого явно устанавливаем или не устанавливаем значение
 if os.environ.get('FLASK_ENV') == 'production':
     # Для PythonAnywhere определяем SERVER_NAME из переменной окружения
-    if 'PYTHONANYWHERE_HOST' in ос.environ:  # Fixed 'ос' to 'os'
+    if 'PYTHONANYWHERE_HOST' in оs.environ:  # Fixed 'ос' to 'os'
         app.config['SERVER_NAME'] = os.environ['PYTHONANYWHERE_HOST']
     # Иначе не устанавливаем SERVER_NAME для продакшена
 else:
