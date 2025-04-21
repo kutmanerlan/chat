@@ -196,6 +196,7 @@ function createChatElement(chat) {
     const contactIndicator = document.createElement('span');
     contactIndicator.className = 'contact-indicator';
     contactIndicator.textContent = 'C';
+    contactIndicator.setAttribute('data-tooltip', 'This user is in your contacts');
     chatItem.appendChild(contactIndicator);
   }
   
