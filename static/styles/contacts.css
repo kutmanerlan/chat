@@ -108,7 +108,7 @@
 /* Contact indicator */
 .contact-indicator {
   position: absolute;
-  right: 20px;
+  right: 30px;
   top: 50%;
   transform: translateY(-50%);
   color: #888;
