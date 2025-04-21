@@ -386,26 +386,28 @@ function removeFromContacts(userId) {
 
 /**
  * Delete a chat with a user (hide from sidebar)
- * This implementation uses client-side storage to track deleted chats
  */
 function deleteChat(userId) {
-  // Store deleted chat in localStorage
-  try {
-    // Get existing deleted chats
-    let deletedChats = JSON.parse(localStorage.getItem('deletedChats') || '[]');
-    
-    // Add this chat if not already in the list
-    if (!deletedChats.includes(userId)) {
-      deletedChats.push(userId);
-      localStorage.setItem('deletedChats', JSON.stringify(deletedChats));
-    }
-    
-    console.log(`Chat with user ${userId} marked as deleted in localStorage`);
-    
-    // Return a resolved promise with success data
-    return Promise.resolve({ success: true });
-  } catch (error) {
-    console.error('Error storing deleted chat in localStorage:', error);
-    return Promise.reject(error);
-  }
+  console.log(`Deleting chat with user ${userId}`);
+  
+  return fetch('/delete_chat', {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      'Cache-Control': 'no-cache, no-store, must-revalidate'
+    },
+    body: JSON.stringify({ user_id: userId })
+  })
+  .then(response => {
+    if (!response.ok) throw new Error('Failed to delete chat');
+    return response.json();
+  })
+  .then(data => {
+    console.log('Chat deletion response:', data);
+    return data;
+  })
+  .catch(error => {
+    console.error('Error in deleteChat:', error);
+    throw error;
+  });
 }

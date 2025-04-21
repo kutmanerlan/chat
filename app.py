@@ -1551,6 +1551,9 @@ def delete_chat():
     user_id = data['user_id']
     
     try:
+        # Log the request for debugging
+        logging.info(f"User {current_user_id} is deleting chat with {user_id}")
+        
         # Check if chat is already deleted
         existing_deleted = DeletedChat.query.filter_by(
             user_id=current_user_id, 
@@ -1558,25 +1561,72 @@ def delete_chat():
         ).first()
         
         if not existing_deleted:
-            # Mark chat as deleted
+            # Create new DeletedChat entry
             deleted_chat = DeletedChat(
                 user_id=current_user_id,
                 chat_with_user_id=user_id
             )
-            
             db.session.add(deleted_chat)
             db.session.commit()
             
-            logging.info(f"User {current_user_id} deleted chat with {user_id}")
+            logging.info(f"Chat with {user_id} marked as deleted for user {current_user_id}")
         else:
-            logging.info(f"Chat between {current_user_id} and {user_id} already deleted")
+            logging.info(f"Chat with {user_id} was already deleted for user {current_user_id}")
         
         return jsonify({'success': True})
     
     except Exception as e:
         db.session.rollback()
-        logging.error(f"Error deleting chat: {str(e)}")
+        logging.error(f"Error deleting chat: {str(e)}", exc_info=True)
         return jsonify({'success': False, 'error': str(e)})
+
+# Debug endpoint to display database info (only available in development)
+@app.route('/debug/db_info')
+def debug_db_info():
+    # Only allow if in debug mode
+    if not app.debug:
+        return jsonify({'error': 'Only available in debug mode'}), 403
+    
+    try:
+        # Get counts from various tables
+        user_count = User.query.count()
+        message_count = Message.query.count()
+        contact_count = Contact.query.count()
+        block_count = Block.query.count()
+        deleted_chat_count = DeletedChat.query.count()
+        
+        # Get deleted chat info
+        if 'user_id' in session:
+            user_id = session['user_id']
+            deleted_chats = DeletedChat.query.filter_by(user_id=user_id).all()
+            deleted_chat_data = [
+                {
+                    'id': dc.id,
+                    'chat_with_user_id': dc.chat_with_user_id,
+                    'deleted_at': dc.deleted_at.isoformat()
+                }
+                for dc in deleted_chats
+            ]
+        else:
+            deleted_chat_data = []
+            user_id = None
+        
+        # Return database info
+        return jsonify({
+            'counts': {
+                'users': user_count,
+                'messages': message_count,
+                'contacts': contact_count,
+                'blocks': block_count,
+                'deleted_chats': deleted_chat_count
+            },
+            'current_user_id': user_id,
+            'deleted_chats': deleted_chat_data
+        })
+    
+    except Exception as e:
+        logging.error(f"Error in debug endpoint: {str(e)}", exc_info=True)
+        return jsonify({'error': str(e)}), 500
 
 if __name__ == '__main__':
     # Инициализация базы данных в контексте приложения

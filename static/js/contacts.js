@@ -95,18 +95,14 @@ function renderSidebar(contacts, chats) {
   // Clear existing items
   contactsList.innerHTML = '';
   
-  // Filter out deleted chats
-  const filteredChats = filterDeletedChats(chats || []);
-  
   // Debug the received data
   console.log('Rendering sidebar with data:', {
     contacts: contacts ? contacts.length : 0,
-    chats: chats ? chats.length : 0,
-    filteredChats: filteredChats.length
+    chats: chats ? chats.length : 0
   });
   
-  if (filteredChats.length > 0) {
-    console.log('First few chats after filtering:', filteredChats.slice(0, 3));
+  if (chats && chats.length > 0) {
+    console.log('First few chats:', chats.slice(0, 3));
   }
   
   // Create chats section
@@ -119,9 +115,9 @@ function renderSidebar(contacts, chats) {
   chatSection.appendChild(chatTitle);
   
   // Add chats
-  if (filteredChats.length > 0) {
-    console.log(`Adding ${filteredChats.length} chats to sidebar`);
-    filteredChats.forEach(chat => {
+  if (chats && chats.length > 0) {
+    console.log(`Adding ${chats.length} chats to sidebar`);
+    chats.forEach(chat => {
       const chatItem = createChatElement(chat);
       chatSection.appendChild(chatItem);
     });
@@ -138,26 +134,6 @@ function renderSidebar(contacts, chats) {
     noChatsMsg.textContent = 'No chats yet';
     chatSection.appendChild(noChatsMsg);
     contactsList.appendChild(chatSection);
-  }
-}
-
-/**
- * Filter out deleted chats
- */
-function filterDeletedChats(chats) {
-  try {
-    // Get deleted chat IDs from localStorage
-    const deletedChats = JSON.parse(localStorage.getItem('deletedChats') || '[]');
-    
-    if (deletedChats.length > 0) {
-      console.log(`Filtering out ${deletedChats.length} deleted chats:`, deletedChats);
-    }
-    
-    // Filter chats array to remove deleted ones
-    return chats.filter(chat => !deletedChats.includes(chat.user_id));
-  } catch (error) {
-    console.error('Error filtering deleted chats:', error);
-    return chats; // Return original array if there's an error
   }
 }
 
@@ -596,7 +572,7 @@ function executeDeleteChat(userId, userName) {
     chatItem.parentNode.removeChild(chatItem);
   }
   
-  // Delete the chat using our localStorage approach
+  // Then notify the server
   deleteChat(userId)
     .then(data => {
       if (data.success) {
@@ -620,10 +596,16 @@ function executeDeleteChat(userId, userName) {
         
         // Stop any active polling
         cleanupPolling();
+      } else {
+        // If server deletion failed, reload sidebar to restore the chat
+        loadSidebar();
+        showErrorNotification('Failed to delete chat on server. Please try again.');
       }
     })
     .catch(error => {
       console.error('Error deleting chat:', error);
+      // Reload sidebar to restore the chat
+      loadSidebar();
       showErrorNotification('Failed to delete chat. Please try again.');
     });
 }
