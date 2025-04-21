@@ -4,6 +4,7 @@ import os
 from werkzeug.security import generate_password_hash, check_password_hash
 from email_utils import generate_confirmation_token, send_confirmation_email, is_email_valid, send_reset_password_email
 import datetime
+from sqlalchemy import func, or_, and_  # Add missing SQLAlchemy imports
 
 # Try to import git, but continue if it's not available
 git_available = False
@@ -41,7 +42,7 @@ else:
     app.config['SERVER_NAME'] = 'localhost:5000'
 
 # Инициализация базы данных
-from models.user import db, User, Contact, Message, Block
+from models.user import db, User, Contact, Message, Block, DeletedChat  # Ensure DeletedChat is imported
 db.init_app(app)
 
 # Функция для создания таблиц базы данных
@@ -1662,63 +1663,89 @@ def debug_database():
         sent_messages = Message.query.filter_by(sender_id=current_user_id).count()
         received_messages = Message.query.filter_by(recipient_id=current_user_id).count()
         
-        # Check for deleted chats (safely handle if table doesn't exist)
-        deleted_chats = DeletedChat.query.filter_by(user_id=current_user_id).all()
-        deleted_chat_ids = [dc.chat_with_user_id for dc in deleted_chats]
-            deleted_chats = DeletedChat.query.filter_by(user_id=current_user_id).all()
-        # Get users who have exchanged messages with this user deleted_chats]
-        chat_users_query = db.session.query(User.id, User.name).distinct().filter(
-            User.id != current_user_id,erying DeletedChat: {str(e)}")
-            or_(ted_chats = []
-                and_(Message.sender_id == User.id, Message.recipient_id == current_user_id),
-                and_(Message.recipient_id == User.id, Message.sender_id == current_user_id)
-            )users = []
-        )ry:
-        chat_users = chat_users_query.all()y current user
-            sent_to_users = db.session.query(User.id, User.name).join(
-        # Important: Try simplest query to see all messages and chat partners
-        return jsonify({sage.sender_id == current_user_id).distinct().all()
-            'user_id': current_user_id,
-            'message_counts': {ages received by current user
-                'sent': sent_messages,ession.query(User.id, User.name).join(
-                'received': received_messages,User.id
-                'total': sent_messages + received_messagesid).distinct().all()
-            },
-            'deleted_chats': {s and remove duplicates
-                'count': len(deleted_chats),
-                'user_ids': deleted_chat_idso_users + received_from_users:
-            },  user_dict[user_id] = user_name
-            'chat_users': {
-                'count': len(chat_users), 'name': name} for user_id, name in user_dict.items() 
-                'users': [{'id': u.id, 'name': u.name} for u in chat_users]
-            }t Exception as e:
-        })  app.logger.error(f"Error getting chat users: {str(e)}")
-    except Exception as e:
-        app.logger.error(f"Error in debug endpoint: {str(e)}")ta
-        return jsonify({'error': str(e)}), 500db.metadata.tables.values()]
+        # Check for deleted chats
+        deleted_chats = []
+        deleted_chat_ids = []
         
-@app.route('/repair_tables', methods=['POST']) information
+        try:
+            # Use proper indentation for this code block
+            deleted_chats = DeletedChat.query.filter_by(user_id=current_user_id).all()
+            deleted_chat_ids = [dc.chat_with_user_id for dc in deleted_chats]
+        except Exception as e:
+            app.logger.error(f"Error querying DeletedChat: {str(e)}")
+        
+        # Get users who have exchanged messages with this user
+        chat_users = []
+        try:
+            # First get all messages sent by current user
+            sent_to_users = db.session.query(User.id, User.name).join(
+                Message, Message.recipient_id == User.id
+            ).filter(Message.sender_id == current_user_id).distinct().all()
+            
+            # Then get all messages received by current user
+            received_from_users = db.session.query(User.id, User.name).join(
+                Message, Message.sender_id == User.id
+            ).filter(Message.recipient_id == current_user_id).distinct().all()
+            
+            # Combine the lists and remove duplicates
+            user_dict = {}
+            for user_id, user_name in sent_to_users + received_from_users:
+                user_dict[user_id] = user_name
+                
+            chat_users = [{'id': user_id, 'name': name} for user_id, name in user_dict.items() 
+                          if user_id != current_user_id]
+        except Exception as e:
+            app.logger.error(f"Error getting chat users: {str(e)}")
+        
+        # Check if table exists by trying to access the MetaData
+        all_tables = [table.name for table in db.metadata.tables.values()]
+        
+        # Return the debug information
+        return jsonify({
+            'user_id': current_user_id,
+            'database_info': {
+                'tables': all_tables
+            },
+            'message_counts': {
+                'sent': sent_messages,
+                'received': received_messages,
+                'total': sent_messages + received_messages
+            },
+            'deleted_chats': {
+                'count': len(deleted_chats),
+                'user_ids': deleted_chat_ids
+            },
+            'chat_users': {
+                'count': len(chat_users),
+                'users': chat_users
+            }
+        })
+    except Exception as e:
+        app.logger.error(f"Error in debug endpoint: {str(e)}")
+        return jsonify({'error': str(e)}), 500
+
+@app.route('/repair_tables', methods=['POST'])
 def repair_tables():
-    """Force recreation of missing tables"""ent_user_id,
-    if 'user_id' not in session:nfo': {
+    """Force recreation of missing tables"""
+    if 'user_id' not in session:
         return jsonify({'success': False, 'error': 'Not logged in'})
     
     try:
         # Log the repair attempt
-        app.logger.info(f"Attempting to repair database tables")           'received': received_messages,
-        ived_messages
-        # Create all tables that don't exist    },
+        app.logger.info(f"Attempting to repair database tables")
+        
+        # Create all tables that don't exist
         db.create_all()
-        app.logger.info("Database tables created/repaired successfully")eted_chats),
+        app.logger.info("Database tables created/repaired successfully")
         
         return jsonify({'success': True, 'message': 'Tables repaired successfully'})
     except Exception as e:
-        app.logger.error(f"Error repairing tables: {str(e)}")   'count': len(chat_users),
+        app.logger.error(f"Error repairing tables: {str(e)}")
         return jsonify({'success': False, 'error': str(e)})
 
 if __name__ == '__main__':
     # Инициализация базы данных в контексте приложения
-    with app.app_context(): endpoint: {str(e)}")
+    with app.app_context():
         create_tables()
     # Временно отключаем SERVER_NAME для локального запуска
     app.config['SERVER_NAME'] = None
