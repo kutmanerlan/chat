@@ -383,18 +383,26 @@ function blockUserHandler(userId, userName) {
         
         // Redirect to main screen if currently chatting with blocked user
         if (ChatApp.activeChat && ChatApp.activeChat.id == userId) {
-          // Clear main area and return to empty state
+          // Get the main content container and completely clear it
           const mainContent = document.querySelector('.main-content');
           if (mainContent) {
+            // Clear all content first
             mainContent.innerHTML = '';
-            // Remove the block message UI completely
             
-            // Optional: Show a minimal message without the block UI
-            const emptyStateMessage = document.createElement('div');
-            emptyStateMessage.className = 'no-messages';
-            emptyStateMessage.textContent = 'Select a chat to start messaging';
-            mainContent.appendChild(emptyStateMessage);
+            // Create a completely empty state
+            const emptyContent = document.createElement('div');
+            emptyContent.className = 'empty-chat-container';
+            
+            const emptyMessage = document.createElement('div');
+            emptyMessage.className = 'empty-chat-message';
+            emptyMessage.textContent = 'Select a chat to start messaging';
+            
+            emptyContent.appendChild(emptyMessage);
+            mainContent.appendChild(emptyContent);
           }
+          
+          // Reset active chat in the app state
+          ChatApp.activeChat = null;
         }
       }
     })
