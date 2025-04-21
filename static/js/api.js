@@ -390,6 +390,9 @@ function removeFromContacts(userId) {
 function deleteChat(userId) {
   console.log(`Deleting chat with user ${userId}`);
   
+  // Show a debug message about what happened
+  console.log(`[DEBUG] Deleting chat with user ${userId} - About to send request to server`);
+  
   return fetch('/delete_chat', {
     method: 'POST',
     headers: {
@@ -399,15 +402,29 @@ function deleteChat(userId) {
     body: JSON.stringify({ user_id: userId })
   })
   .then(response => {
-    if (!response.ok) throw new Error('Failed to delete chat');
+    // Add debug logging for response
+    console.log(`[DEBUG] Delete chat response status: ${response.status}`);
+    
+    if (!response.ok) {
+      console.error(`[DEBUG] Delete chat failed with status ${response.status}`);
+      throw new Error(`Failed to delete chat: ${response.status} ${response.statusText}`);
+    }
     return response.json();
   })
   .then(data => {
-    console.log('Chat deletion response:', data);
+    // Add debug logging for data
+    console.log('[DEBUG] Delete chat response data:', data);
+    
+    if (!data.success) {
+      console.error('[DEBUG] Delete chat returned success=false');
+      throw new Error(data.error || 'Server returned failure response');
+    }
+    
+    console.log('[DEBUG] Delete chat succeeded');
     return data;
   })
   .catch(error => {
-    console.error('Error in deleteChat:', error);
+    console.error('[DEBUG] Error in deleteChat:', error);
     throw error;
   });
 }

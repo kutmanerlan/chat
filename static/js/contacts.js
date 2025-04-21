@@ -18,6 +18,26 @@ function loadSidebar() {
     contactsList.innerHTML = '<div class="loading-sidebar">Loading chats...</div>';
   }
   
+  // Add debug button if we're having issues
+  if (contactsList) {
+    const debugBtn = document.createElement('div');
+    debugBtn.className = 'debug-db-btn';
+    debugBtn.textContent = 'Debug Database';
+    debugBtn.style.padding = '8px';
+    debugBtn.style.margin = '10px 0';
+    debugBtn.style.textAlign = 'center';
+    debugBtn.style.background = '#333';
+    debugBtn.style.borderRadius = '4px';
+    debugBtn.style.cursor = 'pointer';
+    debugBtn.style.fontSize = '12px';
+    debugBtn.addEventListener('click', function() {
+      debugDatabaseState();
+    });
+    
+    // Add to DOM
+    contactsList.appendChild(debugBtn);
+  }
+  
   // Load both contacts and chats
   Promise.all([fetchContacts(), fetchChatList()])
     .then(([contactsData, chatsData]) => {
@@ -47,6 +67,143 @@ function loadSidebar() {
       
       showErrorNotification('Failed to load contacts and chats');
     });
+}
+
+/**
+ * Debug database state - get detailed info on what's in the database
+ */
+function debugDatabaseState() {
+  // Show a loading notification
+  showNotification('Checking database state...', 'info', 2000);
+  
+  // Call the debug endpoint
+  fetch('/debug/database', {
+    method: 'GET',
+    headers: {
+      'Content-Type': 'application/json',
+      'Cache-Control': 'no-cache'
+    }
+  })
+  .then(response => response.json())
+  .then(data => {
+    console.log('Database debug data:', data);
+    
+    // Show a more detailed modal with the information
+    let debugModal = document.createElement('div');
+    debugModal.className = 'modal';
+    debugModal.id = 'debugDatabaseModal';
+    
+    // Format the debug data for display
+    const messageInfo = `Messages: ${data.message_counts.total} (${data.message_counts.sent} sent, ${data.message_counts.received} received)`;
+    const deletedInfo = `Deleted chats: ${data.deleted_chats.count} (IDs: ${data.deleted_chats.user_ids.join(', ') || 'none'})`;
+    const chatUsersInfo = `Chat partners: ${data.chat_users.count}`;
+    
+    // List chat users if there are any
+    let chatUsersList = '';
+    if (data.chat_users.users && data.chat_users.users.length > 0) {
+      chatUsersList = '<ul style="text-align: left; margin: 10px 0; padding-left: 20px;">';
+      data.chat_users.users.forEach(user => {
+        const isDeleted = data.deleted_chats.user_ids.includes(user.id);
+        chatUsersList += `<li>${user.name} (ID: ${user.id})${isDeleted ? ' - <span style="color:#e74c3c">DELETED</span>' : ''}</li>`;
+      });
+      chatUsersList += '</ul>';
+    } else {
+      chatUsersList = '<p>No chat partners found</p>';
+    }
+    
+    // Create the modal content
+    debugModal.innerHTML = `
+      <div class="modal-content" style="width: 80%; max-width: 500px;">
+        <h3>Database Debug Info</h3>
+        <div style="text-align: left; margin: 15px 0;">
+          <p>${messageInfo}</p>
+          <p>${deletedInfo}</p>
+          <p>${chatUsersInfo}</p>
+          <hr style="margin: 15px 0; border-color: #444;">
+          <h4 style="margin: 10px 0;">Chat Partners:</h4>
+          ${chatUsersList}
+        </div>
+        <div class="modal-buttons">
+          <button id="testServerDeleteBtn" class="btn-secondary">Test Server Delete</button>
+          <button id="closeDebugModalBtn" class="btn-primary">Close</button>
+        </div>
+        <p style="margin-top: 15px; font-size: 12px; color: #888;">To fix missing chats, ensure the database has the DeletedChat table and messages exist.</p>
+      </div>
+    `;
+    
+    document.body.appendChild(debugModal);
+    
+    // Show the modal and overlay
+    debugModal.classList.add('active');
+    document.getElementById('overlay').classList.add('active');
+    
+    // Close button handler
+    document.getElementById('closeDebugModalBtn').addEventListener('click', function() {
+      debugModal.classList.remove('active');
+      document.getElementById('overlay').classList.remove('active');
+      setTimeout(() => {
+        debugModal.remove();
+      }, 300);
+    });
+    
+    // Test server-side deletion button
+    document.getElementById('testServerDeleteBtn').addEventListener('click', function() {
+      // Only enable if we have chat partners
+      if (data.chat_users.users && data.chat_users.users.length > 0) {
+        const firstUser = data.chat_users.users[0];
+        testServerDelete(firstUser.id, firstUser.name);
+      } else {
+        showErrorNotification('No chat partners to test deletion with');
+      }
+    });
+  })
+  .catch(error => {
+    console.error('Error getting database debug info:', error);
+    showErrorNotification('Failed to get database information');
+  });
+}
+
+/**
+ * Test server-side deletion directly with API
+ */
+function testServerDelete(userId, userName) {
+  console.log(`Testing server deletion for user ${userId} (${userName})`);
+  
+  // Make a direct fetch call to the delete_chat endpoint
+  fetch('/delete_chat', {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json'
+    },
+    body: JSON.stringify({ user_id: userId })
+  })
+  .then(response => response.json())
+  .then(data => {
+    console.log('Server delete response:', data);
+    
+    if (data.success) {
+      showSuccessNotification(`Successfully tested delete for ${userName}`);
+      
+      // Close the debug modal
+      const debugModal = document.getElementById('debugDatabaseModal');
+      if (debugModal) {
+        debugModal.classList.remove('active');
+        document.getElementById('overlay').classList.remove('active');
+        setTimeout(() => {
+          debugModal.remove();
+        }, 300);
+      }
+      
+      // Reload sidebar to see changes
+      loadSidebar();
+    } else {
+      showErrorNotification(`Server delete test failed: ${data.error || 'Unknown error'}`);
+    }
+  })
+  .catch(error => {
+    console.error('Error testing server delete:', error);
+    showErrorNotification('Failed to test server delete');
+  });
 }
 
 /**

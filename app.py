@@ -825,107 +825,122 @@ def get_contacts():
 # Маршрут для получения списка чатов пользователя
 @app.route('/get_chat_list')
 def get_chat_list():
+    """Get list of users the current user has chats with"""
     if 'user_id' not in session:
         return jsonify({'success': False, 'error': 'Not logged in'})
     
     current_user_id = session['user_id']
     
     try:
-        # Start timing the function for performance monitoring
-        start_time = datetime.utcnow()
+        # Log the request for debugging
+        app.logger.info(f"User {current_user_id} requesting chat list")
+        
+        # SIMPLIFIED QUERY APPROACH:
+        # 1. First get ALL users who have exchanged messages with the current user
+        message_partners_query = db.session.query(
+            User
+        ).filter(
+            User.id != current_user_id,
+            or_(
+                and_(
+                    Message.sender_id == User.id,
+                    Message.recipient_id == current_user_id
+                ),
+                and_(
+                    Message.recipient_id == User.id,
+                    Message.sender_id == current_user_id
+                )
+            )
+        ).distinct()
         
         # Get the list of deleted chat user IDs
-        deleted_user_ids = []
-        deleted_chats = DeletedChat.query.filter_by(user_id=current_user_id).all()
-        for chat in deleted_chats:
-            deleted_user_ids.append(chat.chat_with_user_id)
+        deleted_chat_ids_query = db.session.query(
+            DeletedChat.chat_with_user_id
+        ).filter(
+            DeletedChat.user_id == current_user_id
+        )
+        deleted_chat_ids = [row[0] for row in deleted_chat_ids_query.all()]
         
-        # Log how many deleted chats we have
-        app.logger.info(f"User {current_user_id} has {len(deleted_user_ids)} deleted chats")
+        # Filter out deleted chats - do this in Python rather than complex SQL
+        message_partners = [
+            user for user in message_partners_query.all() 
+            if user.id not in deleted_chat_ids
+        ]
         
-        # SIMPLIFIED APPROACH: Get all users who have exchanged messages with the current user
-        # This query finds all users where there are messages between them and the current user
-        users_with_conversations = db.session.query(User).join(
-            Message, 
-            or_(
-                and_(Message.sender_id == User.id, Message.recipient_id == current_user_id),
-                and_(Message.recipient_id == User.id, Message.sender_id == current_user_id)
-            )
-        ).filter(User.id != current_user_id).distinct().all()
+        # Log how many users we found for this user
+        app.logger.info(f"Found {len(message_partners)} chat partners for user {current_user_id}")
         
-        # Debug info about found users
-        user_ids = [user.id for user in users_with_conversations]
-        app.logger.info(f"Found {len(users_with_conversations)} users with conversations: {user_ids}")
-        
-        # Get contacts, blocks, etc.
-        contacts = Contact.query.filter_by(user_id=current_user_id).all()
-        contact_ids = [contact.contact_id for contact in contacts]
-        
-        blocks_made = Block.query.filter_by(user_id=current_user_id).all()
-        blocks_received = Block.query.filter_by(blocked_user_id=current_user_id).all()
-        
-        blocked_ids = [block.blocked_user_id for block in blocks_made]
-        blocked_by_ids = [block.user_id for block in blocks_received]
-        
-        # Prepare chat list
+        # Prepare the chat list
         chat_list = []
         
-        for user in users_with_conversations:
-            # Skip if this is a deleted chat
-            if user.id in deleted_user_ids:
-                app.logger.info(f"Skipping deleted chat with user {user.id}")
-                continue
-                
-            # Get the last message between the users
-            last_message = Message.query.filter(
+        # Get contact status
+        contact_ids_query = db.session.query(
+            Contact.contact_id
+        ).filter(
+            Contact.user_id == current_user_id
+        )
+        contact_ids = [row[0] for row in contact_ids_query.all()]
+        
+        # Get block status
+        blocked_ids_query = db.session.query(
+            Block.blocked_user_id
+        ).filter(
+            Block.user_id == current_user_id
+        )
+        blocked_ids = [row[0] for row in blocked_ids_query.all()]
+        
+        blocked_by_ids_query = db.session.query(
+            Block.user_id
+        ).filter(
+            Block.blocked_user_id == current_user_id
+        )
+        blocked_by_ids = [row[0] for row in blocked_by_ids_query.all()]
+        
+        # Process each chat partner
+        for user in message_partners:
+            # Get last message
+            last_message_query = db.session.query(
+                Message
+            ).filter(
                 or_(
                     and_(Message.sender_id == current_user_id, Message.recipient_id == user.id),
                     and_(Message.recipient_id == current_user_id, Message.sender_id == user.id)
                 )
             ).order_by(Message.timestamp.desc()).first()
             
-            # Guard against null messages (shouldn't happen but just to be safe)
-            if not last_message:
-                app.logger.warning(f"No messages found between users {current_user_id} and {user.id} despite join result")
+            # In case no messages were found (shouldn't happen, but just to be safe)
+            if not last_message_query:
                 continue
-            
+                
             # Count unread messages
-            unread_count = Message.query.filter_by(
-                sender_id=user.id,
-                recipient_id=current_user_id,
-                is_read=False
-            ).count()
+            unread_count_query = db.session.query(
+                func.count(Message.id)
+            ).filter(
+                Message.sender_id == user.id,
+                Message.recipient_id == current_user_id,
+                Message.is_read == False
+            ).scalar()
             
-            # Add user to chat list
+            # Add chat to the list
             chat_list.append({
                 'user_id': user.id,
                 'name': user.name,
                 'avatar_path': user.avatar_path,
-                'last_message': last_message.content if last_message else '',
-                'last_message_time': last_message.timestamp.isoformat() if last_message else '',
-                'unread_count': unread_count,
+                'last_message': last_message_query.content,
+                'last_message_time': last_message_query.timestamp.isoformat(),
+                'unread_count': unread_count_query,
                 'is_contact': user.id in contact_ids,
                 'is_blocked_by_you': user.id in blocked_ids,
                 'has_blocked_you': user.id in blocked_by_ids
             })
-        
+            
         # Sort by last message time
         chat_list.sort(key=lambda x: x['last_message_time'], reverse=True)
-        
-        # Performance logging and chat list content logging
-        end_time = datetime.utcnow()
-        duration = (end_time - start_time).total_seconds()
-        app.logger.info(f"get_chat_list completed in {duration:.2f} seconds with {len(chat_list)} chats")
-        
-        if len(chat_list) == 0:
-            app.logger.warning(f"No chats found for user {current_user_id}. Check if the user has any messages.")
-        else:
-            app.logger.info(f"Returning {len(chat_list)} chats for user {current_user_id}")
         
         return jsonify({'success': True, 'chats': chat_list})
     
     except Exception as e:
-        app.logger.error(f"Error in get_chat_list: {str(e)}", exc_info=True)
+        app.logger.error(f"Error in get_chat_list: {str(e)}")
         return jsonify({'success': False, 'error': str(e)})
 
 # Маршрут для получения списка чатов пользователя
@@ -1539,6 +1554,7 @@ def refresh_sidebar():
 
 @app.route('/delete_chat', methods=['POST'])
 def delete_chat():
+    """Mark a chat as deleted for the current user"""
     if 'user_id' not in session:
         return jsonify({'success': False, 'error': 'Not logged in'})
     
@@ -1551,33 +1567,33 @@ def delete_chat():
     user_id = data['user_id']
     
     try:
-        # Log the request for debugging
-        logging.info(f"User {current_user_id} is deleting chat with {user_id}")
-        
-        # Check if chat is already deleted
-        existing_deleted = DeletedChat.query.filter_by(
-            user_id=current_user_id, 
-            chat_with_user_id=user_id
-        ).first()
-        
-        if not existing_deleted:
-            # Create new DeletedChat entry
+        # Check if table exists by trying to query it
+        try:
+            existing = DeletedChat.query.filter_by(
+                user_id=current_user_id,
+                chat_with_user_id=user_id
+            ).first()
+        except Exception as table_error:
+            app.logger.error(f"Error querying DeletedChat table: {str(table_error)}")
+            # If table doesn't exist, let's try to create it on the fly
+            db.create_all()
+            existing = None
+            
+        # Now try to create the record
+        if not existing:
             deleted_chat = DeletedChat(
                 user_id=current_user_id,
                 chat_with_user_id=user_id
             )
             db.session.add(deleted_chat)
             db.session.commit()
-            
-            logging.info(f"Chat with {user_id} marked as deleted for user {current_user_id}")
-        else:
-            logging.info(f"Chat with {user_id} was already deleted for user {current_user_id}")
+            app.logger.info(f"Chat between {current_user_id} and {user_id} marked as deleted")
         
         return jsonify({'success': True})
     
     except Exception as e:
         db.session.rollback()
-        logging.error(f"Error deleting chat: {str(e)}", exc_info=True)
+        app.logger.error(f"Error in delete_chat: {str(e)}")
         return jsonify({'success': False, 'error': str(e)})
 
 # Debug endpoint to display database info (only available in development)
@@ -1626,6 +1642,59 @@ def debug_db_info():
     
     except Exception as e:
         logging.error(f"Error in debug endpoint: {str(e)}", exc_info=True)
+        return jsonify({'error': str(e)}), 500
+
+@app.route('/debug/database', methods=['GET'])
+def debug_database():
+    """Debug endpoint to check database state for the current user"""
+    if 'user_id' not in session:
+        return jsonify({'error': 'Not logged in'}), 401
+        
+    current_user_id = session['user_id']
+    
+    try:
+        # Check if user exists
+        user = User.query.get(current_user_id)
+        if not user:
+            return jsonify({'error': 'User not found'}), 404
+            
+        # Check for any messages involving this user
+        sent_messages = Message.query.filter_by(sender_id=current_user_id).count()
+        received_messages = Message.query.filter_by(recipient_id=current_user_id).count()
+        
+        # Check for deleted chats
+        deleted_chats = DeletedChat.query.filter_by(user_id=current_user_id).all()
+        deleted_chat_ids = [dc.chat_with_user_id for dc in deleted_chats]
+        
+        # Get users who have exchanged messages with this user
+        chat_users_query = db.session.query(User.id, User.name).distinct().filter(
+            User.id != current_user_id,
+            or_(
+                and_(Message.sender_id == User.id, Message.recipient_id == current_user_id),
+                and_(Message.recipient_id == User.id, Message.sender_id == current_user_id)
+            )
+        )
+        chat_users = chat_users_query.all()
+        
+        # Important: Try simplest query to see all messages and chat partners
+        return jsonify({
+            'user_id': current_user_id,
+            'message_counts': {
+                'sent': sent_messages,
+                'received': received_messages,
+                'total': sent_messages + received_messages
+            },
+            'deleted_chats': {
+                'count': len(deleted_chats),
+                'user_ids': deleted_chat_ids
+            },
+            'chat_users': {
+                'count': len(chat_users),
+                'users': [{'id': u.id, 'name': u.name} for u in chat_users]
+            }
+        })
+    except Exception as e:
+        app.logger.error(f"Error in debug endpoint: {str(e)}")
         return jsonify({'error': str(e)}), 500
 
 if __name__ == '__main__':
