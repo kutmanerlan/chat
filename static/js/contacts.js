@@ -6,6 +6,18 @@
  * Load user contacts and chats
  */
 function loadSidebar() {
+  console.log('Loading sidebar...');
+  
+  // First, check if we have any contacts in the DOM already
+  const currentChats = document.querySelectorAll('.contact-item');
+  const hasExistingChats = currentChats.length > 0;
+  
+  // Show loading indicator in sidebar if it's empty
+  const contactsList = document.getElementById('contactsList');
+  if (contactsList && !hasExistingChats) {
+    contactsList.innerHTML = '<div class="loading-sidebar">Loading chats...</div>';
+  }
+  
   // Load both contacts and chats
   Promise.all([fetchContacts(), fetchChatList()])
     .then(([contactsData, chatsData]) => {
@@ -16,6 +28,10 @@ function loadSidebar() {
       
       if (chatsData.chats) {
         ChatApp.chats = chatsData.chats;
+        console.log(`Retrieved ${chatsData.chats.length} chats`);
+      } else {
+        console.warn('No chats data returned from API');
+        ChatApp.chats = [];
       }
       
       // Render sidebar items
@@ -23,6 +39,12 @@ function loadSidebar() {
     })
     .catch(error => {
       console.error('Error loading sidebar data:', error);
+      
+      // Show error in sidebar
+      if (contactsList) {
+        contactsList.innerHTML = '<div class="sidebar-error">Failed to load chats. <a href="#" onclick="loadSidebar(); return false;">Retry</a></div>';
+      }
+      
       showErrorNotification('Failed to load contacts and chats');
     });
 }
@@ -526,5 +548,53 @@ function unblockUserHandler(userId, userName) {
     .catch(error => {
       console.error('Error unblocking user:', error);
       showErrorNotification('Failed to unblock user. Please try again.');
+    });
+}
+
+/**
+ * Execute chat deletion after confirmation
+ */
+function executeDeleteChat(userId, userName) {
+  // First, remove this chat from the sidebar immediately (client-side)
+  const chatItem = document.querySelector(`.contact-item[data-user-id="${userId}"]`);
+  if (chatItem && chatItem.parentNode) {
+    chatItem.parentNode.removeChild(chatItem);
+  }
+  
+  // Then notify the server
+  deleteChat(userId)
+    .then(data => {
+      if (data.success) {
+        showNotification(`Chat with ${userName} deleted`, 'delete-chat');
+        
+        // Reset main content area
+        const mainContent = document.querySelector('.main-content');
+        if (mainContent) {
+          mainContent.innerHTML = '';
+          
+          // Show a placeholder message
+          const emptyChat = document.createElement('div');
+          emptyChat.className = 'empty-chat-container';
+          emptyChat.innerHTML = '<div class="empty-chat-message">Select a chat to start messaging</div>';
+          
+          mainContent.appendChild(emptyChat);
+        }
+        
+        // Reset active chat
+        ChatApp.activeChat = null;
+        
+        // Stop any active polling
+        cleanupPolling();
+      } else {
+        // If server deletion failed, reload sidebar to restore the chat
+        loadSidebar();
+        showErrorNotification('Failed to delete chat on server. Please try again.');
+      }
+    })
+    .catch(error => {
+      console.error('Error deleting chat:', error);
+      // Reload sidebar to restore the chat
+      loadSidebar();
+      showErrorNotification('Failed to delete chat. Please try again.');
     });
 }

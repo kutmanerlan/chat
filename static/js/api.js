@@ -247,6 +247,8 @@ function fetchRecentConversations() {
  * Get chat list
  */
 function fetchChatList() {
+  console.time('fetchChatList'); // Performance measurement
+  
   return fetch('/get_chat_list', {
     method: 'GET',
     headers: {
@@ -257,6 +259,21 @@ function fetchChatList() {
   .then(response => {
     if (!response.ok) throw new Error('Failed to load chat list');
     return response.json();
+  })
+  .then(data => {
+    console.timeEnd('fetchChatList'); // End timing
+    
+    // Log the number of chats for debugging
+    if (data.chats) {
+      console.log(`Loaded ${data.chats.length} chats`);
+    }
+    
+    return data;
+  })
+  .catch(error => {
+    console.timeEnd('fetchChatList');
+    console.error('Error in fetchChatList:', error);
+    throw error; // Re-throw for handling upstream
   });
 }
 
@@ -347,5 +364,13 @@ function deleteChat(userId) {
   .then(response => {
     if (!response.ok) throw new Error('Failed to delete chat');
     return response.json();
+  })
+  .then(data => {
+    console.log('Chat deletion response:', data);
+    return data;
+  })
+  .catch(error => {
+    console.error('Error in deleteChat:', error);
+    throw error;
   });
 }
