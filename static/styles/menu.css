@@ -180,7 +180,7 @@
     padding: 8px 8px;
     margin-left: 0;
     position: absolute;
-    bottom: 5px; /* Changed from -5px to 5px to lift it up */
+    bottom: 15px; /* Changed from -5px to 5px to lift it up */
     left: 1px;
     align-items: center;
     justify-content: flex-start;

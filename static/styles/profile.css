@@ -263,8 +263,8 @@
 
 /* Adjust avatar size to balance with larger text */
 .side-menu .avatar-placeholder {
-    width: 55px !important; /* Reduced from 65px */
-    height: 55px !important; /* Reduced from 65px */
+    width: 60px !important; /* Reduced from 65px */
+    height: 60px !important; /* Reduced from 65px */
     border-radius: 50% !important;
     background-color: #706c6c !important;
     margin-right: 15px !important;
