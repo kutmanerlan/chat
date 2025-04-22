@@ -4,6 +4,7 @@ import argparse
 import logging
 from flask import Flask
 from flask_sqlalchemy import SQLAlchemy
+from datetime import datetime
 
 # Setup logging
 logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
@@ -29,6 +30,59 @@ except ImportError:
 
 # Initialize the app with the database
 db.init_app(app)
+
+def show_database_data():
+    """Display all data from the database tables"""
+    try:
+        print("\n=== Database Contents ===")
+        
+        # Display Users
+        users = User.query.all()
+        print("\n-- Users --")
+        print(f"{'ID':<5} {'Name':<20} {'Email':<30} {'Confirmed':<10}")
+        print("-" * 70)
+        for user in users:
+            print(f"{user.id:<5} {user.name[:20]:<20} {user.email[:30]:<30} {'Yes' if user.email_confirmed else 'No':<10}")
+        
+        # Display Messages
+        messages = Message.query.order_by(Message.timestamp.desc()).limit(50).all()
+        print("\n-- Messages (last 50) --")
+        print(f"{'ID':<5} {'From':<5} {'To':<5} {'Time':<20} {'Read':<5} {'Content':<40}")
+        print("-" * 80)
+        for msg in messages:
+            # Truncate content for display
+            content = msg.content if len(msg.content) < 40 else msg.content[:37] + "..."
+            timestamp = msg.timestamp.strftime("%Y-%m-%d %H:%M:%S") if msg.timestamp else "N/A"
+            print(f"{msg.id:<5} {msg.sender_id:<5} {msg.recipient_id:<5} {timestamp:<20} {'Yes' if msg.is_read else 'No':<5} {content:<40}")
+        
+        # Display Contacts
+        contacts = Contact.query.all()
+        print("\n-- Contacts --")
+        print(f"{'ID':<5} {'User ID':<8} {'Contact ID':<10}")
+        print("-" * 30)
+        for contact in contacts:
+            print(f"{contact.id:<5} {contact.user_id:<8} {contact.contact_id:<10}")
+        
+        # Display Blocks
+        blocks = Block.query.all()
+        print("\n-- Blocks --")
+        print(f"{'ID':<5} {'User ID':<8} {'Blocked User ID':<15}")
+        print("-" * 35)
+        for block in blocks:
+            print(f"{block.id:<5} {block.user_id:<8} {block.blocked_user_id:<15}")
+        
+        # Display Deleted Chats
+        deleted_chats = DeletedChat.query.all()
+        print("\n-- Deleted Chats --")
+        print(f"{'ID':<5} {'User ID':<8} {'Chat With User ID':<15} {'Deleted At':<20}")
+        print("-" * 55)
+        for chat in deleted_chats:
+            deleted_at = chat.deleted_at.strftime("%Y-%m-%d %H:%M:%S") if chat.deleted_at else "N/A"
+            print(f"{chat.id:<5} {chat.user_id:<8} {chat.chat_with_user_id:<15} {deleted_at:<20}")
+        
+        print("\n=== End of Database Contents ===")
+    except Exception as e:
+        logger.error(f"Error showing database data: {str(e)}")
 
 def clear_deleted_chats():
     """Remove all entries from the DeletedChat table"""
@@ -102,6 +156,7 @@ def main():
     parser.add_argument('--messages', action='store_true', help="Delete all messages")
     parser.add_argument('--all', action='store_true', help="Perform a full reset (all of the above)")
     parser.add_argument('--status', action='store_true', help="Show database status without making changes")
+    parser.add_argument('--show-data', action='store_true', help="Show actual database contents (limited to 50 records per table)")
     
     args = parser.parse_args()
     
@@ -115,6 +170,10 @@ def main():
     with app.app_context():
         if args.status:
             report_database_status()
+            return
+            
+        if args.show_data:
+            show_database_data()
             return
             
         print("Starting database cleanup...")
