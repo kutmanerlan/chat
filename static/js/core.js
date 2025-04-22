@@ -4,160 +4,303 @@
  */
 
 // Application state and initialization
-let ChatApp = {
+const ChatApp = {
     // Application state
-    currentUserId: null,
-    currentUserName: null,
-    currentUserAvatar: null,
-    currentChat: null,
-    contacts: [],
-    chats: [],
-    currentPage: 1,
-    hasMoreMessages: false,
-    isInitialized: false,
-    
-    // Debug mode
-    debug: true,
+    currentUser: null,
+    activeChat: null,
+    activeContact: null,
+    messagePage: 1,
+    messageLimit: 30,
+    hasMoreMessages: true,
+    polling: null,
+    pollingInterval: 3000, // 3 seconds
     
     // Initialize the application
     init: function() {
-        this.log('Initializing ChatApp...');
+        console.log('Initializing ChatApp');
         
-        // Initialize application state
-        this.resetState();
+        // Initialize debugging tools
+        initDebugPanel();
         
-        // Get current user info
-        this.loadCurrentUserInfo()
+        // Set up UI components
+        setupMenuButtons();
+        setupAvatarUpload();
+        
+        // Load current user information
+        this.loadCurrentUser()
             .then(() => {
-                // Only load sidebar after we have user info
-                this.log('Loading sidebar with user data...');
+                // Load sidebar with contacts and chats
                 loadSidebar();
                 
-                // Mark as initialized
-                this.isInitialized = true;
-                this.log('ChatApp initialization complete');
-                
-                // Dispatch an event that initialization is complete
-                document.dispatchEvent(new CustomEvent('chat-app-initialized'));
+                // Start polling for new messages if user is logged in
+                if (this.currentUser) {
+                    this.startPolling();
+                }
             })
             .catch(error => {
-                console.error('Failed to initialize ChatApp:', error);
-                showErrorNotification('Failed to initialize the application. Please refresh the page.');
+                console.error('Failed to initialize application:', error);
+                showErrorNotification('Failed to load user information');
             });
-        
-        // Initialize event listeners
-        this.initEventListeners();
-    },
-    
-    // Reset application state
-    resetState: function() {
-        this.currentUserId = null;
-        this.currentUserName = null;
-        this.currentUserAvatar = null;
-        this.currentChat = null;
-        this.contacts = [];
-        this.chats = [];
-        this.currentPage = 1;
-        this.hasMoreMessages = false;
     },
     
     // Load current user information
-    loadCurrentUserInfo: function() {
-        return new Promise((resolve, reject) => {
-            fetchCurrentUserInfo()
-                .then(data => {
-                    if (data && data.user_id) {
-                        this.currentUserId = data.user_id;
-                        this.currentUserName = data.user_name;
-                        this.currentUserAvatar = data.avatar_path;
-                        this.log('User data loaded:', this.currentUserName);
-                        resolve(data);
-                    } else {
-                        reject(new Error('Invalid user data received'));
+    loadCurrentUser: function() {
+        return fetchCurrentUserInfo()
+            .then(userData => {
+                this.currentUser = userData;
+                updateUserInterface(userData);
+                return userData;
+            });
+    },
+    
+    // Start polling for new messages
+    startPolling: function() {
+        if (this.polling) {
+            clearInterval(this.polling);
+        }
+        
+        this.polling = setInterval(() => {
+            this.pollForUpdates();
+        }, this.pollingInterval);
+    },
+    
+    // Stop polling
+    stopPolling: function() {
+        if (this.polling) {
+            clearInterval(this.polling);
+            this.polling = null;
+        }
+    },
+    
+    // Poll for updates (new messages, status changes)
+    pollForUpdates: function() {
+        // Only poll if we have an active chat
+        if (this.activeChat) {
+            this.checkForNewMessages();
+        }
+    },
+    
+    // Check for new messages in current chat
+    checkForNewMessages: function() {
+        // Find the last message ID if there are messages
+        let lastMessageId = 0;
+        const messages = document.querySelectorAll('.message');
+        if (messages.length > 0) {
+            const lastMessage = messages[messages.length - 1];
+            lastMessageId = parseInt(lastMessage.dataset.messageId) || 0;
+        }
+        
+        // Get new messages since the last message
+        fetchMessages(this.activeChat.userId, 1, 100, lastMessageId)
+            .then(data => {
+                if (data.success && data.messages && data.messages.length > 0) {
+                    // Log in debug if enabled
+                    if (typeof logNewMessages === 'function') {
+                        logNewMessages(data.messages.length);
                     }
-                })
+                    
+                    // Add new messages to the chat
+                    const chatMessages = document.querySelector('.chat-messages');
+                    if (chatMessages) {
+                        data.messages.forEach(message => {
+                            addMessageToChat(message, chatMessages, true);
+                        });
+                    }
+                }
+            })
+            .catch(error => {
+                console.error('Error polling for new messages:', error);
+            });
+    },
+    
+    // Open chat with a user
+    openChat: function(userId, userName) {
+        console.log(`Opening chat with user ${userName} (ID: ${userId})`);
+        
+        // Store the active chat information
+        this.activeChat = {
+            userId: userId,
+            userName: userName
+        };
+        
+        // Find and activate the corresponding contact item if it exists
+        const contactItems = document.querySelectorAll('.contact-item');
+        let contactExists = false;
+        
+        contactItems.forEach(item => {
+            if (item.dataset.userId === userId.toString()) {
+                contactExists = true;
+                item.classList.add('active');
+            } else {
+                item.classList.remove('active');
+            }
+        });
+        
+        // Create the chat interface
+        const mainContent = document.querySelector('.main-content');
+        if (!mainContent) return;
+        
+        // Clear the main content
+        mainContent.innerHTML = '';
+        
+        // Create the chat container
+        const chatContainer = document.createElement('div');
+        chatContainer.className = 'chat-container';
+        
+        // Add chat header
+        chatContainer.innerHTML = `
+            <div class="chat-header">
+                <div class="chat-user-info">
+                    <div class="chat-user-avatar">
+                        <div class="avatar-initials">${userName.charAt(0)}</div>
+                    </div>
+                    <div class="chat-user-name">${userName}</div>
+                </div>
+                <button class="chat-menu-btn">
+                    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <circle cx="12" cy="12" r="1"></circle>
+                        <circle cx="19" cy="12" r="1"></circle>
+                        <circle cx="5" cy="12" r="1"></circle>
+                    </svg>
+                </button>
+            </div>
+            <div class="chat-messages">
+                <!-- Messages will be loaded here -->
+            </div>
+            <div class="message-input-container">
+                <div class="input-wrapper">
+                    <div class="clip-button-container">
+                        <button class="paperclip-button">
+                            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <path d="M21.44 11.05l-9.19 9.19a6 6 0 01-8.49-8.49l9.19-9.19a4 4 0 015.66 5.66l-9.2 9.19a2 2 0 01-2.83-2.83l8.49-8.48"></path>
+                            </svg>
+                        </button>
+                    </div>
+                    <div class="message-input-field">
+                        <input type="text" placeholder="Type a message">
+                    </div>
+                    <button class="send-button">
+                        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <path d="M22 2L11 13"></path>
+                            <path d="M22 2L15 22L11 13L2 9L22 2Z"></path>
+                        </svg>
+                    </button>
+                </div>
+            </div>
+        `;
+        
+        mainContent.appendChild(chatContainer);
+        
+        // Load chat messages
+        const chatMessages = chatContainer.querySelector('.chat-messages');
+        if (chatMessages) {
+            loadMessages(userId)
                 .catch(error => {
-                    console.error('Failed to load current user info:', error);
-                    reject(error);
+                    console.error('Error loading messages:', error);
                 });
-        });
-    },
-    
-    // Initialize event listeners
-    initEventListeners: function() {
-        // Add event listener for manually refreshing the sidebar
-        document.addEventListener('refresh-sidebar', () => {
-            this.log('Refresh sidebar event received');
-            loadSidebar();
-        });
-        
-        // Add error handler for uncaught exceptions
-        window.addEventListener('error', (event) => {
-            console.error('Uncaught error:', event.error);
-            // Only show notification if we're initialized
-            if (this.isInitialized) {
-                showErrorNotification('An error occurred. Please check the console for details.');
-            }
-        });
-        
-        // Add event listener for online/offline events
-        window.addEventListener('online', () => {
-            this.log('Application is back online');
-            showSuccessNotification('You are back online');
-            
-            // Refresh data when back online
-            if (this.isInitialized) {
-                loadSidebar();
-            }
-        });
-        
-        window.addEventListener('offline', () => {
-            this.log('Application is offline');
-            showErrorNotification('You are offline. Some features may not work.');
-        });
-    },
-    
-    // Log messages in debug mode
-    log: function(message, ...args) {
-        if (this.debug) {
-            console.log(`[ChatApp] ${message}`, ...args);
         }
-    },
-    
-    // Handle errors
-    handleError: function(error, context) {
-        console.error(`Error in ${context}:`, error);
-        if (typeof showErrorNotification === 'function') {
-            showErrorNotification(`Error: ${error.message || 'Unknown error'}`);
-        }
-    },
-    
-    // Retry a failed operation
-    retry: function(operation, maxRetries = 3, delay = 1000) {
-        return new Promise((resolve, reject) => {
-            let attempts = 0;
+        
+        // Set up message input handlers
+        const messageInput = chatContainer.querySelector('.message-input-field input');
+        const sendButton = chatContainer.querySelector('.send-button');
+        const attachButton = chatContainer.querySelector('.paperclip-button');
+        
+        if (messageInput && sendButton) {
+            // Enable/disable send button based on input content
+            messageInput.addEventListener('input', function() {
+                if (this.value.trim()) {
+                    sendButton.classList.add('active');
+                } else {
+                    sendButton.classList.remove('active');
+                }
+            });
             
-            const attempt = () => {
-                attempts++;
-                this.log(`Attempt ${attempts} for operation: ${operation.name}`);
+            // Handle enter key in input field
+            messageInput.addEventListener('keydown', function(e) {
+                if (e.key === 'Enter' && !e.shiftKey && this.value.trim()) {
+                    e.preventDefault();
+                    sendMessageHandler(this.value, userId, chatMessages);
+                }
+            });
+            
+            // Handle send button click
+            sendButton.addEventListener('click', function() {
+                if (messageInput.value.trim()) {
+                    sendMessageHandler(messageInput.value, userId, chatMessages);
+                }
+            });
+        }
+        
+        // Set up file attachment
+        if (attachButton) {
+            attachButton.addEventListener('click', function() {
+                // Create a file input element
+                const fileInput = document.createElement('input');
+                fileInput.type = 'file';
+                fileInput.accept = 'image/*,.pdf,.doc,.docx,.xls,.xlsx,.txt';
+                fileInput.style.display = 'none';
+                document.body.appendChild(fileInput);
                 
-                operation()
-                    .then(resolve)
-                    .catch(error => {
-                        if (attempts < maxRetries) {
-                            this.log(`Retrying in ${delay}ms...`);
-                            setTimeout(attempt, delay);
-                        } else {
-                            this.log('Maximum retries reached, giving up.');
-                            reject(error);
-                        }
-                    });
-            };
-            
-            attempt();
+                // Trigger click on the file input
+                fileInput.click();
+                
+                // Handle file selection
+                fileInput.addEventListener('change', function() {
+                    if (this.files && this.files.length > 0) {
+                        handleFileSelection(this.files, ChatApp.activeChat);
+                    }
+                    // Remove the file input from the DOM
+                    document.body.removeChild(fileInput);
+                });
+            });
+        }
+        
+        // Check for contact status and update UI if needed
+        fetch('/check_contact', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({ contact_id: userId })
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.is_contact) {
+                console.log(`User ${userId} is already a contact`);
+            } else if (!contactExists) {
+                console.log(`User ${userId} is not a contact, adding to contacts`);
+                // Add user to contacts if they aren't already
+                addToContacts(userId);
+            }
+        })
+        .catch(error => {
+            console.error('Error checking contact status:', error);
         });
+        
+        // If this user was not in the sidebar before, refresh the sidebar
+        if (!contactExists) {
+            setTimeout(() => {
+                loadSidebar();
+            }, 1000);
+        }
     }
 };
+
+// Make openChat available globally
+window.openChat = function(userId, userName) {
+    ChatApp.openChat(userId, userName);
+};
+
+// Helper function to fetch current user information
+function fetchCurrentUserInfo() {
+    return fetch('/get_current_user_info')
+        .then(response => {
+            if (!response.ok) {
+                throw new Error('Failed to fetch user info');
+            }
+            return response.json();
+        });
+}
 
 // Helper functions for date and time formatting
 function formatTimestamp(timestamp) {

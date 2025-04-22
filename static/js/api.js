@@ -151,18 +151,20 @@ function searchUsers(query) {
  * @param {number} page - Page number (starting from 1)
  * @param {number} limit - Number of messages per page
  */
-function fetchMessages(userId, page = 1, limit = 30) {
-  return fetch(`/get_messages?user_id=${userId}&page=${page}&limit=${limit}`, {
-    method: 'GET',
-    headers: { 
-      'Content-Type': 'application/json',
-      'Cache-Control': 'no-cache'
+function fetchMessages(userId, page = 1, limit = 30, lastMessageId = 0) {
+    let url = `/get_messages?user_id=${userId}&page=${page}&limit=${limit}`;
+    
+    if (lastMessageId > 0) {
+        url += `&last_message_id=${lastMessageId}`;
     }
-  })
-  .then(response => {
-    if (!response.ok) throw new Error('Failed to load messages');
-    return response.json();
-  });
+    
+    return fetch(url)
+        .then(response => {
+            if (!response.ok) {
+                throw new Error('Failed to fetch messages');
+            }
+            return response.json();
+        });
 }
 
 /**
@@ -187,46 +189,45 @@ function fetchNewMessages(userId, lastMessageId) {
 /**
  * Send a message
  */
-function sendMessage(recipientId, content) {
-  return fetch('/send_message', {
-    method: 'POST',
-    headers: {
-      'Content-Type': 'application/json'
-    },
-    body: JSON.stringify({
-      recipient_id: recipientId,
-      content: content
+function sendMessage(userId, content) {
+    return fetch('/send_message', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({
+            recipient_id: userId,
+            content: content
+        })
     })
-  })
-  .then(response => {
-    if (!response.ok) throw new Error(`Failed to send message: ${response.status}`);
-    return response.json();
-  });
+    .then(response => {
+        if (!response.ok) {
+            throw new Error('Failed to send message');
+        }
+        return response.json();
+    });
 }
 
 /**
  * Edit a message
  */
 function editMessage(messageId, content) {
-  return fetch('/edit_message', {
-    method: 'POST',
-    headers: {
-      'Content-Type': 'application/json'
-    },
-    body: JSON.stringify({
-      message_id: messageId,
-      content: content
+    return fetch('/edit_message', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({
+            message_id: messageId,
+            content: content
+        })
     })
-  })
-  .then(response => {
-    if (!response.ok) {
-      if (response.status === 403) {
-        throw new Error('You can only edit your own messages');
-      }
-      throw new Error('Failed to edit message');
-    }
-    return response.json();
-  });
+    .then(response => {
+        if (!response.ok) {
+            throw new Error('Failed to edit message');
+        }
+        return response.json();
+    });
 }
 
 /**
@@ -320,39 +321,35 @@ function fetchContacts() {
  * Update user profile
  */
 function updateProfile(formData) {
-  return fetch('/update_profile', {
-    method: 'POST',
-    body: formData
-  })
-  .then(response => {
-    if (!response.ok) throw new Error('Failed to update profile');
-    return response.json();
-  });
+    return fetch('/update_profile', {
+        method: 'POST',
+        body: formData
+    })
+    .then(response => {
+        if (!response.ok) {
+            throw new Error('Failed to update profile');
+        }
+        return response.json();
+    });
 }
 
 /**
  * Upload avatar
  */
 function uploadAvatar(file) {
-  // Check file size (max 5MB)
-  if (file.size > 5 * 1024 * 1024) {
-    showErrorNotification('File is too large. Maximum size is 5MB.');
-    return Promise.reject(new Error('File too large'));
-  }
-  
-  // Create form data
-  const formData = new FormData();
-  formData.append('avatar', file);
-  
-  // Send to server
-  return fetch('/upload_avatar', {
-    method: 'POST',
-    body: formData
-  })
-  .then(response => {
-    if (!response.ok) throw new Error('Failed to upload avatar');
-    return response.json();
-  });
+    const formData = new FormData();
+    formData.append('avatar', file);
+    
+    return fetch('/upload_avatar', {
+        method: 'POST',
+        body: formData
+    })
+    .then(response => {
+        if (!response.ok) {
+            throw new Error('Failed to upload avatar');
+        }
+        return response.json();
+    });
 }
 
 /**
@@ -387,4 +384,22 @@ function removeFromContacts(userId) {
     if (!response.ok) throw new Error('Failed to remove contact');
     return response.json();
   });
+}
+
+/**
+ * Helper function to escape HTML to prevent XSS
+ */
+function escapeHtml(text) {
+    const div = document.createElement('div');
+    div.textContent = text;
+    return div.innerHTML;
+}
+
+/**
+ * Format file size for display
+ */
+function formatFileSize(bytes) {
+    if (bytes < 1024) return bytes + ' bytes';
+    else if (bytes < 1048576) return (bytes / 1024).toFixed(1) + ' KB';
+    else return (bytes / 1048576).toFixed(1) + ' MB';
 }

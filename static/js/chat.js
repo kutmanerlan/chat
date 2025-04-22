@@ -821,3 +821,218 @@ function checkForBlockUpdates(userId) {
       console.error('Error checking block status:', error);
     });
 }
+
+/**
+ * Chat interaction functionality
+ */
+
+/**
+ * Add the selected user to contacts
+ */
+function addToContacts(userId) {
+    // API call to add user to contacts
+    fetch('/add_contact', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({ contact_id: userId })
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            console.log('User added to contacts:', data.contact);
+            showSuccessNotification('User added to your contacts');
+            
+            // Add the contact to the contact list in the sidebar
+            const contactsList = document.getElementById('contactsList');
+            if (contactsList && data.contact) {
+                // Create a new contact element
+                const contactElement = createContactElement(data.contact);
+                
+                // Check if "no contacts" message exists and remove it
+                const noContactsMessage = contactsList.querySelector('.no-contacts-message');
+                if (noContactsMessage) {
+                    noContactsMessage.style.display = 'none';
+                }
+                
+                // Add the new contact element to the contacts list
+                contactsList.appendChild(contactElement);
+            }
+        } else {
+            console.error('Failed to add user to contacts:', data.error);
+            showErrorNotification('Failed to add user to contacts');
+        }
+    })
+    .catch(error => {
+        console.error('Error adding user to contacts:', error);
+        showErrorNotification('Failed to add user to contacts');
+    });
+}
+
+/**
+ * Create a contact element for the sidebar
+ */
+function createContactElement(contact) {
+    const contactElement = document.createElement('div');
+    contactElement.className = 'contact-item';
+    contactElement.setAttribute('data-user-id', contact.id);
+    
+    // Create avatar
+    const avatarDiv = document.createElement('div');
+    avatarDiv.className = 'contact-avatar';
+    
+    if (contact.avatar_path) {
+        const img = document.createElement('img');
+        img.src = contact.avatar_path;
+        img.alt = contact.name;
+        img.onerror = function() {
+            this.remove();
+            const initials = document.createElement('div');
+            initials.className = 'avatar-initials';
+            initials.textContent = getInitials(contact.name);
+            avatarDiv.appendChild(initials);
+        };
+        avatarDiv.appendChild(img);
+    } else {
+        const initials = document.createElement('div');
+        initials.className = 'avatar-initials';
+        initials.textContent = getInitials(contact.name);
+        avatarDiv.appendChild(initials);
+    }
+    
+    // Create contact info
+    const infoDiv = document.createElement('div');
+    infoDiv.className = 'contact-info';
+    
+    const nameDiv = document.createElement('div');
+    nameDiv.className = 'contact-name';
+    nameDiv.textContent = contact.name;
+    infoDiv.appendChild(nameDiv);
+    
+    // Assemble the contact element
+    contactElement.appendChild(avatarDiv);
+    contactElement.appendChild(infoDiv);
+    
+    // Add click event to open chat
+    contactElement.addEventListener('click', function() {
+        openChat(contact.id, contact.name);
+    });
+    
+    return contactElement;
+}
+
+/**
+ * Create a chat element for the sidebar
+ */
+function createChatElement(chat) {
+    const chatElement = document.createElement('div');
+    chatElement.className = 'contact-item conversation-item';
+    chatElement.setAttribute('data-user-id', chat.user_id);
+    
+    // Create avatar
+    const avatarDiv = document.createElement('div');
+    avatarDiv.className = 'contact-avatar';
+    
+    if (chat.avatar_path) {
+        const img = document.createElement('img');
+        img.src = chat.avatar_path;
+        img.alt = chat.name;
+        img.onerror = function() {
+            this.remove();
+            const initials = document.createElement('div');
+            initials.className = 'avatar-initials';
+            initials.textContent = getInitials(chat.name);
+            avatarDiv.appendChild(initials);
+        };
+        avatarDiv.appendChild(img);
+    } else {
+        const initials = document.createElement('div');
+        initials.className = 'avatar-initials';
+        initials.textContent = getInitials(chat.name);
+        avatarDiv.appendChild(initials);
+    }
+    
+    // Create chat info
+    const infoDiv = document.createElement('div');
+    infoDiv.className = 'contact-info';
+    
+    const nameDiv = document.createElement('div');
+    nameDiv.className = 'contact-name';
+    nameDiv.textContent = chat.name;
+    infoDiv.appendChild(nameDiv);
+    
+    // Format last message timestamp
+    const lastMessageTime = new Date(chat.last_message_time);
+    const timeStr = formatChatTime(lastMessageTime);
+    
+    // Last message with timestamp
+    const lastMessageDiv = document.createElement('div');
+    lastMessageDiv.className = 'last-message';
+    
+    const messageTextDiv = document.createElement('div');
+    messageTextDiv.className = 'message-text';
+    messageTextDiv.textContent = chat.last_message;
+    lastMessageDiv.appendChild(messageTextDiv);
+    
+    const messageTimeDiv = document.createElement('div');
+    messageTimeDiv.className = 'message-time';
+    messageTimeDiv.textContent = timeStr;
+    lastMessageDiv.appendChild(messageTimeDiv);
+    
+    infoDiv.appendChild(lastMessageDiv);
+    
+    // Add unread badge if there are unread messages
+    if (chat.unread_count > 0) {
+        const unreadBadge = document.createElement('div');
+        unreadBadge.className = 'unread-badge';
+        unreadBadge.textContent = chat.unread_count > 99 ? '99+' : chat.unread_count;
+        chatElement.appendChild(unreadBadge);
+    }
+    
+    // Assemble the chat element
+    chatElement.appendChild(avatarDiv);
+    chatElement.appendChild(infoDiv);
+    
+    // Add click event to open chat
+    chatElement.addEventListener('click', function() {
+        openChat(chat.user_id, chat.name);
+    });
+    
+    return chatElement;
+}
+
+/**
+ * Helper function to get initials from a name
+ */
+function getInitials(name) {
+    if (!name) return '?';
+    
+    const parts = name.split(' ');
+    if (parts.length === 1) {
+        return parts[0].charAt(0).toUpperCase();
+    } else {
+        return (parts[0].charAt(0) + parts[parts.length - 1].charAt(0)).toUpperCase();
+    }
+}
+
+/**
+ * Format chat time for display
+ */
+function formatChatTime(date) {
+    const now = new Date();
+    const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+    const yesterday = new Date(today);
+    yesterday.setDate(yesterday.getDate() - 1);
+    
+    if (date >= today) {
+        // Today - show time only
+        return date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+    } else if (date >= yesterday) {
+        // Yesterday
+        return 'Yesterday';
+    } else {
+        // Earlier - show date
+        return date.toLocaleDateString([], { month: 'short', day: 'numeric' });
+    }
+}
