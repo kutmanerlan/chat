@@ -2,6 +2,16 @@
  * Chat CSS - chat interface components
  */
 
+/* Chat container - add flex display */
+.chat-container {
+    display: flex;
+    flex-direction: column;
+    height: 100%;
+    width: 100%;
+    position: relative;
+    overflow: hidden;
+}
+
 /* Chat header */
 .chat-header {
     position: relative;
@@ -82,10 +92,10 @@
     color: white;
 }
 
-/* Chat messages area */
+/* Chat messages area - fix height calculation */
 .chat-messages {
     flex-grow: 1;
-    height: calc(100vh - 128px);
+    height: calc(100vh - 128px); /* Ensure proper height calculation */
     padding: 20px 16px;
     overflow-y: auto;
     display: flex;

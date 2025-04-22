@@ -25,6 +25,13 @@
     border-left: 1px solid var(--border-color);
 }
 
+/* Add this CSS to ensure proper chat container layout */
+.main-content .chat-container {
+    height: 100%;
+    display: flex;
+    flex-direction: column;
+}
+
 /* Top bar with search */
 .top-bar {
     display: flex;
