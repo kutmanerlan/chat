@@ -962,3 +962,278 @@ if (typeof formatFileSize !== 'function') {
     else return (bytes / 1048576).toFixed(1) + ' MB';
   };
 }
+
+/**
+ * Direct fix for message sending
+ */
+function fixMessageSending() {
+  console.log('[FIX] Installing direct message sending fix');
+  
+  // Find all necessary elements
+  const chatMessages = document.querySelector('.chat-messages');
+  const messageInput = document.querySelector('.message-input-field input');
+  const sendButton = document.querySelector('.send-button');
+  
+  if (!chatMessages || !messageInput || !sendButton) {
+    console.error('[FIX] Could not find all required elements for message sending');
+    return;
+  }
+  
+  // Get the recipient ID from the active chat
+  let recipientId = null;
+  if (typeof ChatApp !== 'undefined' && ChatApp.activeChat) {
+    recipientId = ChatApp.activeChat.userId;
+  } else {
+    // Try to extract recipient ID from the URL or data attributes
+    const chatHeader = document.querySelector('.chat-header');
+    if (chatHeader) {
+      recipientId = chatHeader.getAttribute('data-user-id');
+    }
+  }
+  
+  if (!recipientId) {
+    console.error('[FIX] Could not determine recipient ID');
+    return;
+  }
+  
+  console.log(`[FIX] Setting up message handlers for recipient ${recipientId}`);
+  
+  // Set up input handler
+  messageInput.addEventListener('input', function() {
+    if (this.value.trim()) {
+      sendButton.classList.add('active');
+    } else {
+      sendButton.classList.remove('active');
+    }
+  });
+  
+  // Set up keydown handler
+  messageInput.addEventListener('keydown', function(e) {
+    if (e.key === 'Enter' && !e.shiftKey && this.value.trim()) {
+      e.preventDefault();
+      const text = this.value.trim();
+      console.log(`[FIX] Sending message via Enter key: ${text}`);
+      sendDirectMessage(text, recipientId, chatMessages);
+    }
+  });
+  
+  // Set up click handler
+  sendButton.addEventListener('click', function() {
+    const text = messageInput.value.trim();
+    if (text) {
+      console.log(`[FIX] Sending message via button click: ${text}`);
+      sendDirectMessage(text, recipientId, chatMessages);
+    }
+  });
+  
+  console.log('[FIX] Message sending fix installed');
+}
+
+/**
+ * Direct message sending implementation
+ */
+function sendDirectMessage(text, recipientId, chatMessages) {
+  // Create a temporary message immediately
+  const tempMessageEl = document.createElement('div');
+  tempMessageEl.className = 'message message-sent message-pending';
+  
+  // Format timestamp
+  const now = new Date();
+  const hours = String(now.getHours()).padStart(2, '0');
+  const minutes = String(now.getMinutes()).padStart(2, '0');
+  
+  // Add content
+  tempMessageEl.innerHTML = `
+    <div class="message-content">${escapeHtml(text)}</div>
+    <div class="message-time">
+      ${hours}:${minutes}
+      <span class="message-status">Sending...</span>
+    </div>
+  `;
+  
+  // Find or create messages container
+  let messagesContainer = chatMessages.querySelector('.messages-container');
+  if (!messagesContainer) {
+    console.log('[FIX] Creating messages container as it does not exist');
+    messagesContainer = document.createElement('div');
+    messagesContainer.className = 'messages-container';
+    chatMessages.appendChild(messagesContainer);
+  }
+  
+  // Add the temp message
+  messagesContainer.appendChild(tempMessageEl);
+  
+  // Make it visible
+  setTimeout(() => {
+    tempMessageEl.classList.add('message-visible');
+  }, 10);
+  
+  // Scroll to the new message
+  chatMessages.scrollTop = chatMessages.scrollHeight;
+  
+  // Clear the input field
+  const messageInput = document.querySelector('.message-input-field input');
+  if (messageInput) {
+    messageInput.value = '';
+    
+    // Update send button state
+    const sendButton = document.querySelector('.send-button');
+    if (sendButton) sendButton.classList.remove('active');
+  }
+  
+  // Send the actual message to the server
+  fetch('/send_message', {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json'
+    },
+    body: JSON.stringify({
+      recipient_id: recipientId,
+      content: text
+    })
+  })
+  .then(response => {
+    if (!response.ok) {
+      throw new Error(`Server returned ${response.status}: ${response.statusText}`);
+    }
+    return response.json();
+  })
+  .then(data => {
+    console.log('[FIX] Message sent successfully:', data);
+    
+    // Remove the temporary message
+    if (tempMessageEl && tempMessageEl.parentNode) {
+      tempMessageEl.parentNode.removeChild(tempMessageEl);
+    }
+    
+    // Add the real message with server data
+    if (data.success && data.message) {
+      addMessageToChat(data.message, chatMessages);
+      
+      // Request sidebar refresh to show this chat
+      setTimeout(() => {
+        console.log('[FIX] Refreshing sidebar after successful message');
+        if (typeof loadSidebar === 'function') {
+          loadSidebar();
+        }
+      }, 500);
+    } else {
+      throw new Error(data.error || 'Failed to send message');
+    }
+  })
+  .catch(error => {
+    console.error('[FIX] Error sending message:', error);
+    
+    // Show error on temporary message
+    if (tempMessageEl && tempMessageEl.parentNode) {
+      tempMessageEl.classList.add('message-error');
+      const contentDiv = tempMessageEl.querySelector('.message-content');
+      if (contentDiv) {
+        contentDiv.innerHTML += '<div class="message-error-text">Failed to send</div>';
+      }
+    }
+    
+    // Show error notification
+    if (typeof showErrorNotification === 'function') {
+      showErrorNotification('Failed to send message. Please try again.');
+    }
+  });
+}
+
+// Make sure to add this CSS to the page for the fixing
+function addFixStyles() {
+  const styleEl = document.createElement('style');
+  styleEl.textContent = `
+    .message-pending {
+      opacity: 0.7;
+    }
+    .message-status {
+      font-size: 10px;
+      color: rgba(255, 255, 255, 0.6);
+      margin-left: 5px;
+    }
+    .message-error .message-content {
+      position: relative;
+    }
+    .message-error-text {
+      color: #e57373;
+      font-size: 11px;
+      margin-top: 4px;
+      font-style: italic;
+    }
+    .message {
+      max-width: 50%;
+      padding: 10px 12px;
+      position: relative;
+      margin-bottom: 6px;
+      line-height: 1.4;
+      border-radius: 8px;
+      animation: fadeIn 0.2s ease-out;
+      box-shadow: 0 1px 2px rgba(0, 0, 0, 0.2);
+      word-wrap: break-word;
+      overflow-wrap: break-word;
+      hyphens: auto;
+      opacity: 0;
+      transform: translateY(10px);
+      transition: opacity 0.2s ease-out, transform 0.2s ease-out;
+    }
+    .message-visible {
+      opacity: 1;
+      transform: translateY(0);
+    }
+    .message-sent {
+      background-color: #b4b4b4;
+      color: white;
+      align-self: flex-end;
+      border-radius: 8px 8px 2px 8px;
+      margin-left: auto;
+    }
+    .message-received {
+      background-color: #222222;
+      color: white;
+      align-self: flex-start;
+      border-radius: 8px 8px 8px 2px;
+      margin-right: auto;
+    }
+    .messages-container {
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+      width: 100%;
+    }
+  `;
+  document.head.appendChild(styleEl);
+}
+
+// Call this function when DOM content is loaded
+document.addEventListener('DOMContentLoaded', function() {
+  // Wait a bit for other scripts to initialize
+  setTimeout(() => {
+    // Add the fix styles first
+    addFixStyles();
+    
+    // Set up a mutation observer to detect when chat is opened
+    const observer = new MutationObserver(function(mutations) {
+      for (let mutation of mutations) {
+        if (mutation.addedNodes.length) {
+          // Check if a chat container was added
+          const chatContainer = document.querySelector('.chat-container');
+          if (chatContainer) {
+            console.log('[FIX] Detected chat container, applying message sending fix');
+            fixMessageSending();
+          }
+        }
+      }
+    });
+    
+    // Start observing
+    observer.observe(document.body, { childList: true, subtree: true });
+    
+    // Also try to fix immediately if chat is already open
+    const existingChat = document.querySelector('.chat-container');
+    if (existingChat) {
+      console.log('[FIX] Found existing chat container, applying message sending fix');
+      fixMessageSending();
+    }
+  }, 500);
+});

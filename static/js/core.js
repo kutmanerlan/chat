@@ -2,201 +2,61 @@
  * Core application functionality
  */
 
-// Global ChatApp object to manage application state
+// Initialize the ChatApp object with improved structure
 const ChatApp = {
     // Application state
     currentUser: null,
     activeChat: null,
-    activeContact: null,
-    messagePage: 1,
-    messageLimit: 30,
-    hasMoreMessages: true,
-    polling: null,
-    pollingInterval: 3000, // 3 seconds
-    
-    // Debug flag
-    debug: true,
     
     // Initialize the application
     init: function() {
-        console.log('[ChatApp] Initializing application');
+        console.log('[ChatApp] Starting initialization');
         
-        // Add verbose error handler for chat initialization
-        window.addEventListener('error', function(e) {
-            console.error('[ChatApp] Global error:', e.message, 'at', e.filename, 'line', e.lineno);
-        });
-        
-        // Set up UI components
-        this.setupCoreComponents();
-        
-        // Load current user information
+        // Get current user information
         this.loadCurrentUser()
-            .then(userData => {
-                console.log('[ChatApp] Current user loaded successfully:', userData.user_name);
+            .then(() => {
+                console.log('[ChatApp] Current user loaded:', this.currentUser);
                 
-                // Load sidebar with contacts and chats
+                // Load sidebar
                 if (typeof loadSidebar === 'function') {
                     loadSidebar();
                 } else {
-                    console.error('[ChatApp] loadSidebar function not available');
-                }
-                
-                // Start polling for new messages if user is logged in
-                if (this.currentUser) {
-                    this.startPolling();
+                    console.warn('[ChatApp] loadSidebar function not available');
                 }
             })
             .catch(error => {
-                console.error('[ChatApp] Failed to initialize application:', error);
-                if (typeof showErrorNotification === 'function') {
-                    showErrorNotification('Failed to load user information');
-                }
+                console.error('[ChatApp] Error initializing ChatApp:', error);
             });
-    },
-    
-    // Set up core components
-    setupCoreComponents: function() {
-        // Initialize debugging tools if available
-        if (typeof initDebugPanel === 'function') {
-            try {
-                initDebugPanel();
-                console.log('[ChatApp] Debug panel initialized');
-            } catch(e) {
-                console.warn('[ChatApp] Debug panel initialization failed:', e);
+            
+        // Set up global event handler for fixing problematic interfaces
+        window.addEventListener('error', function(e) {
+            console.warn('[ChatApp] Captured error:', e.message);
+            // If we have errors, try the emergency fix
+            if (typeof fixMessageSending === 'function') {
+                console.log('[ChatApp] Applying emergency fixes');
+                fixMessageSending();
             }
-        }
-        
-        // Set up menu buttons if available
-        if (typeof setupMenuButtons === 'function') {
-            try {
-                setupMenuButtons();
-                console.log('[ChatApp] Menu buttons initialized');
-            } catch(e) {
-                console.warn('[ChatApp] Menu setup failed:', e);
-            }
-        }
-        
-        // Set up avatar upload if available
-        if (typeof setupAvatarUpload === 'function') {
-            try {
-                setupAvatarUpload();
-                console.log('[ChatApp] Avatar upload initialized');
-            } catch(e) {
-                console.warn('[ChatApp] Avatar upload setup failed:', e);
-            }
-        }
+        });
     },
     
     // Load current user information
     loadCurrentUser: function() {
-        console.log('[ChatApp] Loading current user information');
         return fetch('/get_current_user_info')
             .then(response => {
                 if (!response.ok) {
-                    throw new Error('Network response was not ok: ' + response.status);
+                    throw new Error('Failed to fetch user info');
                 }
                 return response.json();
             })
             .then(userData => {
                 this.currentUser = userData;
-                
-                // Update UI with user data if function exists
-                if (typeof updateUserInterface === 'function') {
-                    updateUserInterface(userData);
-                } else {
-                    console.warn('[ChatApp] updateUserInterface function not available');
-                }
-                
                 return userData;
             });
     },
     
-    // Start polling for new messages
-    startPolling: function() {
-        console.log('[ChatApp] Starting message polling');
-        if (this.polling) {
-            clearInterval(this.polling);
-        }
-        
-        this.polling = setInterval(() => {
-            this.pollForUpdates();
-        }, this.pollingInterval);
-    },
-    
-    // Stop polling: function() {
-        if (this.polling) {
-            clearInterval(this.polling);
-            this.polling = null;
-            console.log('[ChatApp] Message polling stopped');
-        }
-    },
-    
-    // Poll for updates (new messages, status changes)
-    pollForUpdates: function() {
-        // Only poll if we have an active chat
-        if (this.activeChat) {
-            this.checkForNewMessages();
-        }
-    },
-    
-    // Check for new messages in current chat
-    checkForNewMessages: function() {
-        if (!this.activeChat || !this.activeChat.userId) {
-            console.warn('[ChatApp] Cannot check for new messages: No active chat');
-            return;
-        }
-        
-        // Find the last message ID if there are messages
-        let lastMessageId = 0;
-        const messages = document.querySelectorAll('.message');
-        if (messages.length > 0) {
-            const lastMessage = messages[messages.length - 1];
-            lastMessageId = parseInt(lastMessage.dataset.messageId) || 0;
-        }
-        
-        // Get new messages since the last message
-        if (typeof fetchMessages !== 'function') {
-            console.error('[ChatApp] fetchMessages function not available');
-            return;
-        }
-        
-        fetchMessages(this.activeChat.userId, 1, 100, lastMessageId)
-            .then(data => {
-                if (data.success && data.messages && data.messages.length > 0) {
-                    // Log in debug if enabled
-                    if (typeof logNewMessages === 'function') {
-                        logNewMessages(data.messages.length);
-                    }
-                    
-                    // Add new messages to the chat
-                    const chatMessages = document.querySelector('.chat-messages');
-                    if (chatMessages) {
-                        data.messages.forEach(message => {
-                            if (typeof addMessageToChat === 'function') {
-                                addMessageToChat(message, chatMessages, true);
-                            } else {
-                                console.error('[ChatApp] addMessageToChat function not available');
-                            }
-                        });
-                    }
-                }
-            })
-            .catch(error => {
-                console.error('[ChatApp] Error polling for new messages:', error);
-            });
-    },
-    
-    // Open chat with a user
+    // Open chat with a user - simplified for reliability
     openChat: function(userId, userName) {
         console.log(`[ChatApp] Opening chat with user ${userName} (ID: ${userId})`);
-        
-        if (!userId) {
-            console.error('[ChatApp] Cannot open chat: Invalid user ID');
-            return;
-        }
-        
-        // Convert userId to a number to ensure consistency
-        userId = parseInt(userId, 10);
         
         // Store the active chat information
         this.activeChat = {
@@ -204,40 +64,29 @@ const ChatApp = {
             userName: userName
         };
         
-        // Find and activate the corresponding contact item if it exists
+        // Find active contact in sidebar if it exists
         const contactItems = document.querySelectorAll('.contact-item');
-        let contactExists = false;
-        
         contactItems.forEach(item => {
+            item.classList.remove('active');
             if (item.dataset.userId === userId.toString()) {
-                contactExists = true;
                 item.classList.add('active');
-            } else {
-                item.classList.remove('active');
             }
         });
         
-        if (!contactExists) {
-            console.log(`[ChatApp] User ${userId} not found in current contacts list, will add to contacts`);
-        }
-        
-        // Create the chat interface
+        // Create the chat interface - simplified for reliability
         const mainContent = document.querySelector('.main-content');
-        if (!mainContent) {
-            console.error('[ChatApp] Main content element not found');
-            return;
-        }
+        if (!mainContent) return;
         
-        // Clear the main content
+        // Clear the current content
         mainContent.innerHTML = '';
         
-        // Create the chat container
+        // Create a new chat container
         const chatContainer = document.createElement('div');
         chatContainer.className = 'chat-container';
         
-        // Add chat header
+        // Add chat header with user info
         chatContainer.innerHTML = `
-            <div class="chat-header">
+            <div class="chat-header" data-user-id="${userId}">
                 <div class="chat-user-info">
                     <div class="chat-user-avatar">
                         <div class="avatar-initials">${userName.charAt(0).toUpperCase()}</div>
@@ -253,7 +102,6 @@ const ChatApp = {
                 </button>
             </div>
             <div class="chat-messages">
-                <!-- Messages will be loaded here -->
                 <div class="loading-messages">Loading messages...</div>
             </div>
             <div class="message-input-container">
@@ -278,104 +126,118 @@ const ChatApp = {
             </div>
         `;
         
+        // Add the chat container to the main content
         mainContent.appendChild(chatContainer);
         
-        // Load chat messages
-        const chatMessages = chatContainer.querySelector('.chat-messages');
-        if (chatMessages) {
-            if (typeof loadMessages === 'function') {
-                loadMessages(userId)
-                    .catch(error => {
-                        console.error('[ChatApp] Error loading messages:', error);
-                    });
-            } else {
-                console.error('[ChatApp] loadMessages function not available');
-                chatMessages.innerHTML = '<div class="no-messages">Failed to load messages. loadMessages function not found.</div>';
-            }
+        // Try to undelete the chat in case it was deleted before
+        this.undeleteChat(userId);
+        
+        // Load messages for this chat
+        this.loadMessages(userId);
+        
+        // Try to set up the message sending functionality (as a backup)
+        if (typeof fixMessageSending === 'function') {
+            fixMessageSending();
         }
         
-        // Set up message input handlers
-        const messageInput = chatContainer.querySelector('.message-input-field input');
-        const sendButton = chatContainer.querySelector('.send-button');
-        const attachButton = chatContainer.querySelector('.paperclip-button');
+        // Make sure the user is added to contacts
+        this.ensureUserIsContact(userId);
+    },
+    
+    // Load messages for a chat
+    loadMessages: function(userId) {
+        const chatMessages = document.querySelector('.chat-messages');
+        if (!chatMessages) return;
         
-        if (messageInput && sendButton) {
-            // Focus the input field
-            setTimeout(() => {
-                messageInput.focus();
-            }, 100);
-            
-            // Enable/disable send button based on input content
-            messageInput.addEventListener('input', function() {
-                if (this.value.trim()) {
-                    sendButton.classList.add('active');
-                } else {
-                    sendButton.classList.remove('active');
-                }
-            });
-            
-            // Handle enter key in input field
-            messageInput.addEventListener('keydown', function(e) {
-                if (e.key === 'Enter' && !e.shiftKey && this.value.trim()) {
-                    e.preventDefault();
-                    console.log('[ChatApp] Enter key pressed, sending message');
-                    
-                    const text = this.value.trim();
-                    if (text && typeof sendMessageHandler === 'function') {
-                        sendMessageHandler(text, userId, chatMessages);
-                    } else if (!typeof sendMessageHandler === 'function') {
-                        console.error('[ChatApp] sendMessageHandler function not available');
-                    }
-                }
-            });
-            
-            // Handle send button click
-            sendButton.addEventListener('click', function() {
-                console.log('[ChatApp] Send button clicked');
-                const text = messageInput.value.trim();
-                
-                if (text) {
-                    if (typeof sendMessageHandler === 'function') {
-                        sendMessageHandler(text, userId, chatMessages);
-                    } else {
-                        console.error('[ChatApp] sendMessageHandler function not available');
-                    }
-                }
+        // Try to use the loadMessages function if it exists
+        if (typeof loadMessages === 'function') {
+            loadMessages(userId).catch(error => {
+                console.error('[ChatApp] Error loading messages with regular function:', error);
+                this.fallbackLoadMessages(userId);
             });
         } else {
-            console.error('[ChatApp] Message input elements not found');
+            // Use fallback if function not found
+            this.fallbackLoadMessages(userId);
         }
+    },
+    
+    // Fallback for loading messages
+    fallbackLoadMessages: function(userId) {
+        console.log('[ChatApp] Using fallback message loading for user:', userId);
         
-        // Set up file attachment
-        if (attachButton) {
-            attachButton.addEventListener('click', function() {
-                // Create a file input element
-                const fileInput = document.createElement('input');
-                fileInput.type = 'file';
-                fileInput.accept = 'image/*,.pdf,.doc,.docx,.xls,.xlsx,.txt';
-                fileInput.style.display = 'none';
-                document.body.appendChild(fileInput);
+        const chatMessages = document.querySelector('.chat-messages');
+        if (!chatMessages) return;
+        
+        // Show loading indicator
+        chatMessages.innerHTML = '<div class="loading-messages">Loading messages...</div>';
+        
+        // Fetch messages from server
+        fetch(`/get_messages?user_id=${userId}&page=1&limit=30`)
+            .then(response => {
+                if (!response.ok) {
+                    throw new Error('Failed to fetch messages');
+                }
+                return response.json();
+            })
+            .then(data => {
+                // Create messages container
+                chatMessages.innerHTML = '';
+                const messagesContainer = document.createElement('div');
+                messagesContainer.className = 'messages-container';
+                chatMessages.appendChild(messagesContainer);
                 
-                // Trigger click on the file input
-                fileInput.click();
-                
-                // Handle file selection
-                fileInput.addEventListener('change', function() {
-                    if (this.files && this.files.length > 0) {
-                        if (typeof handleFileSelection === 'function') {
-                            handleFileSelection(this.files, ChatApp.activeChat);
-                        } else {
-                            console.error('[ChatApp] handleFileSelection function not available');
-                        }
-                    }
-                    // Remove the file input from the DOM
-                    document.body.removeChild(fileInput);
-                });
+                // Show messages if we have them
+                if (data.success && data.messages && data.messages.length > 0) {
+                    data.messages.forEach(message => {
+                        const messageEl = this.createMessageElement(message);
+                        messagesContainer.appendChild(messageEl);
+                    });
+                    
+                    // Scroll to bottom
+                    chatMessages.scrollTop = chatMessages.scrollHeight;
+                } else {
+                    // Show no messages text
+                    messagesContainer.innerHTML = '<div class="no-messages">No messages yet. Send a message to start the conversation.</div>';
+                }
+            })
+            .catch(error => {
+                console.error('[ChatApp] Error loading messages:', error);
+                chatMessages.innerHTML = '<div class="error-message">Failed to load messages. Please try again.</div>';
             });
-        }
+    },
+    
+    // Create a message element
+    createMessageElement: function(message) {
+        const messageEl = document.createElement('div');
         
-        // Check for contact status and update UI if needed
-        console.log('[ChatApp] Checking contact status for user:', userId);
+        // Determine if this is a sent or received message
+        const isSent = parseInt(message.sender_id) === parseInt(this.currentUser?.user_id);
+        
+        messageEl.className = `message ${isSent ? 'message-sent' : 'message-received'}`;
+        messageEl.dataset.messageId = message.id;
+        
+        // Format timestamp
+        const timestamp = new Date(message.timestamp);
+        const hours = String(timestamp.getHours()).padStart(2, '0');
+        const minutes = String(timestamp.getMinutes()).padStart(2, '0');
+        
+        // Regular text message
+        messageEl.innerHTML = `
+            <div class="message-content">${this.escapeHtml(message.content)}</div>
+            <div class="message-time">${hours}:${minutes}</div>
+        `;
+        
+        // Add animation class
+        setTimeout(() => {
+            messageEl.classList.add('message-visible');
+        }, 10);
+        
+        return messageEl;
+    },
+    
+    // Make sure a user is added to contacts
+    ensureUserIsContact: function(userId) {
+        // Check if user is already a contact
         fetch('/check_contact', {
             method: 'POST',
             headers: {
@@ -383,122 +245,124 @@ const ChatApp = {
             },
             body: JSON.stringify({ contact_id: userId })
         })
-        .then(response => {
-            if (!response.ok) {
-                throw new Error('Network response was not ok: ' + response.status);
-            }
-            return response.json();
-        })
+        .then(response => response.json())
         .then(data => {
-            console.log('[ChatApp] Contact status response:', data);
-            if (data.is_contact) {
-                console.log(`[ChatApp] User ${userId} is already a contact`);
-            } else if (!contactExists) {
-                console.log(`[ChatApp] User ${userId} is not a contact, adding to contacts`);
-                // Add user to contacts if they aren't already
-                if (typeof addToContacts === 'function') {
-                    addToContacts(userId)
-                        .then(success => {
-                            if (success) {
-                                console.log('[ChatApp] Successfully added to contacts, refreshing sidebar');
-                                // If we successfully added to contacts, refresh the sidebar
-                                if (typeof refreshContacts === 'function') {
-                                    refreshContacts();
-                                } else if (typeof loadSidebar === 'function') {
-                                    loadSidebar();
-                                } else {
-                                    console.error('[ChatApp] Neither refreshContacts nor loadSidebar function available');
-                                }
-                            } else {
-                                console.warn('[ChatApp] Failed to add user to contacts');
-                            }
-                        });
-                } else {
-                    console.error('[ChatApp] addToContacts function not available');
-                }
+            if (!data.is_contact) {
+                // Add user to contacts
+                this.addUserToContacts(userId);
             }
         })
         .catch(error => {
             console.error('[ChatApp] Error checking contact status:', error);
         });
     },
-
-    // Add a new method to undelete a chat if it was previously deleted
+    
+    // Add a user to contacts
+    addUserToContacts: function(userId) {
+        fetch('/add_contact', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({ contact_id: userId })
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                console.log('[ChatApp] User added to contacts:', data);
+                // Refresh the sidebar
+                if (typeof loadSidebar === 'function') {
+                    setTimeout(() => {
+                        loadSidebar();
+                    }, 1000);
+                }
+            }
+        })
+        .catch(error => {
+            console.error('[ChatApp] Error adding user to contacts:', error);
+        });
+    },
+    
+    // Undelete a chat if it was deleted
     undeleteChat: function(userId) {
-        console.log(`[ChatApp] Checking if chat with user ${userId} needs to be undeleted`);
-        return fetch('/clear_deleted_chats', {
+        fetch('/clear_deleted_chats', {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json'
             },
             body: JSON.stringify({ user_id: userId })
         })
-        .then(response => {
-            if (!response.ok) {
-                // We'll continue even if this fails - it might not be deleted
-                console.warn(`[ChatApp] Failed to undelete chat with user ${userId}, status: ${response.status}`);
-            }
-            return true; // Continue with opening the chat
+        .then(response => response.json())
+        .then(data => {
+            console.log('[ChatApp] Chat undeleted:', data);
         })
         .catch(error => {
-            console.warn(`[ChatApp] Error undeleting chat: ${error}`);
-            return true; // Continue with opening the chat despite error
+            console.error('[ChatApp] Error undeleting chat:', error);
         });
+    },
+    
+    // Utility to escape HTML
+    escapeHtml: function(text) {
+        if (!text) return '';
+        const div = document.createElement('div');
+        div.textContent = text;
+        return div.innerHTML;
     }
 };
 
-// Add methods to diagnose missing functions
-ChatApp.diagnoseFunctions = function() {
-    const requiredFunctions = [
-        'fetchMessages', 'loadMessages', 'sendMessageHandler', 'addMessageToChat',
-        'handleFileSelection', 'addToContacts', 'loadSidebar', 'refreshContacts',
-        'updateUserInterface', 'showErrorNotification'
-    ];
-    
-    console.group('[ChatApp] Function Diagnostics:');
-    let allFunctionsAvailable = true;
-    
-    requiredFunctions.forEach(funcName => {
-        if (typeof window[funcName] === 'function') {
-            console.log(`✓ ${funcName}: Available`);
-        } else {
-            console.error(`✗ ${funcName}: Not available`);
-            allFunctionsAvailable = false;
-        }
-    });
-    
-    if (!allFunctionsAvailable) {
-        console.warn('[ChatApp] Some required functions are missing. The application may not work correctly.');
-    } else {
-        console.log('[ChatApp] All required functions are available.');
-    }
-    console.groupEnd();
-    
-    return allFunctionsAvailable;
-};
-
-// Run diagnostics after a short delay to ensure all scripts are loaded
-setTimeout(() => {
-    ChatApp.diagnoseFunctions();
-}, 1000);
-
-// Make openChat available globally
+// Make openChat function globally available
 window.openChat = function(userId, userName) {
     console.log(`[Global] openChat called for user ${userName} (ID: ${userId})`);
-    if (!userId) {
-        console.error('[Global] openChat called with invalid userId');
+    
+    // Handle missing ChatApp
+    if (typeof ChatApp === 'undefined' || !ChatApp.openChat) {
+        console.error('[Global] ChatApp not available, using fallback');
+        
+        // Simple fallback implementation
+        const mainContent = document.querySelector('.main-content');
+        if (mainContent) {
+            mainContent.innerHTML = `
+                <div class="chat-container">
+                    <div class="chat-header">
+                        <div class="chat-user-info">
+                            <div class="chat-user-avatar">
+                                <div class="avatar-initials">${userName.charAt(0).toUpperCase()}</div>
+                            </div>
+                            <div class="chat-user-name">${userName}</div>
+                        </div>
+                    </div>
+                    <div class="chat-messages">
+                        <div class="loading-messages">Loading messages...</div>
+                    </div>
+                    <div class="message-input-container">
+                        <div class="input-wrapper">
+                            <div class="message-input-field">
+                                <input type="text" placeholder="Type a message">
+                            </div>
+                            <button class="send-button">Send</button>
+                        </div>
+                    </div>
+                </div>
+            `;
+            
+            // Try to apply fixes
+            if (typeof fixMessageSending === 'function') {
+                setTimeout(fixMessageSending, 100);
+            }
+        }
         return;
     }
+    
+    // Use the ChatApp implementation
     ChatApp.openChat(userId, userName);
 };
 
-// Check if document is ready and auto-initialize
-if (document.readyState === 'complete' || document.readyState === 'interactive') {
-    console.log('[ChatApp] Document already ready, initializing immediately');
-    ChatApp.init();
-} else {
-    document.addEventListener('DOMContentLoaded', function() {
-        console.log('[ChatApp] DOMContentLoaded event, initializing');
+// Initialize when document is ready
+document.addEventListener('DOMContentLoaded', function() {
+    console.log('[ChatApp] DOM ready, initializing ChatApp');
+    if (typeof ChatApp !== 'undefined' && ChatApp.init) {
         ChatApp.init();
-    });
-}
+    } else {
+        console.error('[ChatApp] ChatApp object not available or init method missing');
+    }
+});
