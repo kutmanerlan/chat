@@ -326,11 +326,12 @@
 }
 
 .no-items-message {
-  padding: 10px 15px;
-  color: #777;
+  padding: 15px;
+  color: #888;
   font-size: 13px;
   font-style: italic;
   text-align: center;
+  line-height: 1.5;
 }
 
 /* Loading indicator for sidebar */
@@ -360,4 +361,16 @@
 
 .sidebar-error a:hover {
   text-decoration: underline;
+}
+
+/* Highlight effect for search box */
+@keyframes highlight-pulse {
+  0% { box-shadow: 0 0 0 0 rgba(52, 152, 219, 0.4); }
+  70% { box-shadow: 0 0 0 8px rgba(52, 152, 219, 0); }
+  100% { box-shadow: 0 0 0 0 rgba(52, 152, 219, 0); }
+}
+
+.highlight-search input {
+  animation: highlight-pulse 1.5s ease-out infinite;
+  border: 1px solid #3498db;
 }

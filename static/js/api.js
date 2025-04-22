@@ -312,6 +312,66 @@ function fetchChatList() {
 }
 
 /**
+ * Get chat list
+ */
+function fetchChatList() {
+  return fetch('/get_chat_list', {
+    method: 'GET',
+    headers: {
+      'Cache-Control': 'no-cache', // Prevent caching
+      'Content-Type': 'application/json'
+    }
+  })
+  .then(response => {
+    if (!response.ok) throw new Error('Failed to load chats');
+    return response.json();
+  })
+  .then(data => {
+    // Ensure the data structure is valid even if empty
+    if (!data.chats) {
+      data.chats = [];
+      console.log('No chats data found, using empty array');
+    }
+    return data;
+  })
+  .catch(error => {
+    console.error('Error in fetchChatList:', error);
+    // Return a valid but empty response object rather than propagating the error
+    return { success: true, chats: [] };
+  });
+}
+
+/**
+ * Get user contacts
+ */
+function fetchContacts() {
+  return fetch('/get_contacts', {
+    method: 'GET',
+    headers: {
+      'Cache-Control': 'no-cache',
+      'Content-Type': 'application/json'
+    }
+  })
+  .then(response => {
+    if (!response.ok) throw new Error('Failed to load contacts');
+    return response.json();
+  })
+  .then(data => {
+    // Ensure the data structure is valid even if empty
+    if (!data.contacts) {
+      data.contacts = [];
+      console.log('No contacts data found, using empty array');
+    }
+    return data;
+  })
+  .catch(error => {
+    console.error('Error in fetchContacts:', error);
+    // Return a valid but empty response object
+    return { success: true, contacts: [] };
+  });
+}
+
+/**
  * Update user profile
  */
 function updateProfile(formData) {

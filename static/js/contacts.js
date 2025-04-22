@@ -12,40 +12,50 @@ function loadSidebar() {
   const currentChats = document.querySelectorAll('.contact-item');
   const hasExistingChats = currentChats.length > 0;
   
-  // Show loading indicator in sidebar if it's empty
+  // Show loading indicator in sidebar
   const contactsList = document.getElementById('contactsList');
   if (contactsList && !hasExistingChats) {
     contactsList.innerHTML = '<div class="loading-sidebar">Loading chats...</div>';
   }
   
-  // Load both contacts and chats
+  // Load both contacts and chats with retry capability
+  loadSidebarData();
+}
+
+/**
+ * Helper function to load sidebar data with retry
+ */
+function loadSidebarData(retryCount = 0) {
   Promise.all([fetchContacts(), fetchChatList()])
     .then(([contactsData, chatsData]) => {
-      // Store data in app state
-      if (contactsData.contacts) {
-        ChatApp.contacts = contactsData.contacts;
-      }
+      // Store data in app state - ensure we always have valid arrays
+      ChatApp.contacts = contactsData.contacts || [];
+      ChatApp.chats = chatsData.chats || [];
       
-      if (chatsData.chats) {
-        ChatApp.chats = chatsData.chats;
-        console.log(`Retrieved ${chatsData.chats.length} chats`);
-      } else {
-        console.warn('No chats data returned from API');
-        ChatApp.chats = [];
-      }
+      console.log(`Retrieved ${ChatApp.contacts.length} contacts and ${ChatApp.chats.length} chats`);
       
       // Render sidebar items
       renderSidebar(ChatApp.contacts, ChatApp.chats);
+      
+      // Remove any error notifications about loading
+      removeErrorNotificationByText('Failed to load contacts and chats');
     })
     .catch(error => {
       console.error('Error loading sidebar data:', error);
       
       // Show error in sidebar
+      const contactsList = document.getElementById('contactsList');
       if (contactsList) {
         contactsList.innerHTML = '<div class="sidebar-error">Failed to load chats. <a href="#" onclick="loadSidebar(); return false;">Retry</a></div>';
       }
       
-      showErrorNotification('Failed to load contacts and chats');
+      if (retryCount < 2) {
+        console.log(`Retrying sidebar data load (attempt ${retryCount + 1})`);
+        setTimeout(() => loadSidebarData(retryCount + 1), 1000);
+      } else {
+        // After 3 attempts, show a notification
+        showErrorNotification('Failed to load contacts and chats');
+      }
     });
 }
 
@@ -101,10 +111,6 @@ function renderSidebar(contacts, chats) {
     chats: chats ? chats.length : 0
   });
   
-  if (chats && chats.length > 0) {
-    console.log('First few chats:', chats.slice(0, 3));
-  }
-  
   // Create chats section
   const chatSection = document.createElement('div');
   chatSection.className = 'sidebar-section chats-section';
@@ -127,13 +133,50 @@ function renderSidebar(contacts, chats) {
     if (noContactsMessage) noContactsMessage.style.display = 'none';
   } else {
     // If no chats, show a message in the section
-    console.warn('No chats to display in sidebar');
+    console.log('No chats to display in sidebar');
     
     const noChatsMsg = document.createElement('div');
     noChatsMsg.className = 'no-items-message';
-    noChatsMsg.textContent = 'No chats yet';
+    noChatsMsg.textContent = 'No chats yet. Start by searching for a user.';
     chatSection.appendChild(noChatsMsg);
     contactsList.appendChild(chatSection);
+    
+    // Show the search UI more prominently if no chats
+    highlightSearchFeature();
+  }
+
+  // Create contacts section
+  if (contacts && contacts.length > 0) {
+    const contactsSection = document.createElement('div');
+    contactsSection.className = 'sidebar-section contacts-section';
+    
+    const contactsTitle = document.createElement('div');
+    contactsTitle.className = 'section-title';
+    contactsTitle.textContent = 'Contacts';
+    contactsSection.appendChild(contactsTitle);
+    
+    contacts.forEach(contact => {
+      const contactItem = createContactElement(contact);
+      contactsSection.appendChild(contactItem);
+    });
+    
+    contactsList.appendChild(contactsSection);
+  }
+}
+
+/**
+ * Highlight the search feature after clearing database
+ */
+function highlightSearchFeature() {
+  // Add a visual indicator around search for new users
+  const searchContainer = document.querySelector('.search-container');
+  if (searchContainer) {
+    searchContainer.classList.add('highlight-search');
+    
+    // Remove highlight after a few seconds
+    setTimeout(() => {
+      searchContainer.classList.remove('highlight-search');
+    }, 3000);
   }
 }
 
@@ -179,7 +222,26 @@ function hideAllTooltips() {
  * Handler for adding a contact
  */
 function addContactHandler(userId, userName) {
-  // ...existing code...
+  console.log('Adding user to contacts:', userId, userName);
+  
+  addToContacts(userId)
+    .then(response => {
+      if (response.success) {
+        showSuccessNotification(`Added ${userName} to contacts`);
+        
+        // Update UI and data structures
+        updateContactMenu(userId, true);
+        
+        // Force refresh sidebar to show updated contacts
+        loadSidebar();
+      } else {
+        throw new Error(response.error || 'Failed to add contact');
+      }
+    })
+    .catch(error => {
+      console.error('Error adding contact:', error);
+      showErrorNotification(`Error adding contact: ${error.message}`);
+    });
 }
 
 /**
