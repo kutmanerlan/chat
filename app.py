@@ -964,7 +964,7 @@ def get_chat_list_filtered():
         blocks_received = Block.query.filter_by(blocked_user_id=current_user_id).all()
         
         blocked_ids = [block.blocked_user_id for blocks in blocks_made]
-        blocked_by_ids = [block.user_id for blocks in blocks_received]
+        blocked_by_ids = [row[0] for row in blocks_received]
         
         # Prepare chat list
         chat_list = []
@@ -1709,13 +1709,25 @@ def repair_tables():
 
 @app.route('/clear_deleted_chats', methods=['POST'])
 def clear_deleted_chats():
-    """Clear all deleted chat records - for admin use only"""
+    """Clear deleted chat records for the current user"""
     if 'user_id' not in session:
         return jsonify({'success': False, 'error': 'Not logged in'})
     
     try:
-        # Clear all deleted chat records for the current user only
-        DeletedChat.query.filter_by(user_id=session['user_id']).delete()
+        data = request.get_json()
+        # If a specific user_id is provided, only clear that chat
+        user_id = data.get('user_id', None)
+        
+        if user_id:
+            # Clear only the specific chat
+            DeletedChat.query.filter_by(
+                user_id=session['user_id'],
+                chat_with_user_id=user_id
+            ).delete()
+        else:
+            # Clear all deleted chat records for the current user
+            DeletedChat.query.filter_by(user_id=session['user_id']).delete()
+            
         db.session.commit()
         
         return jsonify({

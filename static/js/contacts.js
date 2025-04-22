@@ -85,7 +85,7 @@ function fetchContacts() {
 function fetchChatList() {
     console.log('Fetching chat list from server...');
     
-    // Try the main chat list endpoint first
+    // Try the main chat list endpoint
     return fetch('/get_chat_list')
         .then(response => {
             if (!response.ok) {
