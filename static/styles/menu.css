@@ -6,51 +6,27 @@
 .menu-btn {
     display: flex;
     flex-direction: column;
-    justify-content: center;
-    align-items: center;
-    width: 40px; /* Increased from 20px to make a larger click target */
-    height: 40px; /* Increased from 20px to make a larger click target */
+    justify-content: space-between;
+    width: 24px;
+    height: 18px;
     background-color: transparent;
     border: none;
     padding: 0;
     margin: 0;
     cursor: pointer;
     outline: none;
-    position: relative;
-    transition: none;
 }
 
 .menu-btn:focus,
-.menu-btn:active,
-.menu-btn:hover {
+.menu-btn:active {
     outline: none;
-    box-shadow: none;
-    background-color: rgba(255, 255, 255, 0.1); /* Added slight highlight on hover */
-    border-radius: 50%;
 }
 
 .menu-btn span {
     display: block;
-    width: 16px;
-    height: 1.5px;
+    width: 24px;
+    height: 2px;
     background-color: var(--text-secondary);
-    position: absolute;
-    left: 12px; /* Adjusted from 2px to center in the wider button */
-}
-
-.menu-btn span:nth-child(1) {
-    top: 12px; /* Adjusted from 5px based on new size */
-    transform: none;
-}
-
-.menu-btn span:nth-child(2) {
-    top: 19px; /* Adjusted from 10px based on new size */
-    transform: none;
-}
-
-.menu-btn span:nth-child(3) {
-    top: 26px; /* Adjusted from 15px based on new size */
-    transform: none;
 }
 
 /* Side menu styles */
@@ -76,8 +52,8 @@
 /* Close button for side menu */
 .close-menu-btn {
     position: absolute;
-    top: 15px; /* Increased from 1px for better visibility */
-    left: 15px; /* Increased from 3px for better visibility */
+    top: 15px;
+    left: 15px;
     width: 32px;
     height: 32px;
     display: flex;

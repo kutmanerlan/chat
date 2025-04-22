@@ -7,16 +7,17 @@
   <!-- Include modular CSS files -->
   <link rel="stylesheet" href="{{ url_for('static', filename='styles/main.css') }}">
   
-  <!-- Include modular JavaScript files -->
-  <script src="{{ url_for('static', filename='js/core.js') }}" defer></script>
-  <script src="{{ url_for('static', filename='js/api.js') }}" defer></script>
-  <script src="{{ url_for('static', filename='js/ui.js') }}" defer></script>
-  <script src="{{ url_for('static', filename='js/chat.js') }}" defer></script>
-  <script src="{{ url_for('static', filename='js/messages.js') }}" defer></script>
-  <script src="{{ url_for('static', filename='js/contacts.js') }}" defer></script>
-  <script src="{{ url_for('static', filename='js/search.js') }}" defer></script>
-  <script src="{{ url_for('static', filename='js/notifications.js') }}" defer></script>
-  <script src="{{ url_for('static', filename='js/main.js') }}" defer></script>
+  <!-- Include modular JavaScript files - order matters -->
+  <script src="{{ url_for('static', filename='js/core.js') }}"></script>
+  <script src="{{ url_for('static', filename='js/api.js') }}"></script>
+  <script src="{{ url_for('static', filename='js/ui.js') }}"></script>
+  <script src="{{ url_for('static', filename='js/chat.js') }}"></script>
+  <script src="{{ url_for('static', filename='js/messages.js') }}"></script>
+  <script src="{{ url_for('static', filename='js/contacts.js') }}"></script>
+  <script src="{{ url_for('static', filename='js/search.js') }}"></script>
+  <script src="{{ url_for('static', filename='js/notifications.js') }}"></script>
+  <script src="{{ url_for('static', filename='js/main.js') }}"></script>
+  <script src="{{ url_for('static', filename='js/debug.js') }}"></script>
 </head>
 <body>
   <!-- Боковая панель -->
