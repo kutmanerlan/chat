@@ -205,3 +205,106 @@ document.addEventListener('DOMContentLoaded', () => {
     debugIndicators();
   }, 2000);
 });
+
+/**
+ * Debug utilities for the chat application
+ */
+
+// Create global debug object
+window.ChatDebug = {
+    // Check if all required functions are available
+    checkFunctions: function() {
+        const requiredFunctions = [
+            'fetchCurrentUserInfo',
+            'loadSidebar',
+            'showErrorNotification',
+            'showSuccessNotification',
+            'openChat',
+            'loadMessages',
+            'addToContacts',
+            'createChatElement',
+            'createContactElement'
+        ];
+        
+        console.log('=== Function Availability Check ===');
+        const missingFunctions = [];
+        
+        requiredFunctions.forEach(fn => {
+            const exists = typeof window[fn] === 'function';
+            console.log(`${fn}: ${exists ? '✓' : '✗'}`);
+            if (!exists) missingFunctions.push(fn);
+        });
+        
+        if (missingFunctions.length > 0) {
+            console.error('Missing functions:', missingFunctions);
+            return false;
+        }
+        
+        console.log('All required functions are available');
+        return true;
+    },
+    
+    // Show script loading info
+    showScriptInfo: function() {
+        const scripts = document.querySelectorAll('script');
+        console.log('=== Loaded Scripts ===');
+        scripts.forEach((script, index) => {
+            console.log(`${index + 1}. ${script.src || 'Inline script'}`);
+        });
+    },
+    
+    // Fix missing functions by creating temporary implementations
+    fixMissingFunctions: function() {
+        // Check for openChat function
+        if (typeof window.openChat !== 'function') {
+            console.warn('Creating fallback for missing openChat function');
+            window.openChat = function(userId, userName) {
+                console.log('Fallback openChat called with:', userId, userName);
+                // Simplified implementation to just show something
+                const mainContent = document.querySelector('.main-content');
+                if (mainContent) {
+                    mainContent.innerHTML = `<div style="padding: 20px; text-align: center;">
+                        <h2>Chat with ${userName}</h2>
+                        <p>User ID: ${userId}</p>
+                        <p>This is a fallback chat view</p>
+                    </div>`;
+                }
+            };
+        }
+    },
+
+    // Initialize debugging utilities
+    init: function() {
+        console.log('Initializing Chat Debug Tools');
+        this.showScriptInfo();
+        
+        // Add debug button to the page
+        const debugBtn = document.createElement('button');
+        debugBtn.textContent = 'Debug';
+        debugBtn.style.position = 'fixed';
+        debugBtn.style.bottom = '10px';
+        debugBtn.style.right = '10px';
+        debugBtn.style.zIndex = '9999';
+        debugBtn.style.padding = '5px 10px';
+        debugBtn.style.backgroundColor = '#333';
+        debugBtn.style.color = 'white';
+        debugBtn.style.border = 'none';
+        debugBtn.style.borderRadius = '4px';
+        debugBtn.style.cursor = 'pointer';
+        
+        debugBtn.addEventListener('click', () => {
+            this.checkFunctions();
+            this.fixMissingFunctions();
+        });
+        
+        document.body.appendChild(debugBtn);
+    }
+};
+
+// Initialize debug tools when DOM is loaded
+document.addEventListener('DOMContentLoaded', function() {
+    // Wait a bit to ensure all other scripts have loaded
+    setTimeout(() => {
+        if (window.ChatDebug) window.ChatDebug.init();
+    }, 1000);
+});

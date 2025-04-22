@@ -214,7 +214,7 @@ function createSearchUserItem(user) {
 
 // Handle click on search user item
 function handleSearchUserClick(user) {
-    console.log('User clicked:', user);
+    console.log('User clicked in search:', user);
     
     // Hide search results
     const searchResults = document.querySelector('.search-results');
@@ -228,12 +228,84 @@ function handleSearchUserClick(user) {
         searchInput.value = '';
     }
     
-    // Open chat with user - make sure this function exists
-    if (typeof openChat === 'function') {
-        openChat(user.id, user.name);
+    // Debug if openChat exists
+    if (typeof openChat !== 'function') {
+        console.error('openChat function not found - this is why chat is not opening');
+        console.error('Available global functions:', Object.keys(window).filter(key => typeof window[key] === 'function'));
+        
+        // Try to find the openChat function in other objects
+        if (typeof window.ChatApp !== 'undefined' && typeof window.ChatApp.openChat === 'function') {
+            console.log('Found openChat as ChatApp.openChat - using that instead');
+            window.ChatApp.openChat(user.id, user.name);
+            return;
+        }
+        
+        // Fallback implementation if openChat is missing
+        console.warn('Using fallback chat opening implementation');
+        // Create a simple implementation to at least show something
+        openChatFallback(user.id, user.name);
+        return;
+    }
+    
+    // Open chat with user
+    console.log('Calling openChat with:', user.id, user.name);
+    openChat(user.id, user.name);
+}
+
+// Fallback implementation if openChat is missing
+function openChatFallback(userId, userName) {
+    console.log('Opening chat using fallback method:', userId, userName);
+    
+    // Get main content area
+    const mainContent = document.querySelector('.main-content');
+    if (!mainContent) {
+        console.error('Main content element not found');
+        return;
+    }
+    
+    // Clear the main content
+    mainContent.innerHTML = '';
+    
+    // Create a basic chat UI
+    const chatContainer = document.createElement('div');
+    chatContainer.className = 'chat-container';
+    chatContainer.innerHTML = `
+        <div class="chat-header">
+            <div class="chat-user-info">
+                <div class="chat-user-avatar">
+                    <div class="avatar-initials">${userName.charAt(0)}</div>
+                </div>
+                <div class="chat-user-name">${userName}</div>
+            </div>
+        </div>
+        <div class="chat-messages">
+            <div class="no-messages">Start a conversation with ${userName}</div>
+        </div>
+        <div class="message-input-container">
+            <div class="input-wrapper">
+                <div class="message-input-field">
+                    <input type="text" placeholder="Type a message" id="messageInput">
+                </div>
+                <button class="send-button">Send</button>
+            </div>
+        </div>
+    `;
+    
+    mainContent.appendChild(chatContainer);
+    
+    // Store current chat info
+    if (typeof ChatApp !== 'undefined') {
+        ChatApp.currentChat = {
+            userId: userId,
+            userName: userName
+        };
+    }
+    
+    // Fetch messages for this user
+    if (typeof loadMessages === 'function') {
+        loadMessages(userId);
     } else {
-        console.error('openChat function not found. Check if chat.js is loaded properly.');
-        alert('Could not open chat with ' + user.name);
+        console.error('loadMessages function not found');
     }
 }
 

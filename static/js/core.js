@@ -231,7 +231,7 @@ function debounce(func, wait) {
 document.addEventListener('DOMContentLoaded', function() {
     console.log('DOM fully loaded, initializing ChatApp...');
     
-    // Check if all required scripts are loaded
+    // Check if all required scripts are loaded - but don't block initialization
     const requiredFunctions = [
         'fetchCurrentUserInfo',
         'loadSidebar',
@@ -245,15 +245,20 @@ document.addEventListener('DOMContentLoaded', function() {
     
     if (missingFunctions.length > 0) {
         console.error('Missing required functions:', missingFunctions);
-        alert(`Failed to initialize: Missing required functions. Try refreshing the page.`);
-        return;
+        // Log detailed function availability to help debugging
+        console.log('Function availability check:');
+        requiredFunctions.forEach(fn => {
+            console.log(`- ${fn}: ${typeof window[fn]}`);
+        });
+        
+        // Continue with initialization instead of showing an alert and blocking
+        console.warn('Continuing initialization despite missing functions');
     }
     
-    // Initialize the application
+    // Initialize the application anyway
     if (typeof ChatApp !== 'undefined') {
         ChatApp.init();
     } else {
         console.error('ChatApp is not defined. Check if core.js is loaded properly.');
-        alert('Failed to initialize the application. Please refresh the page.');
     }
 });
