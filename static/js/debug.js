@@ -3,76 +3,97 @@
  */
 
 // Debug state
-const ChatDebug = {
-  enabled: false,
-  container: null,
-  lastPollTime: null,
-  newMessageCount: 0,
-  blockCheckCount: 0
-};
+const DEBUG_MODE = false; // Set to false to hide debug features by default
+
+// Debug panel state
+let debugPanelVisible = false;
 
 /**
- * Initialize debugging panel
+ * Initialize debug features
  */
 function initDebugPanel() {
-  // Check for debug mode in URL
-  const urlParams = new URLSearchParams(window.location.search);
-  ChatDebug.enabled = urlParams.get('debug') === 'true';
-  
-  if (!ChatDebug.enabled) {
-    // Even if debug panel is not enabled, add basic click debugging
-    setupClickDebugging();
-    return;
-  }
-  
-  console.log('Debug mode enabled');
-  
-  // Create debug container
-  const debugContainer = document.createElement('div');
-  debugContainer.className = 'debug-panel';
-  debugContainer.innerHTML = `
-    <div class="debug-header">
-      <h3>Debug Panel</h3>
-      <button class="debug-close-btn">×</button>
-    </div>
-    <div class="debug-content">
-      <div class="debug-section">
-        <h4>Message Polling</h4>
-        <div class="debug-item">Last poll: <span id="lastPoll">Never</span></div>
-        <div class="debug-item">New messages: <span id="newMessages">0</span></div>
-        <div class="debug-item">Block checks: <span id="blockChecks">0</span></div>
-      </div>
-      <div class="debug-section">
-        <button id="triggerPoll" class="debug-btn">Force Poll</button>
-        <button id="clearDebug" class="debug-btn">Clear Counters</button>
-      </div>
-    </div>
-  `;
-  
-  // Add to page
-  document.body.appendChild(debugContainer);
-  ChatDebug.container = debugContainer;
-  
-  // Add event listeners
-  document.querySelector('.debug-close-btn').addEventListener('click', () => {
-    debugContainer.classList.toggle('minimized');
-  });
-  
-  document.getElementById('triggerPoll').addEventListener('click', () => {
-    if (ChatApp.activeChat) {
-      checkForNewMessages(ChatApp.activeChat.id);
-      checkForBlockUpdates(ChatApp.activeChat.id);
-      updateDebugInfo('Manual poll triggered');
-    } else {
-      updateDebugInfo('No active chat to poll');
+    // Don't create debug elements if debug mode is disabled
+    if (!DEBUG_MODE) {
+        // Remove any existing debug elements
+        removeExistingDebugElements();
+        return;
     }
-  });
-  
-  document.getElementById('clearDebug').addEventListener('click', () => {
-    ChatDebug.newMessageCount = 0;
-    ChatDebug.blockCheckCount = 0;
-    updateDebugDisplay();
-  });
+
+    // Check for debug mode in URL
+    const urlParams = new URLSearchParams(window.location.search);
+    ChatDebug.enabled = urlParams.get('debug') === 'true';
+    
+    if (!ChatDebug.enabled) {
+        // Even if debug panel is not enabled, add basic click debugging
+        setupClickDebugging();
+        return;
+    }
+    
+    console.log('Debug mode enabled');
+    
+    // Create debug container
+    const debugContainer = document.createElement('div');
+    debugContainer.className = 'debug-panel';
+    debugContainer.innerHTML = `
+      <div class="debug-header">
+        <h3>Debug Panel</h3>
+        <button class="debug-close-btn">×</button>
+      </div>
+      <div class="debug-content">
+        <div class="debug-section">
+          <h4>Message Polling</h4>
+          <div class="debug-item">Last poll: <span id="lastPoll">Never</span></div>
+          <div class="debug-item">New messages: <span id="newMessages">0</span></div>
+          <div class="debug-item">Block checks: <span id="blockChecks">0</span></div>
+        </div>
+        <div class="debug-section">
+          <button id="triggerPoll" class="debug-btn">Force Poll</button>
+          <button id="clearDebug" class="debug-btn">Clear Counters</button>
+        </div>
+      </div>
+    `;
+    
+    // Add to page
+    document.body.appendChild(debugContainer);
+    ChatDebug.container = debugContainer;
+    
+    // Add event listeners
+    document.querySelector('.debug-close-btn').addEventListener('click', () => {
+      debugContainer.classList.toggle('minimized');
+    });
+    
+    document.getElementById('triggerPoll').addEventListener('click', () => {
+      if (ChatApp.activeChat) {
+        checkForNewMessages(ChatApp.activeChat.id);
+        checkForBlockUpdates(ChatApp.activeChat.id);
+        updateDebugInfo('Manual poll triggered');
+      } else {
+        updateDebugInfo('No active chat to poll');
+      }
+    });
+    
+    document.getElementById('clearDebug').addEventListener('click', () => {
+      ChatDebug.newMessageCount = 0;
+      ChatDebug.blockCheckCount = 0;
+      updateDebugDisplay();
+    });
+}
+
+/**
+ * Remove any existing debug elements
+ */
+function removeExistingDebugElements() {
+    // Remove debug button
+    const debugButton = document.getElementById('debugButton');
+    if (debugButton) {
+        debugButton.remove();
+    }
+
+    // Remove debug panel
+    const debugPanel = document.getElementById('debugPanel');
+    if (debugPanel) {
+        debugPanel.remove();
+    }
 }
 
 /**
@@ -159,6 +180,11 @@ function logBlockCheck(changed) {
 
 // Check for indicators display issue
 function debugIndicators() {
+  // Skip if debug mode is disabled
+  if (!DEBUG_MODE) {
+      return;
+  }
+
   console.log("Debugging indicators display...");
   
   // Find all contact items

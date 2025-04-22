@@ -18,7 +18,11 @@
   <script src="{{ url_for('static', filename='js/search.js') }}"></script>
   <script src="{{ url_for('static', filename='js/core.js') }}"></script>
   <script src="{{ url_for('static', filename='js/main.js') }}"></script>
+  
+  <!-- Add this line to conditionally include the debug script -->
+  {% if debug %}
   <script src="{{ url_for('static', filename='js/debug.js') }}"></script>
+  {% endif %}
 </head>
 <body>
   <!-- Боковая панель -->

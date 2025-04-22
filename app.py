@@ -493,8 +493,11 @@ def main():
     if hasattr(user, 'avatar_path') and user.avatar_path:
         session['avatar_path'] = user.avatar_path
     
+    # Pass debug flag to template - only True if in development mode
+    debug_mode = app.debug
+    
     # Добавляем антикэширующие заголовки
-    response = make_response(render_template('dashboard.html', user=user))
+    response = make_response(render_template('dashboard.html', user=user, debug=debug_mode))
     response.headers['Cache-Control'] = 'no-store, no-cache, must-revalidate, max-age=0'
     response.headers['Pragma'] = 'no-cache'
     response.headers['Expires'] = '0'
