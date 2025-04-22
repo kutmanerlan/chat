@@ -263,8 +263,8 @@
 
 /* Adjust avatar size to balance with larger text */
 .side-menu .avatar-placeholder {
-    width: 65px !important; /* Increased from 60px */
-    height: 65px !important; /* Increased from 60px */
+    width: 55px !important; /* Reduced from 65px */
+    height: 55px !important; /* Reduced from 65px */
     border-radius: 50% !important;
     background-color: #706c6c !important;
     margin-right: 15px !important;
@@ -278,6 +278,6 @@
 
 /* Adjust avatar initials size */
 .side-menu .avatar-placeholder .avatar-initials {
-    font-size: 26px !important; /* Increased from default size */
+    font-size: 22px !important; /* Reduced from 26px to match smaller avatar */
     font-weight: 500 !important;
 }
