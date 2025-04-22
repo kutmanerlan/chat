@@ -221,213 +221,206 @@ const ChatApp = {
             console.log(`[ChatApp] User ${userId} not found in current contacts list, will add to contacts`);
         }
         
-        // Check if this chat has been deleted and undelete it
-        this.undeleteChat(userId)
-            .then(() => {
-                // Create the chat interface
-                const mainContent = document.querySelector('.main-content');
-                if (!mainContent) {
-                    console.error('[ChatApp] Main content element not found');
-                    return;
-                }
-                
-                // Clear the main content
-                mainContent.innerHTML = '';
-                
-                // Create the chat container
-                const chatContainer = document.createElement('div');
-                chatContainer.className = 'chat-container';
-                
-                // Add chat header
-                chatContainer.innerHTML = `
-                    <div class="chat-header">
-                        <div class="chat-user-info">
-                            <div class="chat-user-avatar">
-                                <div class="avatar-initials">${userName.charAt(0).toUpperCase()}</div>
-                            </div>
-                            <div class="chat-user-name">${userName}</div>
-                        </div>
-                        <button class="chat-menu-btn">
+        // Create the chat interface
+        const mainContent = document.querySelector('.main-content');
+        if (!mainContent) {
+            console.error('[ChatApp] Main content element not found');
+            return;
+        }
+        
+        // Clear the main content
+        mainContent.innerHTML = '';
+        
+        // Create the chat container
+        const chatContainer = document.createElement('div');
+        chatContainer.className = 'chat-container';
+        
+        // Add chat header
+        chatContainer.innerHTML = `
+            <div class="chat-header">
+                <div class="chat-user-info">
+                    <div class="chat-user-avatar">
+                        <div class="avatar-initials">${userName.charAt(0).toUpperCase()}</div>
+                    </div>
+                    <div class="chat-user-name">${userName}</div>
+                </div>
+                <button class="chat-menu-btn">
+                    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <circle cx="12" cy="12" r="1"></circle>
+                        <circle cx="19" cy="12" r="1"></circle>
+                        <circle cx="5" cy="12" r="1"></circle>
+                    </svg>
+                </button>
+            </div>
+            <div class="chat-messages">
+                <!-- Messages will be loaded here -->
+                <div class="loading-messages">Loading messages...</div>
+            </div>
+            <div class="message-input-container">
+                <div class="input-wrapper">
+                    <div class="clip-button-container">
+                        <button class="paperclip-button">
                             <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                                <circle cx="12" cy="12" r="1"></circle>
-                                <circle cx="19" cy="12" r="1"></circle>
-                                <circle cx="5" cy="12" r="1"></circle>
+                                <path d="M21.44 11.05l-9.19 9.19a6 6 0 01-8.49-8.49l9.19-9.19a4 4 0 015.66 5.66l-9.2 9.19a2 2 0 01-2.83-2.83l8.49-8.48"></path>
                             </svg>
                         </button>
                     </div>
-                    <div class="chat-messages">
-                        <!-- Messages will be loaded here -->
-                        <div class="loading-messages">Loading messages...</div>
+                    <div class="message-input-field">
+                        <input type="text" placeholder="Type a message">
                     </div>
-                    <div class="message-input-container">
-                        <div class="input-wrapper">
-                            <div class="clip-button-container">
-                                <button class="paperclip-button">
-                                    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                                        <path d="M21.44 11.05l-9.19 9.19a6 6 0 01-8.49-8.49l9.19-9.19a4 4 0 015.66 5.66l-9.2 9.19a2 2 0 01-2.83-2.83l8.49-8.48"></path>
-                                    </svg>
-                                </button>
-                            </div>
-                            <div class="message-input-field">
-                                <input type="text" placeholder="Type a message">
-                            </div>
-                            <button class="send-button">
-                                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                                    <path d="M22 2L11 13"></path>
-                                    <path d="M22 2L15 22L11 13L2 9L22 2Z"></path>
-                                </svg>
-                            </button>
-                        </div>
-                    </div>
-                `;
-                
-                mainContent.appendChild(chatContainer);
-                
-                // Load chat messages
-                const chatMessages = chatContainer.querySelector('.chat-messages');
-                if (chatMessages) {
-                    if (typeof loadMessages === 'function') {
-                        loadMessages(userId)
-                            .catch(error => {
-                                console.error('[ChatApp] Error loading messages:', error);
-                            });
-                    } else {
-                        console.error('[ChatApp] loadMessages function not available');
-                        chatMessages.innerHTML = '<div class="no-messages">Failed to load messages. loadMessages function not found.</div>';
-                    }
-                }
-                
-                // Set up message input handlers
-                const messageInput = chatContainer.querySelector('.message-input-field input');
-                const sendButton = chatContainer.querySelector('.send-button');
-                const attachButton = chatContainer.querySelector('.paperclip-button');
-                
-                if (messageInput && sendButton) {
-                    // Enable/disable send button based on input content
-                    messageInput.addEventListener('input', function() {
-                        if (this.value.trim()) {
-                            sendButton.classList.add('active');
-                        } else {
-                            sendButton.classList.remove('active');
-                        }
+                    <button class="send-button">
+                        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <path d="M22 2L11 13"></path>
+                            <path d="M22 2L15 22L11 13L2 9L22 2Z"></path>
+                        </svg>
+                    </button>
+                </div>
+            </div>
+        `;
+        
+        mainContent.appendChild(chatContainer);
+        
+        // Load chat messages
+        const chatMessages = chatContainer.querySelector('.chat-messages');
+        if (chatMessages) {
+            if (typeof loadMessages === 'function') {
+                loadMessages(userId)
+                    .catch(error => {
+                        console.error('[ChatApp] Error loading messages:', error);
                     });
-                    
-                    // Handle enter key in input field
-                    messageInput.addEventListener('keydown', function(e) {
-                        if (e.key === 'Enter' && !e.shiftKey && this.value.trim()) {
-                            e.preventDefault();
-                            if (typeof sendMessageHandler === 'function') {
-                                sendMessageHandler(this.value, userId, chatMessages);
-                            } else {
-                                console.error('[ChatApp] sendMessageHandler function not available');
-                            }
-                        }
-                    });
-                    
-                    // Handle send button click
-                    sendButton.addEventListener('click', function() {
-                        if (messageInput.value.trim()) {
-                            if (typeof sendMessageHandler === 'function') {
-                                sendMessageHandler(messageInput.value, userId, chatMessages);
-                            } else {
-                                console.error('[ChatApp] sendMessageHandler function not available');
-                            }
-                        }
-                    });
+            } else {
+                console.error('[ChatApp] loadMessages function not available');
+                chatMessages.innerHTML = '<div class="no-messages">Failed to load messages. loadMessages function not found.</div>';
+            }
+        }
+        
+        // Set up message input handlers
+        const messageInput = chatContainer.querySelector('.message-input-field input');
+        const sendButton = chatContainer.querySelector('.send-button');
+        const attachButton = chatContainer.querySelector('.paperclip-button');
+        
+        if (messageInput && sendButton) {
+            // Focus the input field
+            setTimeout(() => {
+                messageInput.focus();
+            }, 100);
+            
+            // Enable/disable send button based on input content
+            messageInput.addEventListener('input', function() {
+                if (this.value.trim()) {
+                    sendButton.classList.add('active');
+                } else {
+                    sendButton.classList.remove('active');
                 }
-                
-                // Set up file attachment
-                if (attachButton) {
-                    attachButton.addEventListener('click', function() {
-                        // Create a file input element
-                        const fileInput = document.createElement('input');
-                        fileInput.type = 'file';
-                        fileInput.accept = 'image/*,.pdf,.doc,.docx,.xls,.xlsx,.txt';
-                        fileInput.style.display = 'none';
-                        document.body.appendChild(fileInput);
-                        
-                        // Trigger click on the file input
-                        fileInput.click();
-                        
-                        // Handle file selection
-                        fileInput.addEventListener('change', function() {
-                            if (this.files && this.files.length > 0) {
-                                if (typeof handleFileSelection === 'function') {
-                                    handleFileSelection(this.files, ChatApp.activeChat);
-                                } else {
-                                    console.error('[ChatApp] handleFileSelection function not available');
-                                }
-                            }
-                            // Remove the file input from the DOM
-                            document.body.removeChild(fileInput);
-                        });
-                    });
-                }
-                
-                // Check for contact status and update UI if needed
-                console.log('[ChatApp] Checking contact status for user:', userId);
-                fetch('/check_contact', {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json'
-                    },
-                    body: JSON.stringify({ contact_id: userId })
-                })
-                .then(response => {
-                    if (!response.ok) {
-                        throw new Error('Network response was not ok: ' + response.status);
-                    }
-                    return response.json();
-                })
-                .then(data => {
-                    console.log('[ChatApp] Contact status response:', data);
-                    if (data.is_contact) {
-                        console.log(`[ChatApp] User ${userId} is already a contact`);
-                    } else if (!contactExists) {
-                        console.log(`[ChatApp] User ${userId} is not a contact, adding to contacts`);
-                        // Add user to contacts if they aren't already
-                        if (typeof addToContacts === 'function') {
-                            addToContacts(userId)
-                                .then(success => {
-                                    if (success) {
-                                        console.log('[ChatApp] Successfully added to contacts, refreshing sidebar');
-                                        // If we successfully added to contacts, refresh the sidebar
-                                        if (typeof refreshContacts === 'function') {
-                                            refreshContacts();
-                                        } else if (typeof loadSidebar === 'function') {
-                                            loadSidebar();
-                                        } else {
-                                            console.error('[ChatApp] Neither refreshContacts nor loadSidebar function available');
-                                        }
-                                    } else {
-                                        console.warn('[ChatApp] Failed to add user to contacts');
-                                    }
-                                });
-                        } else {
-                            console.error('[ChatApp] addToContacts function not available');
-                        }
-                    }
-                })
-                .catch(error => {
-                    console.error('[ChatApp] Error checking contact status:', error);
-                });
-                
-                // If this user was not in the sidebar before, refresh the sidebar
-                if (!contactExists) {
-                    console.log('[ChatApp] Contact not found in sidebar, scheduling refresh');
-                    setTimeout(() => {
-                        if (typeof loadSidebar === 'function') {
-                            loadSidebar();
-                        } else {
-                            console.error('[ChatApp] loadSidebar function not available for delayed refresh');
-                        }
-                    }, 1000);
-                }
-            })
-            .catch(error => {
-                console.error('[ChatApp] Error while preparing chat:', error);
-                showErrorNotification('Failed to open chat. Please try again.');
             });
+            
+            // Handle enter key in input field
+            messageInput.addEventListener('keydown', function(e) {
+                if (e.key === 'Enter' && !e.shiftKey && this.value.trim()) {
+                    e.preventDefault();
+                    console.log('[ChatApp] Enter key pressed, sending message');
+                    
+                    const text = this.value.trim();
+                    if (text && typeof sendMessageHandler === 'function') {
+                        sendMessageHandler(text, userId, chatMessages);
+                    } else if (!typeof sendMessageHandler === 'function') {
+                        console.error('[ChatApp] sendMessageHandler function not available');
+                    }
+                }
+            });
+            
+            // Handle send button click
+            sendButton.addEventListener('click', function() {
+                console.log('[ChatApp] Send button clicked');
+                const text = messageInput.value.trim();
+                
+                if (text) {
+                    if (typeof sendMessageHandler === 'function') {
+                        sendMessageHandler(text, userId, chatMessages);
+                    } else {
+                        console.error('[ChatApp] sendMessageHandler function not available');
+                    }
+                }
+            });
+        } else {
+            console.error('[ChatApp] Message input elements not found');
+        }
+        
+        // Set up file attachment
+        if (attachButton) {
+            attachButton.addEventListener('click', function() {
+                // Create a file input element
+                const fileInput = document.createElement('input');
+                fileInput.type = 'file';
+                fileInput.accept = 'image/*,.pdf,.doc,.docx,.xls,.xlsx,.txt';
+                fileInput.style.display = 'none';
+                document.body.appendChild(fileInput);
+                
+                // Trigger click on the file input
+                fileInput.click();
+                
+                // Handle file selection
+                fileInput.addEventListener('change', function() {
+                    if (this.files && this.files.length > 0) {
+                        if (typeof handleFileSelection === 'function') {
+                            handleFileSelection(this.files, ChatApp.activeChat);
+                        } else {
+                            console.error('[ChatApp] handleFileSelection function not available');
+                        }
+                    }
+                    // Remove the file input from the DOM
+                    document.body.removeChild(fileInput);
+                });
+            });
+        }
+        
+        // Check for contact status and update UI if needed
+        console.log('[ChatApp] Checking contact status for user:', userId);
+        fetch('/check_contact', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({ contact_id: userId })
+        })
+        .then(response => {
+            if (!response.ok) {
+                throw new Error('Network response was not ok: ' + response.status);
+            }
+            return response.json();
+        })
+        .then(data => {
+            console.log('[ChatApp] Contact status response:', data);
+            if (data.is_contact) {
+                console.log(`[ChatApp] User ${userId} is already a contact`);
+            } else if (!contactExists) {
+                console.log(`[ChatApp] User ${userId} is not a contact, adding to contacts`);
+                // Add user to contacts if they aren't already
+                if (typeof addToContacts === 'function') {
+                    addToContacts(userId)
+                        .then(success => {
+                            if (success) {
+                                console.log('[ChatApp] Successfully added to contacts, refreshing sidebar');
+                                // If we successfully added to contacts, refresh the sidebar
+                                if (typeof refreshContacts === 'function') {
+                                    refreshContacts();
+                                } else if (typeof loadSidebar === 'function') {
+                                    loadSidebar();
+                                } else {
+                                    console.error('[ChatApp] Neither refreshContacts nor loadSidebar function available');
+                                }
+                            } else {
+                                console.warn('[ChatApp] Failed to add user to contacts');
+                            }
+                        });
+                } else {
+                    console.error('[ChatApp] addToContacts function not available');
+                }
+            }
+        })
+        .catch(error => {
+            console.error('[ChatApp] Error checking contact status:', error);
+        });
     },
 
     // Add a new method to undelete a chat if it was previously deleted

@@ -610,34 +610,123 @@ function sendMessageHandler(text, recipientId, chatMessages) {
   
   console.log(`Sending message to ${recipientId}: ${text}`);
   
-  return sendMessage(recipientId, text)
-    .then(data => {
-      if (!data.success) throw new Error(data.error || 'Failed to send message');
-      
-      // Display the new message
+  // Create a temporary message element to show immediately
+  const tempMessage = createTempMessage(text);
+  
+  // Get or create messages container
+  let messagesContainer = chatMessages.querySelector('.messages-container');
+  if (!messagesContainer) {
+    messagesContainer = document.createElement('div');
+    messagesContainer.className = 'messages-container';
+    chatMessages.appendChild(messagesContainer);
+  }
+  
+  // Add the temp message to the chat
+  messagesContainer.appendChild(tempMessage);
+  
+  // Scroll to the new message
+  chatMessages.scrollTop = chatMessages.scrollHeight;
+  
+  // Clear input field immediately for better UX
+  const inputField = document.querySelector('.message-input-field input');
+  if (inputField) {
+    const oldText = inputField.value;
+    inputField.value = '';
+    
+    // Update send button state
+    const sendButton = document.querySelector('.send-button');
+    if (sendButton) sendButton.classList.remove('active');
+  }
+  
+  // Send the message to the server
+  return fetch('/send_message', {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json'
+    },
+    body: JSON.stringify({
+      recipient_id: recipientId,
+      content: text
+    })
+  })
+  .then(response => {
+    if (!response.ok) {
+      throw new Error(`Server returned ${response.status}: ${response.statusText}`);
+    }
+    return response.json();
+  })
+  .then(data => {
+    console.log('Message sent successfully:', data);
+    
+    // Remove the temporary message
+    if (tempMessage && tempMessage.parentNode) {
+      tempMessage.parentNode.removeChild(tempMessage);
+    }
+    
+    // Add the real message with server data
+    if (data.success && data.message) {
       addMessageToChat(data.message, chatMessages);
       
-      // Clear input field
-      const inputField = document.querySelector('.message-input-field input');
-      if (inputField) {
-        inputField.value = '';
-        inputField.focus();
-        
-        // Update send button state
-        const sendButton = document.querySelector('.send-button');
-        if (sendButton) sendButton.classList.remove('active');
+      // Refresh sidebar to show updated chat list after a short delay
+      setTimeout(() => {
+        if (typeof loadSidebar === 'function') {
+          loadSidebar();
+        }
+      }, 500);
+    } else {
+      throw new Error(data.error || 'Failed to send message');
+    }
+    
+    return data;
+  })
+  .catch(error => {
+    console.error('Error sending message:', error);
+    
+    // Replace temp message with error message
+    if (tempMessage && tempMessage.parentNode) {
+      tempMessage.classList.add('message-error');
+      const contentDiv = tempMessage.querySelector('.message-content');
+      if (contentDiv) {
+        contentDiv.innerHTML += '<div class="message-error-text">Failed to send</div>';
       }
-      
-      // Refresh sidebar to show updated chat list
-      loadSidebar();
-      
-      return data;
-    })
-    .catch(error => {
-      console.error('Error sending message:', error);
+    }
+    
+    // Show error notification
+    if (typeof showErrorNotification === 'function') {
       showErrorNotification('Failed to send message. Please try again.');
-      return Promise.reject(error);
-    });
+    }
+    
+    return Promise.reject(error);
+  });
+}
+
+/**
+ * Create a temporary message while sending
+ */
+function createTempMessage(text) {
+  const messageEl = document.createElement('div');
+  messageEl.className = 'message message-sent message-pending';
+  
+  // Format timestamp for current time
+  const now = new Date();
+  const hours = String(now.getHours()).padStart(2, '0');
+  const minutes = String(now.getMinutes()).padStart(2, '0');
+  
+  // Add message content and time
+  messageEl.innerHTML = `
+    <div class="message-content">${escapeHtml(text)}</div>
+    <div class="message-time">
+      ${hours}:${minutes}
+      <span class="message-status">Sending...</span>
+    </div>
+  `;
+  
+  // Add appearance animation
+  setTimeout(() => {
+    messageEl.classList.add('message-visible');
+  }, 10);
+  
+  return messageEl;
 }
 
 /**
