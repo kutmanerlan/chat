@@ -111,3 +111,110 @@ function cleanupChatResources() {
 
 // Add window unload event to clean up resources
 window.addEventListener('beforeunload', cleanupChatResources);
+
+/**
+ * Initialize the chat application
+ */
+let ChatApp = {
+  // Application state
+  currentUserId: null,
+  currentUserName: null,
+  currentUserAvatar: null,
+  currentChat: null,
+  contacts: [],
+  chats: [],
+  currentPage: 1,
+  hasMoreMessages: false,
+  
+  // Debug mode
+  debug: true,
+  
+  // Initialize the application
+  init: function() {
+    console.log('Initializing ChatApp...');
+    
+    // Get current user info
+    this.loadCurrentUserInfo();
+    
+    // Load sidebar with contacts and chats
+    loadSidebar();
+    
+    // Initialize event listeners
+    this.initEventListeners();
+    
+    console.log('ChatApp initialized');
+  },
+  
+  // Load current user information
+  loadCurrentUserInfo: function() {
+    fetchCurrentUserInfo()
+      .then(data => {
+        if (data && data.user_id) {
+          this.currentUserId = data.user_id;
+          this.currentUserName = data.user_name;
+          this.currentUserAvatar = data.avatar_path;
+          
+          console.log('Current user loaded:', this.currentUserName);
+        }
+      })
+      .catch(error => {
+        console.error('Failed to load current user info:', error);
+      });
+  },
+  
+  // Initialize event listeners
+  initEventListeners: function() {
+    // ... existing event listeners ...
+    
+    // Add event listener for manually refreshing the sidebar
+    document.addEventListener('refresh-sidebar', function() {
+      console.log('Refresh sidebar event received');
+      loadSidebar();
+    });
+  },
+  
+  // Log messages in debug mode
+  log: function(message, ...args) {
+    if (this.debug) {
+      console.log(`[ChatApp] ${message}`, ...args);
+    }
+  }
+};
+
+// Helper functions
+function formatTimestamp(timestamp) {
+  if (!timestamp) return '';
+  
+  try {
+    const date = new Date(timestamp);
+    
+    // Check if date is valid
+    if (isNaN(date.getTime())) {
+      return '';
+    }
+    
+    const now = new Date();
+    const isToday = date.toDateString() === now.toDateString();
+    
+    if (isToday) {
+      return date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+    } else {
+      return date.toLocaleDateString([], { month: 'short', day: 'numeric' });
+    }
+  } catch (e) {
+    console.error('Error formatting timestamp:', e);
+    return '';
+  }
+}
+
+function getInitials(name) {
+  if (!name) return '?';
+  
+  // Split the name and get the first letter of each part
+  const parts = name.split(' ');
+  if (parts.length === 1) {
+    return parts[0].charAt(0).toUpperCase();
+  } else {
+    return (parts[0].charAt(0) + parts[parts.length - 1].charAt(0)).toUpperCase();
+  }
+}

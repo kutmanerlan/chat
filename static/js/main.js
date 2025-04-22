@@ -2,15 +2,44 @@
  * Main JavaScript entry point that imports all other modules
  */
 
-// Wait for DOM to be fully loaded before initializing
-document.addEventListener('DOMContentLoaded', () => {
-  // Initialize the application
-  initializeChat();
+// Initialize the application when DOM is loaded
+document.addEventListener('DOMContentLoaded', function() {
+  console.log('DOM fully loaded and parsed');
   
-  // Initialize debug panel if available
-  if (typeof initDebugPanel === 'function') {
-    initDebugPanel();
+  // Initialize the application
+  ChatApp.init();
+  
+  // Set up menu button
+  const menuBtn = document.getElementById('menuBtn');
+  const sideMenu = document.getElementById('sideMenu');
+  const overlay = document.getElementById('overlay');
+  const closeMenuBtn = document.getElementById('closeMenuBtn');
+  
+  if (menuBtn && sideMenu && overlay && closeMenuBtn) {
+    // Open menu
+    menuBtn.addEventListener('click', function() {
+      sideMenu.classList.add('active');
+      overlay.classList.add('active');
+    });
+    
+    // Close menu
+    closeMenuBtn.addEventListener('click', function() {
+      sideMenu.classList.remove('active');
+      overlay.classList.remove('active');
+    });
+    
+    // Close menu when clicking overlay
+    overlay.addEventListener('click', function() {
+      sideMenu.classList.remove('active');
+      overlay.classList.remove('active');
+    });
   }
+  
+  // Force immediate sidebar refresh to diagnose issues
+  setTimeout(() => {
+    console.log('Triggering delayed sidebar refresh for troubleshooting');
+    loadSidebar();
+  }, 1000);
 });
 
 /**
