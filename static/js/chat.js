@@ -291,17 +291,6 @@ function showContactMenu(menuButton, user) {
               ${blockStatus.isBlocked ? 'Unblock user' : 'Block user'}
             </div>
           </div>
-          
-          <!-- Delete Chat option (new) -->
-          <div class="dropdown-option delete-chat-option" id="deleteChatOption">
-            <div class="dropdown-option-icon">
-              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#e74c3c" stroke-width="2">
-                <polyline points="3 6 5 6 21 6"></polyline>
-                <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path>
-              </svg>
-            </div>
-            <div class="dropdown-option-label" style="color: #e74c3c">Delete Chat</div>
-          </div>
         </div>
       `;
       
@@ -337,12 +326,6 @@ function showContactMenu(menuButton, user) {
           contactMenu.style.display = 'none';
         });
       }
-      
-      // Add delete chat event listener
-      document.getElementById('deleteChatOption').addEventListener('click', function() {
-        deleteChatHandler(user.id, user.name);
-        contactMenu.style.display = 'none';
-      });
     })
     .catch(error => {
       console.error('Error checking contact/block status:', error);

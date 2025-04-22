@@ -19,10 +19,7 @@ document.addEventListener('DOMContentLoaded', () => {
 function initializeChat() {
   console.log('Initializing chat application...');
   
-  // Add debug button
-  if (typeof addDebugButton === 'function') {
-    addDebugButton();
-  }
+  // Remove debug button initialization - this was causing the button to appear
   
   // Fetch current user information first
   fetchCurrentUser()
