@@ -242,14 +242,36 @@ function handleSearchUserClick(user) {
         
         // Fallback implementation if openChat is missing
         console.warn('Using fallback chat opening implementation');
-        // Create a simple implementation to at least show something
         openChatFallback(user.id, user.name);
         return;
     }
     
     // Open chat with user
     console.log('Calling openChat with:', user.id, user.name);
-    openChat(user.id, user.name);
+    try {
+        // Ensure userId is a number
+        const userId = parseInt(user.id, 10);
+        
+        // Call openChat with the user info
+        openChat(userId, user.name);
+        
+        // If we successfully opened the chat, log success
+        console.log('openChat called successfully');
+        
+        // Force refresh of the sidebar after a small delay to ensure the new contact appears
+        setTimeout(() => {
+            if (typeof loadSidebar === 'function') {
+                console.log('Refreshing sidebar after search');
+                loadSidebar();
+            }
+        }, 1500);
+    } catch (error) {
+        console.error('Error calling openChat:', error);
+        
+        // Try fallback method if the main method fails
+        console.warn('Trying fallback method to open chat');
+        openChatFallback(user.id, user.name);
+    }
 }
 
 // Fallback implementation if openChat is missing

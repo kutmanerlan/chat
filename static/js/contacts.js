@@ -6,142 +6,112 @@
  * Load contacts and chats in sidebar
  */
 function loadSidebar() {
-    console.log('Loading sidebar...');
+    console.log('Loading sidebar data...');
     
-    // Show loading indicator
+    // Show loading indicator in contacts list
     const contactsList = document.getElementById('contactsList');
     if (contactsList) {
-        contactsList.innerHTML = '<div class="loading-sidebar">Loading chats...</div>';
+        contactsList.innerHTML = '<div class="loading-sidebar">Loading contacts and chats...</div>';
     }
     
-    // Get chats first - this is the critical function
-    fetchChatList()
-        .then(chatsData => {
-            console.log(`Successfully loaded ${chatsData.chats.length} chats`);
-            
-            // Now get contacts
-            return fetchContacts()
-                .then(contactsData => {
-                    return { 
-                        chats: chatsData.chats || [], 
-                        contacts: contactsData.contacts || [] 
-                    };
-                })
-                .catch(error => {
-                    // If contacts fail, still render with chats
-                    console.error('Error loading contacts:', error);
-                    return { 
-                        chats: chatsData.chats || [], 
-                        contacts: [] 
-                    };
-                });
-        })
-        .then(data => {
-            console.log('Rendering sidebar with:', data);
-            
-            // Store data in application state
-            if (typeof ChatApp !== 'undefined') {
-                ChatApp.chats = data.chats;
-                ChatApp.contacts = data.contacts;
-            }
-            
-            // Render the sidebar with available data
-            renderSidebar(data.contacts, data.chats);
-        })
-        .catch(error => {
-            console.error('Error loading sidebar:', error);
-            
-            // Show error in sidebar
-            if (contactsList) {
-                contactsList.innerHTML = `
-                    <div class="sidebar-error">
-                        Failed to load chats. 
-                        <a href="#" onclick="loadSidebar(); return false;">Retry</a>
-                    </div>
-                `;
-            }
-        });
+    // Load contacts and conversations with retry
+    loadSidebarData();
 }
 
 /**
  * Helper function to load sidebar data with retry
  */
 function loadSidebarData(retryCount = 0) {
-  Promise.all([fetchContacts(), fetchChatList()])
-    .then(([contactsData, chatsData]) => {
-      // Store data in app state - ensure we always have valid arrays
-      ChatApp.contacts = contactsData.contacts || [];
-      ChatApp.chats = chatsData.chats || [];
-      
-      console.log(`Retrieved ${ChatApp.contacts.length} contacts and ${ChatApp.chats.length} chats`);
-      
-      // Render sidebar items
-      renderSidebar(ChatApp.contacts, ChatApp.chats);
-      
-      // Remove any error notifications about loading
-      removeErrorNotificationByText('Failed to load contacts and chats');
-    })
-    .catch(error => {
-      console.error('Error loading sidebar data:', error);
-      
-      // Show error in sidebar
-      const contactsList = document.getElementById('contactsList');
-      if (contactsList) {
-        contactsList.innerHTML = '<div class="sidebar-error">Failed to load chats. <a href="#" onclick="loadSidebar(); return false;">Retry</a></div>';
-      }
-      
-      if (retryCount < 2) {
-        console.log(`Retrying sidebar data load (attempt ${retryCount + 1})`);
-        setTimeout(() => loadSidebarData(retryCount + 1), 1000);
-      } else {
-        // After 3 attempts, show a notification
-        showErrorNotification('Failed to load contacts and chats');
-      }
-    });
+    console.log(`Attempting to load sidebar data (attempt ${retryCount + 1})`);
+    
+    // Fetch contacts and chats in parallel
+    Promise.all([fetchContacts(), fetchChatList()])
+        .then(([contactsResponse, chatsResponse]) => {
+            // Process responses
+            if (contactsResponse.success && chatsResponse.success) {
+                console.log(`Loaded ${contactsResponse.contacts.length} contacts and ${chatsResponse.chats.length} chats`);
+                renderSidebar(contactsResponse.contacts, chatsResponse.chats);
+            } else {
+                console.error('Failed to load sidebar data:', 
+                    contactsResponse.success ? '' : 'Contacts error', 
+                    chatsResponse.success ? '' : 'Chats error');
+                
+                throw new Error('Failed to load sidebar data');
+            }
+        })
+        .catch(error => {
+            console.error('Error loading sidebar data:', error);
+            
+            // Show error message in contacts list
+            const contactsList = document.getElementById('contactsList');
+            if (contactsList) {
+                if (retryCount < 2) {
+                    // Try again after a short delay
+                    setTimeout(() => {
+                        loadSidebarData(retryCount + 1);
+                    }, 2000);
+                    
+                    contactsList.innerHTML = '<div class="loading-sidebar">Retrying...</div>';
+                } else {
+                    // Give up after 3 attempts
+                    contactsList.innerHTML = `
+                        <div class="sidebar-error">
+                            Failed to load contacts.
+                            <a href="#" onclick="loadSidebar(); return false;">Retry</a>
+                        </div>
+                    `;
+                }
+            }
+        });
 }
 
 /**
  * Fetch contacts from the server
  */
 function fetchContacts() {
-  return fetch('/get_contacts', {
-    method: 'GET',
-    headers: {
-      'Cache-Control': 'no-cache',
-      'Content-Type': 'application/json'
-    }
-  })
-  .then(response => {
-    if (!response.ok) throw new Error('Failed to load contacts');
-    return response.json();
-  });
+    console.log('Fetching contacts from server...');
+    return fetch('/get_contacts')
+        .then(response => {
+            if (!response.ok) {
+                throw new Error('Network response was not ok');
+            }
+            return response.json();
+        });
 }
 
 /**
  * Fetch chat list from the server
  */
 function fetchChatList() {
-  return fetch('/get_chat_list', {
-    method: 'GET',
-    headers: {
-      'Cache-Control': 'no-cache',
-      'Content-Type': 'application/json'
-    }
-  })
-  .then(response => {
-    if (!response.ok) throw new Error('Failed to load chats');
-    return response.json();
-  });
+    console.log('Fetching chat list from server...');
+    
+    // Try the main chat list endpoint first
+    return fetch('/get_chat_list')
+        .then(response => {
+            if (!response.ok) {
+                throw new Error('Network response was not ok');
+            }
+            return response.json();
+        })
+        .catch(error => {
+            console.warn('Error using primary chat list endpoint, trying fallback:', error);
+            
+            // If the main endpoint fails, try the alternate endpoint
+            return fetch('/get_chat_list_with_deleted')
+                .then(response => {
+                    if (!response.ok) {
+                        throw new Error('Network response was not ok');
+                    }
+                    return response.json();
+                });
+        });
 }
 
 /**
  * Render sidebar with contacts and chats
  */
 function renderSidebar(contacts, chats) {
-    console.log('Rendering sidebar with contacts and chats:', { 
-        contactsCount: contacts ? contacts.length : 0,
-        chatsCount: chats ? chats.length : 0 
-    });
+    console.log('Rendering sidebar with:', contacts.length, 'contacts and', chats.length, 'chats');
     
     const contactsList = document.getElementById('contactsList');
     if (!contactsList) {
@@ -149,62 +119,116 @@ function renderSidebar(contacts, chats) {
         return;
     }
     
-    // Clear existing content
+    // Clear the list
     contactsList.innerHTML = '';
     
-    // Handle empty state
-    if ((!chats || chats.length === 0) && (!contacts || contacts.length === 0)) {
-        contactsList.innerHTML = `
-            <div class="no-items-message">
-                No chats or contacts yet. Search for users to start chatting.
-            </div>
-        `;
-        return;
-    }
-    
-    // Render chats section if we have chats
-    if (chats && chats.length > 0) {
-        const chatsSection = document.createElement('div');
-        chatsSection.className = 'sidebar-section chats-section';
+    // Create a container for conversations if we have any
+    if (chats.length > 0) {
+        const conversationsSection = document.createElement('div');
+        conversationsSection.className = 'conversations-section';
         
-        const chatsTitle = document.createElement('div');
-        chatsTitle.className = 'section-title';
-        chatsTitle.textContent = 'Chats';
-        chatsSection.appendChild(chatsTitle);
+        const conversationsTitle = document.createElement('div');
+        conversationsTitle.className = 'section-title';
+        conversationsTitle.textContent = 'Recent Chats';
+        conversationsSection.appendChild(conversationsTitle);
         
+        // Add conversations
         chats.forEach(chat => {
-            try {
-                const chatElement = createChatElement(chat);
-                chatsSection.appendChild(chatElement);
-            } catch (e) {
-                console.error('Error creating chat element:', e);
-            }
+            // Create chat element
+            const chatElement = createChatElement(chat);
+            conversationsSection.appendChild(chatElement);
         });
         
-        contactsList.appendChild(chatsSection);
+        contactsList.appendChild(conversationsSection);
     }
     
-    // Render contacts section if we have contacts
-    if (contacts && contacts.length > 0) {
+    // Create a container for contacts if we have any
+    if (contacts.length > 0) {
         const contactsSection = document.createElement('div');
-        contactsSection.className = 'sidebar-section contacts-section';
+        contactsSection.className = 'contacts-section';
         
         const contactsTitle = document.createElement('div');
         contactsTitle.className = 'section-title';
         contactsTitle.textContent = 'Contacts';
         contactsSection.appendChild(contactsTitle);
         
+        // Add contacts
         contacts.forEach(contact => {
-            try {
+            // Skip contacts that are already in chats to avoid duplication
+            const isInChats = chats.some(chat => chat.user_id === contact.id);
+            if (!isInChats) {
+                // Create contact element
                 const contactElement = createContactElement(contact);
                 contactsSection.appendChild(contactElement);
-            } catch (e) {
-                console.error('Error creating contact element:', e);
             }
         });
         
-        contactsList.appendChild(contactsSection);
+        // Only add the section if there are unique contacts
+        if (contactsSection.childElementCount > 1) {
+            contactsList.appendChild(contactsSection);
+        }
     }
+    
+    // If no contacts or chats, show a message
+    if (contacts.length === 0 && chats.length === 0) {
+        const noContactsMessage = document.createElement('div');
+        noContactsMessage.className = 'no-contacts-message';
+        noContactsMessage.textContent = 'No contacts or chats yet. Search for users to start chatting.';
+        noContactsMessage.style.display = 'block';
+        contactsList.appendChild(noContactsMessage);
+    }
+    
+    // Debug any issues with sidebar rendering
+    console.log('Sidebar rendering complete');
+    
+    // Call debug function if it exists
+    if (typeof debugIndicators === 'function') {
+        setTimeout(debugIndicators, 500);
+    }
+}
+
+// Add a new function to refresh just the contacts part
+function refreshContacts() {
+    console.log('Refreshing contacts...');
+    fetchContacts()
+        .then(response => {
+            if (response.success) {
+                console.log('Successfully fetched contacts:', response.contacts.length);
+                
+                // Find or create the contacts section
+                let contactsSection = document.querySelector('.contacts-section');
+                if (!contactsSection) {
+                    const contactsList = document.getElementById('contactsList');
+                    if (!contactsList) return;
+                    
+                    contactsSection = document.createElement('div');
+                    contactsSection.className = 'contacts-section';
+                    
+                    const contactsTitle = document.createElement('div');
+                    contactsTitle.className = 'section-title';
+                    contactsTitle.textContent = 'Contacts';
+                    contactsSection.appendChild(contactsTitle);
+                    
+                    contactsList.appendChild(contactsSection);
+                } else {
+                    // Clear existing contacts, keeping the title
+                    const title = contactsSection.querySelector('.section-title');
+                    contactsSection.innerHTML = '';
+                    contactsSection.appendChild(title);
+                }
+                
+                // Add contacts
+                response.contacts.forEach(contact => {
+                    const contactElement = createContactElement(contact);
+                    contactsSection.appendChild(contactElement);
+                });
+            } else {
+                console.error('Failed to refresh contacts');
+            }
+        })
+        .catch(error => {
+            console.error('Error refreshing contacts:', error);
+        });
 }
 
 /**

@@ -828,45 +828,81 @@ function checkForBlockUpdates(userId) {
 
 /**
  * Add the selected user to contacts
+ * @returns {Promise<boolean>} - Promise resolving to true if successful, false otherwise
  */
 function addToContacts(userId) {
-    // API call to add user to contacts
-    fetch('/add_contact', {
-        method: 'POST',
-        headers: {
-            'Content-Type': 'application/json'
-        },
-        body: JSON.stringify({ contact_id: userId })
-    })
-    .then(response => response.json())
-    .then(data => {
-        if (data.success) {
-            console.log('User added to contacts:', data.contact);
-            showSuccessNotification('User added to your contacts');
-            
-            // Add the contact to the contact list in the sidebar
-            const contactsList = document.getElementById('contactsList');
-            if (contactsList && data.contact) {
-                // Create a new contact element
-                const contactElement = createContactElement(data.contact);
+    console.log('Adding user to contacts:', userId);
+    
+    // Return a promise to allow the caller to know when this completes
+    return new Promise((resolve, reject) => {
+        // API call to add user to contacts
+        fetch('/add_contact', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({ contact_id: userId })
+        })
+        .then(response => {
+            if (!response.ok) {
+                throw new Error(`Server returned ${response.status}: ${response.statusText}`);
+            }
+            return response.json();
+        })
+        .then(data => {
+            if (data.success) {
+                console.log('User added to contacts:', data.contact);
+                showSuccessNotification('User added to your contacts');
                 
-                // Check if "no contacts" message exists and remove it
-                const noContactsMessage = contactsList.querySelector('.no-contacts-message');
-                if (noContactsMessage) {
-                    noContactsMessage.style.display = 'none';
+                // Add the contact to the contact list in the sidebar if needed
+                const contactsList = document.getElementById('contactsList');
+                if (contactsList && data.contact) {
+                    const contactsSection = contactsList.querySelector('.contacts-section');
+                    if (contactsSection) {
+                        // Create a new contact element
+                        const contactElement = createContactElement(data.contact);
+                        
+                        // Check if "no contacts" message exists and remove it
+                        const noContactsMessage = contactsList.querySelector('.no-contacts-message');
+                        if (noContactsMessage) {
+                            noContactsMessage.style.display = 'none';
+                        }
+                        
+                        // Add the new contact element to the contacts section
+                        contactsSection.appendChild(contactElement);
+                    } else {
+                        // If no contacts section exists, we should create one
+                        console.log('Creating new contacts section');
+                        const newContactsSection = document.createElement('div');
+                        newContactsSection.className = 'contacts-section';
+                        
+                        const sectionTitle = document.createElement('div');
+                        sectionTitle.className = 'section-title';
+                        sectionTitle.textContent = 'Contacts';
+                        newContactsSection.appendChild(sectionTitle);
+                        
+                        // Create and add the contact element
+                        const contactElement = createContactElement(data.contact);
+                        newContactsSection.appendChild(contactElement);
+                        
+                        // Add to contacts list
+                        contactsList.appendChild(newContactsSection);
+                    }
                 }
                 
-                // Add the new contact element to the contacts list
-                contactsList.appendChild(contactElement);
+                // Resolve the promise with success
+                resolve(true);
+            } else {
+                console.error('Failed to add user to contacts:', data.error);
+                showErrorNotification('Failed to add user to contacts');
+                resolve(false);
             }
-        } else {
-            console.error('Failed to add user to contacts:', data.error);
+        })
+        .catch(error => {
+            console.error('Error adding user to contacts:', error);
             showErrorNotification('Failed to add user to contacts');
-        }
-    })
-    .catch(error => {
-        console.error('Error adding user to contacts:', error);
-        showErrorNotification('Failed to add user to contacts');
+            resolve(false);
+        });
     });
 }
 

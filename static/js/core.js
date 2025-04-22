@@ -64,8 +64,7 @@ const ChatApp = {
         }, this.pollingInterval);
     },
     
-    // Stop polling
-    stopPolling: function() {
+    // Stop polling: function() {
         if (this.polling) {
             clearInterval(this.polling);
             this.polling = null;
@@ -256,6 +255,7 @@ const ChatApp = {
         }
         
         // Check for contact status and update UI if needed
+        console.log('Checking contact status for user:', userId);
         fetch('/check_contact', {
             method: 'POST',
             headers: {
@@ -265,12 +265,24 @@ const ChatApp = {
         })
         .then(response => response.json())
         .then(data => {
+            console.log('Contact status response:', data);
             if (data.is_contact) {
                 console.log(`User ${userId} is already a contact`);
             } else if (!contactExists) {
                 console.log(`User ${userId} is not a contact, adding to contacts`);
                 // Add user to contacts if they aren't already
-                addToContacts(userId);
+                addToContacts(userId)
+                    .then(success => {
+                        if (success) {
+                            console.log('Successfully added to contacts, refreshing sidebar');
+                            // If we successfully added to contacts, refresh the sidebar
+                            if (typeof refreshContacts === 'function') {
+                                refreshContacts();
+                            } else {
+                                loadSidebar();
+                            }
+                        }
+                    });
             }
         })
         .catch(error => {
@@ -279,6 +291,7 @@ const ChatApp = {
         
         // If this user was not in the sidebar before, refresh the sidebar
         if (!contactExists) {
+            console.log('Contact not found in sidebar, scheduling refresh');
             setTimeout(() => {
                 loadSidebar();
             }, 1000);
@@ -288,6 +301,7 @@ const ChatApp = {
 
 // Make openChat available globally
 window.openChat = function(userId, userName) {
+    console.log(`Global openChat called for user ${userName} (ID: ${userId})`);
     ChatApp.openChat(userId, userName);
 };
 
