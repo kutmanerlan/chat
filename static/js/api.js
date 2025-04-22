@@ -244,37 +244,46 @@ function fetchRecentConversations() {
 }
 
 /**
- * Get chat list from the server
+ * Get chat list from server
  */
 function fetchChatList() {
-  console.log('Fetching chat list...');
-  return fetch('/get_chat_list', {
-    method: 'GET',
-    headers: {
-      'Cache-Control': 'no-cache', // Prevent caching
-      'Content-Type': 'application/json'
-    }
-  })
-  .then(response => {
-    if (!response.ok) {
-      throw new Error(`Failed to load chats: ${response.status} ${response.statusText}`);
-    }
-    return response.json();
-  })
-  .then(data => {
-    console.log('Chat list data received:', data);
-    // Validate and ensure the data has expected structure
-    if (!data || !data.chats) {
-      console.warn('Chat list API returned unexpected data format, creating empty array');
-      data = { success: true, chats: [] };
-    }
-    return data;
-  })
-  .catch(error => {
-    console.error('Error fetching chat list:', error);
-    // Return a valid but empty response
-    return { success: true, chats: [] };
-  });
+    console.log('Fetching chat list...');
+    
+    return fetch('/get_chat_list', {
+        method: 'GET',
+        headers: {
+            'Cache-Control': 'no-cache',
+            'X-Requested-With': 'XMLHttpRequest'
+        }
+    })
+    .then(response => {
+        if (!response.ok) {
+            throw new Error(`Network response error: ${response.status}`);
+        }
+        return response.json();
+    })
+    .then(data => {
+        // Additional debugging
+        console.log('Chat list response:', data);
+        
+        if (!data.success) {
+            console.error('API reported error:', data.error);
+            throw new Error(data.error || 'Unknown API error');
+        }
+        
+        // Ensure we have a valid chats array
+        if (!Array.isArray(data.chats)) {
+            console.warn('Invalid chats data, using empty array');
+            data.chats = [];
+        }
+        
+        return data;
+    })
+    .catch(error => {
+        console.error('Error in fetchChatList:', error);
+        // Throw the error to be handled by the caller
+        throw error;
+    });
 }
 
 /**
