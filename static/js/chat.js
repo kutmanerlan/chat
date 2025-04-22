@@ -4,33 +4,59 @@
 
 /**
  * Open a chat with a user
+ * @param {number} userId - the ID of the user to chat with
+ * @param {string} userName - the name of the user to chat with
  */
-function openChatWithUser(userId, userName) {
-  console.log('Opening chat with user:', userId, userName); // Debug log
+function openChat(userId, userName) {
+  console.log(`Opening chat with ${userName} (${userId})`);
   
-  // Store active chat info
-  ChatApp.activeChat = { id: userId, name: userName };
+  // Store the current chat info in application state
+  ChatApp.currentChat = {
+    userId: userId,
+    userName: userName
+  };
   
-  // Get user info and check block status
-  Promise.all([getUserInfo(userId), checkBlockStatus(userId)])
-    .then(([userData, blockStatus]) => {
-      console.log('Got user data and block status:', userData, blockStatus); // Debug log
-      
-      // Create the chat interface with block status
-      createChatInterface(userData, blockStatus);
+  // Get container for chat
+  const mainContent = document.querySelector('.main-content');
+  if (!mainContent) {
+    console.error('Main content container not found');
+    return;
+  }
+  
+  // Clear any existing chat
+  mainContent.innerHTML = '';
+  
+  // Check if user is blocked
+  checkBlockStatus(userId)
+    .then(blockStatus => {
+      // Create chat UI
+      createChatUI(userId, userName, blockStatus);
       
       // Load messages
       loadMessages(userId);
       
-      // Highlight active contact in sidebar
-      highlightActiveContact(userId);
+      // Update active chat in sidebar
+      updateActiveChatInSidebar(userId);
       
-      // Start polling for new messages
-      startMessagePolling(userId);
+      // Mark chat as active
+      markChatAsActive(userId);
     })
     .catch(error => {
-      console.error('Error opening chat:', error);
-      showErrorNotification('Failed to open chat. Please try again.');
+      console.error('Error checking block status:', error);
+      // Create chat UI without block info
+      createChatUI(userId, userName, {
+        is_blocked_by_you: false,
+        has_blocked_you: false
+      });
+      
+      // Load messages anyway
+      loadMessages(userId);
+      
+      // Update active chat in sidebar
+      updateActiveChatInSidebar(userId);
+      
+      // Mark chat as active
+      markChatAsActive(userId);
     });
 }
 
