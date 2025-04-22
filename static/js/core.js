@@ -1,220 +1,259 @@
 /**
- * Core functionality and application state management
+ * Core application functionality 
+ * This file contains the main application logic, state management, and initialization
  */
 
-// Global application state
-const ChatApp = {
-  currentUser: null,
-  activeChat: null,
-  conversations: [],
-  contacts: [],
-  messagePollingInterval: null,
-  eventListenersActive: false,
-  resetInactiveTimeFunc: null,
-  pollInterval: 5000,
-  maxPollInterval: 10000,
-  minPollInterval: 3000,
-  inactiveTime: 0,
-  consecutiveEmptyPolls: 0,
-  lastBlockCheck: 0,
-  messagePage: 1,
-  messageLimit: 30,
-  hasMoreMessages: true,
-  currentChatId: null
-};
-
-/**
- * Initialize the Chat Application
- */
-function initializeChat() {
-  console.log('Initializing chat application...');
-  
-  // Fetch current user information first
-  fetchCurrentUser()
-    .then(() => {
-      loadContacts();
-      loadRecentConversations();
-      setupEventListeners();
-    })
-    .catch(error => {
-      console.error('Failed to initialize chat:', error);
-      showErrorNotification('Failed to initialize chat. Please refresh the page.');
-    });
-}
-
-/**
- * Setup global event listeners
- */
-function setupEventListeners() {
-  // Setup search functionality
-  setupSearch();
-  
-  // Setup UI menu buttons
-  setupMenuButtons();
-  
-  // Setup avatar upload
-  setupAvatarUpload();
-}
-
-/**
- * Escape HTML to prevent XSS
- */
-function escapeHtml(text) {
-  if (!text) return '';
-  
-  const div = document.createElement('div');
-  div.textContent = text;
-  return div.innerHTML;
-}
-
-/**
- * Format file size in human-readable format
- */
-function formatFileSize(bytes) {
-  if (bytes < 1024) return bytes + ' B';
-  else if (bytes < 1048576) return (bytes / 1024).toFixed(1) + ' KB';
-  else return (bytes / 1048576).toFixed(1) + ' MB';
-}
-
-/**
- * Handle cleanup when switching chats or leaving the app
- */
-function cleanupChatResources() {
-  // Stop polling
-  if (ChatApp.messagePollingInterval) {
-    clearInterval(ChatApp.messagePollingInterval);
-    ChatApp.messagePollingInterval = null;
-  }
-  
-  // Remove event listeners
-  if (ChatApp.eventListenersActive && ChatApp.resetInactiveTimeFunc) {
-    document.removeEventListener('mousemove', ChatApp.resetInactiveTimeFunc);
-    document.removeEventListener('keydown', ChatApp.resetInactiveTimeFunc);
-    document.removeEventListener('click', ChatApp.resetInactiveTimeFunc);
-    ChatApp.eventListenersActive = false;
-  }
-  
-  // Clear any open menus
-  const menus = document.querySelectorAll('.dropdown-menu, .file-upload-menu, .message-context-menu');
-  menus.forEach(menu => menu.remove());
-  
-  // Clear any edit states
-  const editButtons = document.querySelectorAll('.message-edit-buttons');
-  editButtons.forEach(btn => btn.remove());
-  
-  // Clear any tooltips
-  const tooltips = document.querySelectorAll('.dynamic-tooltip');
-  tooltips.forEach(tooltip => tooltip.remove());
-
-  console.log('Chat resources cleaned up');
-}
-
-// Add window unload event to clean up resources
-window.addEventListener('beforeunload', cleanupChatResources);
-
-/**
- * Initialize the chat application
- */
+// Application state and initialization
 let ChatApp = {
-  // Application state
-  currentUserId: null,
-  currentUserName: null,
-  currentUserAvatar: null,
-  currentChat: null,
-  contacts: [],
-  chats: [],
-  currentPage: 1,
-  hasMoreMessages: false,
-  
-  // Debug mode
-  debug: true,
-  
-  // Initialize the application
-  init: function() {
-    console.log('Initializing ChatApp...');
+    // Application state
+    currentUserId: null,
+    currentUserName: null,
+    currentUserAvatar: null,
+    currentChat: null,
+    contacts: [],
+    chats: [],
+    currentPage: 1,
+    hasMoreMessages: false,
+    isInitialized: false,
     
-    // Get current user info
-    this.loadCurrentUserInfo();
+    // Debug mode
+    debug: true,
     
-    // Load sidebar with contacts and chats
-    loadSidebar();
+    // Initialize the application
+    init: function() {
+        this.log('Initializing ChatApp...');
+        
+        // Initialize application state
+        this.resetState();
+        
+        // Get current user info
+        this.loadCurrentUserInfo()
+            .then(() => {
+                // Only load sidebar after we have user info
+                this.log('Loading sidebar with user data...');
+                loadSidebar();
+                
+                // Mark as initialized
+                this.isInitialized = true;
+                this.log('ChatApp initialization complete');
+                
+                // Dispatch an event that initialization is complete
+                document.dispatchEvent(new CustomEvent('chat-app-initialized'));
+            })
+            .catch(error => {
+                console.error('Failed to initialize ChatApp:', error);
+                showErrorNotification('Failed to initialize the application. Please refresh the page.');
+            });
+        
+        // Initialize event listeners
+        this.initEventListeners();
+    },
+    
+    // Reset application state
+    resetState: function() {
+        this.currentUserId = null;
+        this.currentUserName = null;
+        this.currentUserAvatar = null;
+        this.currentChat = null;
+        this.contacts = [];
+        this.chats = [];
+        this.currentPage = 1;
+        this.hasMoreMessages = false;
+    },
+    
+    // Load current user information
+    loadCurrentUserInfo: function() {
+        return new Promise((resolve, reject) => {
+            fetchCurrentUserInfo()
+                .then(data => {
+                    if (data && data.user_id) {
+                        this.currentUserId = data.user_id;
+                        this.currentUserName = data.user_name;
+                        this.currentUserAvatar = data.avatar_path;
+                        this.log('User data loaded:', this.currentUserName);
+                        resolve(data);
+                    } else {
+                        reject(new Error('Invalid user data received'));
+                    }
+                })
+                .catch(error => {
+                    console.error('Failed to load current user info:', error);
+                    reject(error);
+                });
+        });
+    },
     
     // Initialize event listeners
-    this.initEventListeners();
+    initEventListeners: function() {
+        // Add event listener for manually refreshing the sidebar
+        document.addEventListener('refresh-sidebar', () => {
+            this.log('Refresh sidebar event received');
+            loadSidebar();
+        });
+        
+        // Add error handler for uncaught exceptions
+        window.addEventListener('error', (event) => {
+            console.error('Uncaught error:', event.error);
+            // Only show notification if we're initialized
+            if (this.isInitialized) {
+                showErrorNotification('An error occurred. Please check the console for details.');
+            }
+        });
+        
+        // Add event listener for online/offline events
+        window.addEventListener('online', () => {
+            this.log('Application is back online');
+            showSuccessNotification('You are back online');
+            
+            // Refresh data when back online
+            if (this.isInitialized) {
+                loadSidebar();
+            }
+        });
+        
+        window.addEventListener('offline', () => {
+            this.log('Application is offline');
+            showErrorNotification('You are offline. Some features may not work.');
+        });
+    },
     
-    console.log('ChatApp initialized');
-  },
-  
-  // Load current user information
-  loadCurrentUserInfo: function() {
-    fetchCurrentUserInfo()
-      .then(data => {
-        if (data && data.user_id) {
-          this.currentUserId = data.user_id;
-          this.currentUserName = data.user_name;
-          this.currentUserAvatar = data.avatar_path;
-          
-          console.log('Current user loaded:', this.currentUserName);
+    // Log messages in debug mode
+    log: function(message, ...args) {
+        if (this.debug) {
+            console.log(`[ChatApp] ${message}`, ...args);
         }
-      })
-      .catch(error => {
-        console.error('Failed to load current user info:', error);
-      });
-  },
-  
-  // Initialize event listeners
-  initEventListeners: function() {
-    // ... existing event listeners ...
+    },
     
-    // Add event listener for manually refreshing the sidebar
-    document.addEventListener('refresh-sidebar', function() {
-      console.log('Refresh sidebar event received');
-      loadSidebar();
-    });
-  },
-  
-  // Log messages in debug mode
-  log: function(message, ...args) {
-    if (this.debug) {
-      console.log(`[ChatApp] ${message}`, ...args);
+    // Handle errors
+    handleError: function(error, context) {
+        console.error(`Error in ${context}:`, error);
+        if (typeof showErrorNotification === 'function') {
+            showErrorNotification(`Error: ${error.message || 'Unknown error'}`);
+        }
+    },
+    
+    // Retry a failed operation
+    retry: function(operation, maxRetries = 3, delay = 1000) {
+        return new Promise((resolve, reject) => {
+            let attempts = 0;
+            
+            const attempt = () => {
+                attempts++;
+                this.log(`Attempt ${attempts} for operation: ${operation.name}`);
+                
+                operation()
+                    .then(resolve)
+                    .catch(error => {
+                        if (attempts < maxRetries) {
+                            this.log(`Retrying in ${delay}ms...`);
+                            setTimeout(attempt, delay);
+                        } else {
+                            this.log('Maximum retries reached, giving up.');
+                            reject(error);
+                        }
+                    });
+            };
+            
+            attempt();
+        });
     }
-  }
 };
 
-// Helper functions
+// Helper functions for date and time formatting
 function formatTimestamp(timestamp) {
-  if (!timestamp) return '';
-  
-  try {
-    const date = new Date(timestamp);
+    if (!timestamp) return '';
     
-    // Check if date is valid
-    if (isNaN(date.getTime())) {
-      return '';
+    try {
+        const date = new Date(timestamp);
+        
+        // Check if date is valid
+        if (isNaN(date.getTime())) {
+            return '';
+        }
+        
+        const now = new Date();
+        const isToday = date.toDateString() === now.toDateString();
+        
+        if (isToday) {
+            return date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+        } else {
+            return date.toLocaleDateString([], { month: 'short', day: 'numeric' });
+        }
+    } catch (e) {
+        console.error('Error formatting timestamp:', e);
+        return '';
     }
-    
-    const now = new Date();
-    const isToday = date.toDateString() === now.toDateString();
-    
-    if (isToday) {
-      return date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
-    } else {
-      return date.toLocaleDateString([], { month: 'short', day: 'numeric' });
-    }
-  } catch (e) {
-    console.error('Error formatting timestamp:', e);
-    return '';
-  }
 }
 
 function getInitials(name) {
-  if (!name) return '?';
-  
-  // Split the name and get the first letter of each part
-  const parts = name.split(' ');
-  if (parts.length === 1) {
-    return parts[0].charAt(0).toUpperCase();
-  } else {
-    return (parts[0].charAt(0) + parts[parts.length - 1].charAt(0)).toUpperCase();
-  }
+    if (!name) return '?';
+    
+    // Split the name and get the first letter of each part
+    const parts = name.split(' ');
+    if (parts.length === 1) {
+        return parts[0].charAt(0).toUpperCase();
+    } else {
+        return (parts[0].charAt(0) + parts[parts.length - 1].charAt(0)).toUpperCase();
+    }
 }
+
+// Deep clone an object
+function deepClone(obj) {
+    if (obj === null || typeof obj !== 'object') {
+        return obj;
+    }
+    
+    if (Array.isArray(obj)) {
+        return obj.map(item => deepClone(item));
+    }
+    
+    const cloned = {};
+    for (const key in obj) {
+        if (Object.prototype.hasOwnProperty.call(obj, key)) {
+            cloned[key] = deepClone(obj[key]);
+        }
+    }
+    
+    return cloned;
+}
+
+// Debounce function to limit function calls
+function debounce(func, wait) {
+    let timeout;
+    return function(...args) {
+        const context = this;
+        clearTimeout(timeout);
+        timeout = setTimeout(() => func.apply(context, args), wait);
+    };
+}
+
+// Initialize the application when DOM is loaded
+document.addEventListener('DOMContentLoaded', function() {
+    console.log('DOM fully loaded, initializing ChatApp...');
+    
+    // Check if all required scripts are loaded
+    const requiredFunctions = [
+        'fetchCurrentUserInfo',
+        'loadSidebar',
+        'showErrorNotification',
+        'showSuccessNotification'
+    ];
+    
+    const missingFunctions = requiredFunctions.filter(
+        fn => typeof window[fn] !== 'function'
+    );
+    
+    if (missingFunctions.length > 0) {
+        console.error('Missing required functions:', missingFunctions);
+        alert(`Failed to initialize: Missing required functions. Try refreshing the page.`);
+        return;
+    }
+    
+    // Initialize the application
+    if (typeof ChatApp !== 'undefined') {
+        ChatApp.init();
+    } else {
+        console.error('ChatApp is not defined. Check if core.js is loaded properly.');
+        alert('Failed to initialize the application. Please refresh the page.');
+    }
+});
