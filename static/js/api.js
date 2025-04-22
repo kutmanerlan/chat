@@ -146,12 +146,16 @@ function searchUsers(query) {
 }
 
 /**
- * Load message history with pagination
- * @param {number} userId - User ID to load messages for
- * @param {number} page - Page number (starting from 1)
- * @param {number} limit - Number of messages per page
+ * Fetch messages for a conversation
  */
 function fetchMessages(userId, page = 1, limit = 30, lastMessageId = 0) {
+    console.log(`[API] Fetching messages for user ${userId}, page ${page}, limit ${limit}`);
+    
+    if (!userId) {
+        console.error('[API] fetchMessages called without a user ID');
+        return Promise.reject(new Error('User ID is required'));
+    }
+    
     let url = `/get_messages?user_id=${userId}&page=${page}&limit=${limit}`;
     
     if (lastMessageId > 0) {
@@ -161,9 +165,17 @@ function fetchMessages(userId, page = 1, limit = 30, lastMessageId = 0) {
     return fetch(url)
         .then(response => {
             if (!response.ok) {
-                throw new Error('Failed to fetch messages');
+                throw new Error(`Failed to fetch messages: ${response.status} ${response.statusText}`);
             }
             return response.json();
+        })
+        .then(data => {
+            console.log(`[API] Fetched ${data.messages ? data.messages.length : 0} messages for user ${userId}`);
+            return data;
+        })
+        .catch(error => {
+            console.error('[API] Error fetching messages:', error);
+            throw error;
         });
 }
 
@@ -187,9 +199,11 @@ function fetchNewMessages(userId, lastMessageId) {
 }
 
 /**
- * Send a message
+ * Send a message to a user
  */
 function sendMessage(userId, content) {
+    console.log(`[API] Sending message to user ${userId}`);
+    
     return fetch('/send_message', {
         method: 'POST',
         headers: {
@@ -202,9 +216,13 @@ function sendMessage(userId, content) {
     })
     .then(response => {
         if (!response.ok) {
-            throw new Error('Failed to send message');
+            throw new Error(`Failed to send message: ${response.status} ${response.statusText}`);
         }
         return response.json();
+    })
+    .catch(error => {
+        console.error('[API] Error sending message:', error);
+        throw error;
     });
 }
 
@@ -390,6 +408,7 @@ function removeFromContacts(userId) {
  * Helper function to escape HTML to prevent XSS
  */
 function escapeHtml(text) {
+    if (!text) return '';
     const div = document.createElement('div');
     div.textContent = text;
     return div.innerHTML;
@@ -403,3 +422,25 @@ function formatFileSize(bytes) {
     else if (bytes < 1048576) return (bytes / 1024).toFixed(1) + ' KB';
     else return (bytes / 1048576).toFixed(1) + ' MB';
 }
+
+/**
+ * Store user ID in body data attribute for access in all scripts
+ */
+function storeUserIdInDOM() {
+    fetch('/get_current_user_info')
+        .then(response => response.json())
+        .then(data => {
+            if (data && data.user_id) {
+                document.body.setAttribute('data-user-id', data.user_id);
+                console.log('[API] Stored user ID in DOM data attribute');
+            }
+        })
+        .catch(error => {
+            console.error('[API] Failed to store user ID:', error);
+        });
+}
+
+// Initialize when DOM is loaded
+document.addEventListener('DOMContentLoaded', function() {
+    storeUserIdInDOM();
+});

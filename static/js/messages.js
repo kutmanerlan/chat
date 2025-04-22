@@ -6,38 +6,62 @@
  * Load messages for a conversation
  */
 function loadMessages(userId) {
+  console.log(`[Messages] Loading messages for user ID: ${userId}`);
+  
   const chatMessages = document.querySelector('.chat-messages');
-  if (!chatMessages) return Promise.reject(new Error('Chat messages container not found'));
+  if (!chatMessages) {
+    console.error('[Messages] Chat messages container not found');
+    return Promise.reject(new Error('Chat messages container not found'));
+  }
   
   // Show loading indicator
-  chatMessages.innerHTML = '';
-  const loadingIndicator = document.createElement('div');
-  loadingIndicator.className = 'loading-messages';
-  loadingIndicator.textContent = 'Loading messages...';
-  loadingIndicator.style.textAlign = 'center';
-  loadingIndicator.style.padding = '20px';
-  loadingIndicator.style.color = '#888';
-  chatMessages.appendChild(loadingIndicator);
+  chatMessages.innerHTML = '<div class="loading-messages">Loading messages...</div>';
+  
+  // Check if userId is valid
+  if (!userId) {
+    console.error('[Messages] Invalid user ID provided to loadMessages');
+    chatMessages.innerHTML = '<div class="error-message">Error: Invalid conversation</div>';
+    return Promise.reject(new Error('Invalid user ID'));
+  }
   
   // Store pagination info
-  ChatApp.messagePage = 1;
-  ChatApp.messageLimit = 30; // Load only 30 messages at a time
-  ChatApp.hasMoreMessages = true;
-  ChatApp.currentChatId = userId;
+  if (typeof ChatApp !== 'undefined') {
+    ChatApp.messagePage = 1;
+    ChatApp.messageLimit = 30; // Load only 30 messages at a time
+    ChatApp.hasMoreMessages = true;
+    ChatApp.currentChatId = userId;
+  } else {
+    console.warn('[Messages] ChatApp not defined, falling back to local variables');
+    window.messagePage = 1;
+    window.messageLimit = 30;
+    window.hasMoreMessages = true;
+    window.currentChatId = userId;
+  }
   
   // Fetch messages with pagination
-  return fetchMessages(userId, 1, ChatApp.messageLimit)
+  return fetchMessages(userId, 1, typeof ChatApp !== 'undefined' ? ChatApp.messageLimit : 30)
     .then(data => {
+      console.log(`[Messages] Fetched ${data.messages ? data.messages.length : 0} messages`);
+      
       // Clear loading indicator
       chatMessages.innerHTML = '';
       
-      // Render messages
+      // Create messages container
+      const messagesContainer = document.createElement('div');
+      messagesContainer.className = 'messages-container';
+      chatMessages.appendChild(messagesContainer);
+      
+      // Check if we have messages
       if (data.success && data.messages && data.messages.length > 0) {
         // Add load more button if needed
-        if (data.messages.length >= ChatApp.messageLimit) {
+        if (data.messages.length >= (typeof ChatApp !== 'undefined' ? ChatApp.messageLimit : 30)) {
           addLoadMoreButton(chatMessages, userId);
         } else {
-          ChatApp.hasMoreMessages = false;
+          if (typeof ChatApp !== 'undefined') {
+            ChatApp.hasMoreMessages = false;
+          } else {
+            window.hasMoreMessages = false;
+          }
         }
         
         renderMessages(data.messages, chatMessages);
@@ -46,11 +70,13 @@ function loadMessages(userId) {
         const noMessages = document.createElement('div');
         noMessages.className = 'no-messages';
         noMessages.textContent = 'No messages yet';
-        chatMessages.appendChild(noMessages);
+        messagesContainer.appendChild(noMessages);
       }
+      
+      return data;
     })
     .catch(error => {
-      console.error('Error loading messages:', error);
+      console.error('[Messages] Error loading messages:', error);
       
       // Show error message
       chatMessages.innerHTML = '';
@@ -156,12 +182,20 @@ function addLoadMoreButton(chatMessages, userId) {
  * Render messages in the chat
  */
 function renderMessages(messages, chatMessages) {
+  console.log(`[Messages] Rendering ${messages.length} messages`);
+  
   // Create messages container if it doesn't exist
   let messagesContainer = chatMessages.querySelector('.messages-container');
   if (!messagesContainer) {
     messagesContainer = document.createElement('div');
     messagesContainer.className = 'messages-container';
     chatMessages.appendChild(messagesContainer);
+  }
+  
+  // Clear any existing "no messages" elements
+  const noMessagesElement = messagesContainer.querySelector('.no-messages');
+  if (noMessagesElement) {
+    messagesContainer.removeChild(noMessagesElement);
   }
   
   // Limit the number of DOM elements for performance
@@ -182,8 +216,12 @@ function renderMessages(messages, chatMessages) {
   
   // Add each message to the fragment
   messages.forEach(message => {
-    const messageEl = createMessageElement(message);
-    fragment.appendChild(messageEl);
+    try {
+      const messageEl = createMessageElement(message);
+      fragment.appendChild(messageEl);
+    } catch(err) {
+      console.error('[Messages] Error creating message element:', err, message);
+    }
   });
   
   // Append all messages at once
@@ -208,7 +246,17 @@ function createMessageElement(message) {
   const messageEl = document.createElement('div');
   
   // Determine if this is a sent or received message
-  const isSent = parseInt(message.sender_id) === parseInt(ChatApp.currentUser.user_id);
+  let isSent;
+  
+  // Handle case when ChatApp is not defined
+  if (typeof ChatApp !== 'undefined' && ChatApp.currentUser) {
+    isSent = parseInt(message.sender_id) === parseInt(ChatApp.currentUser.user_id);
+  } else {
+    // Fallback to session user_id if available
+    const userId = document.body.getAttribute('data-user-id');
+    isSent = userId && parseInt(message.sender_id) === parseInt(userId);
+  }
+  
   messageEl.className = `message ${isSent ? 'message-sent' : 'message-received'}`;
   messageEl.dataset.messageId = message.id;
   messageEl.dataset.senderId = message.sender_id;
@@ -224,7 +272,7 @@ function createMessageElement(message) {
   // Check if this is a file message
   let contentHTML = '';
   
-  if (message.content.startsWith('FILE:')) {
+  if (message.content && message.content.startsWith('FILE:')) {
     // Parse file information
     const [prefix, filePath, fileName, isImage] = message.content.split(':');
     const isImageFile = isImage === 'true';
@@ -263,7 +311,8 @@ function createMessageElement(message) {
     }
   } else {
     // Regular text message
-    contentHTML = `<div class="message-content">${escapeHtml(message.content)}</div>`;
+    const content = message.content || '';
+    contentHTML = `<div class="message-content">${escapeHtml(content)}</div>`;
   }
   
   const timeHTML = `<div class="message-time">
@@ -276,7 +325,9 @@ function createMessageElement(message) {
   // Add context menu event listener
   messageEl.addEventListener('contextmenu', function(e) {
     e.preventDefault();
-    showMessageContextMenu(e, message, messageEl);
+    if (typeof showMessageContextMenu === 'function') {
+      showMessageContextMenu(e, message, messageEl);
+    }
   });
   
   // Add appearance animation
@@ -779,4 +830,46 @@ function createLoadingFileMessage(file) {
   `;
   
   return message;
+}
+
+// Helper function for fetchMessages if it's missing
+if (typeof fetchMessages !== 'function') {
+  console.warn('[Messages] fetchMessages not found, creating fallback function');
+  window.fetchMessages = function(userId, page = 1, limit = 30, lastMessageId = 0) {
+    let url = `/get_messages?user_id=${userId}&page=${page}&limit=${limit}`;
+    
+    if (lastMessageId > 0) {
+      url += `&last_message_id=${lastMessageId}`;
+    }
+    
+    return fetch(url)
+      .then(response => {
+        if (!response.ok) {
+          throw new Error('Failed to fetch messages');
+        }
+        return response.json();
+      });
+  };
+}
+
+// Helper function to escape HTML if it's missing
+if (typeof escapeHtml !== 'function') {
+  console.warn('[Messages] escapeHtml not found, creating function');
+  window.escapeHtml = function(text) {
+    if (!text) return '';
+    const div = document.createElement('div');
+    div.textContent = text;
+    return div.innerHTML;
+  };
+}
+
+// Helper function for formatFileSize if it's missing
+if (typeof formatFileSize !== 'function') {
+  console.warn('[Messages] formatFileSize not found, creating function');
+  window.formatFileSize = function(bytes) {
+    if (!bytes) return '0 bytes';
+    if (bytes < 1024) return bytes + ' bytes';
+    else if (bytes < 1048576) return (bytes / 1024).toFixed(1) + ' KB';
+    else return (bytes / 1048576).toFixed(1) + ' MB';
+  };
 }
