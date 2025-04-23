@@ -130,9 +130,6 @@
   z-index: 10;
   cursor: help;
   pointer-events: auto;
-  /* Remove the fixed dimensions */
-  /* Remove the display: flex, align-items, justify-content */
-  /* Remove the border */
 }
 
 /* Block indicator - MAKING IT MATCH the contact indicator */
@@ -143,30 +140,25 @@
   transform: translateY(-50%);
   color: #888;
   font-size: 12px;
-  font-weight: normal; /* Changed from bold to normal */
+  font-weight: normal;
   padding: 2px 4px;
-  background-color: rgba(100, 100, 100, 0.2); /* Matching contact indicator */
+  background-color: rgba(100, 100, 100, 0.2);
   border-radius: 4px;
   z-index: 10;
   cursor: help;
   pointer-events: auto;
-  /* Removed fixed dimensions */
-  /* Removed display: flex, align-items, justify-content */
-  /* Removed border */
 }
 
-/* Blocked by you indicator (red) - SIMPLIFIED */
+/* Blocked by you indicator (red) */
 .block-indicator.blocked-by-you {
-  background-color: rgba(231, 76, 60, 0.2); /* Reduced opacity to match contact indicator */
+  background-color: rgba(231, 76, 60, 0.2);
   color: #e74c3c;
-  /* Removed border */
 }
 
-/* User has blocked you indicator (gray) - SIMPLIFIED */
+/* User has blocked you indicator (gray) */
 .block-indicator.blocked-you {
-  background-color: rgba(150, 150, 150, 0.2); /* Reduced opacity to match contact indicator */
+  background-color: rgba(150, 150, 150, 0.2);
   color: #999;
-  /* Removed border */
 }
 
 /* Block message in main area */
@@ -200,7 +192,7 @@
   background-color: #4c4c4c;
 }
 
-/* Remove tooltip pseudo-elements and replace with classes for actual DOM elements */
+/* Dynamic tooltip */
 .dynamic-tooltip {
   position: fixed;
   background-color: #333;
@@ -228,38 +220,14 @@
   pointer-events: none;
 }
 
-/* Conversations and recents */
-.conversations-section,
-.contacts-section {
-    margin-bottom: 15px;
-    border-bottom: 1px solid rgba(100, 100, 100, 0.2);
-    padding-bottom: 10px;
-}
-
-.section-title {
-    padding: 10px 15px 5px;
-    font-size: 13px;
-    color: var(--text-secondary);
-    text-transform: uppercase;
-    letter-spacing: 0.5px;
-    font-weight: 500;
-}
-
-.conversation-item {
-    position: relative;
-}
-
-.conversation-item .contact-info {
-    width: calc(100% - 65px);
-}
-
-.conversation-item .last-message {
+/* Last message should respect the container width */
+.last-message {
     display: flex;
     justify-content: space-between;
     width: 100%;
 }
 
-.conversation-item .message-text {
+.message-text {
     flex-grow: 1;
     white-space: nowrap;
     overflow: hidden;
@@ -269,28 +237,12 @@
     transition: opacity 0.2s ease;
 }
 
-.conversation-item .message-time {
+.message-time {
     font-size: 11px;
     color: var(--text-dimmed);
     margin-left: 5px;
     white-space: nowrap;
     transition: opacity 0.2s ease;
-}
-
-.conversation-item .contact-item {
-    background-color: rgba(43, 82, 120, 0.05); /* Very subtle blue tint for chats */
-}
-
-/* Last message should also respect the container width */
-.last-message {
-    font-size: 13px;
-    color: var(--text-dimmed);
-    white-space: nowrap;
-    overflow: hidden;
-    text-overflow: ellipsis;
-    max-width: 100%;
-    margin-top: 3px;
-    padding-right: 10px; /* Additional right padding */
 }
 
 .unread-badge {
@@ -309,26 +261,7 @@
     padding: 0 5px;
 }
 
-/* Sidebar sections */
-.sidebar-section {
-  margin-bottom: 15px;
-}
-
-.section-title {
-  padding: 10px 15px 5px;
-  font-size: 12px;
-  color: var(--text-secondary);
-  text-transform: uppercase;
-  letter-spacing: 0.5px;
-  font-weight: 500;
-}
-
-.sidebar-separator {
-  height: 1px;
-  background-color: rgba(100, 100, 100, 0.2);
-  margin: 8px 15px 15px;
-}
-
+/* No items message */
 .no-items-message {
   padding: 15px;
   color: #888;
@@ -378,8 +311,6 @@
   animation: highlight-pulse 1.5s ease-out infinite;
   border: 1px solid #3498db;
 }
-
-/* Add these styles at the end of the file */
 
 /* Smooth animation for chat updates */
 .chat-updating {
