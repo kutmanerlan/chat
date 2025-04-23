@@ -368,6 +368,123 @@ function createChatElement(chat) {
 }
 
 /**
+ * Update a single chat in the sidebar without refreshing the whole sidebar
+ * @param {Object} chatData - The updated chat data
+ */
+function updateSingleChat(chatData) {
+  if (!chatData || !chatData.user_id) {
+    console.error('[Contacts] Invalid chat data provided to updateSingleChat');
+    return;
+  }
+  
+  console.log('[Contacts] Updating single chat:', chatData.user_id);
+  
+  // Find the existing chat item
+  const contactsList = document.getElementById('contactsList');
+  if (!contactsList) return;
+  
+  const existingItem = contactsList.querySelector(`.contact-item[data-user-id="${chatData.user_id}"]`);
+  const chatSection = contactsList.querySelector('.conversations-section');
+  
+  if (existingItem) {
+    // If it exists, update its content (last message, time)
+    const lastMessageEl = existingItem.querySelector('.message-text');
+    const timeEl = existingItem.querySelector('.message-time');
+    
+    if (lastMessageEl) {
+      lastMessageEl.textContent = chatData.last_message || '';
+    }
+    
+    if (timeEl && chatData.last_message_time) {
+      timeEl.textContent = formatTimestamp(new Date(chatData.last_message_time));
+    }
+    
+    // Update unread badge if needed
+    const unreadBadge = existingItem.querySelector('.unread-badge');
+    if (chatData.unread_count && chatData.unread_count > 0) {
+      if (unreadBadge) {
+        unreadBadge.textContent = chatData.unread_count;
+      } else {
+        const newBadge = document.createElement('div');
+        newBadge.className = 'unread-badge';
+        newBadge.textContent = chatData.unread_count;
+        existingItem.appendChild(newBadge);
+      }
+    } else if (unreadBadge) {
+      unreadBadge.remove();
+    }
+    
+    // Add transition class for smooth movement
+    existingItem.classList.add('chat-updating');
+    
+    // Move to top of conversations if in chat section
+    if (chatSection && existingItem.parentNode === chatSection) {
+      // Clone the item to prevent layout jumps
+      const clonedItem = existingItem.cloneNode(true);
+      clonedItem.classList.add('chat-updating');
+      
+      // Insert at the top of conversation section
+      if (chatSection.firstChild) {
+        chatSection.insertBefore(clonedItem, chatSection.firstChild);
+      } else {
+        chatSection.appendChild(clonedItem);
+      }
+      
+      // Remove the old item with a delay
+      setTimeout(() => {
+        existingItem.remove();
+        // Remove transition class after animation completes
+        setTimeout(() => {
+          clonedItem.classList.remove('chat-updating');
+        }, 300);
+      }, 10);
+    } else {
+      // Just update in place if not in conversations section
+      setTimeout(() => {
+        existingItem.classList.remove('chat-updating');
+      }, 300);
+    }
+  } else {
+    // If it doesn't exist, we'll need to refresh the sidebar
+    // This should be rare, only when starting a new conversation
+    console.log('[Contacts] Chat not found in sidebar, refreshing');
+    loadSidebar();
+  }
+}
+
+/**
+ * Format timestamp for sidebar display
+ */
+function formatTimestamp(date) {
+  if (!date) return '';
+  
+  const now = new Date();
+  const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+  const yesterday = new Date(today);
+  yesterday.setDate(yesterday.getDate() - 1);
+  
+  // Check if the date is today
+  if (date >= today) {
+    return date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+  }
+  
+  // Check if the date is yesterday
+  if (date >= yesterday) {
+    return 'Yesterday';
+  }
+  
+  // Otherwise show day name for this week, or date for older
+  const dayDiff = Math.round((today - date) / (1000 * 60 * 60 * 24));
+  if (dayDiff < 7) {
+    const days = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
+    return days[date.getDay()];
+  }
+  
+  // For older messages
+  return date.toLocaleDateString([], { month: 'short', day: 'numeric' });
+}
+
+/**
  * Show tooltip when hovering over contact indicator
  */
 function showTooltip(event) {

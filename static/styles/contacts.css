@@ -34,6 +34,7 @@
     position: relative;
     pointer-events: auto; /* Ensure clicks are registered */
     z-index: 5; /* Add a z-index to ensure it's clickable */
+    transition: background-color 0.2s ease, transform 0.3s ease;
 }
 
 .contact-item.active {
@@ -97,6 +98,7 @@
     top: -10px;
     width: 100%; /* Full width of parent */
     padding-right: 10px; /* Additional right padding */
+    transition: opacity 0.2s ease;
 }
 
 .contact-bio {
@@ -264,6 +266,7 @@
     text-overflow: ellipsis;
     font-size: 13px;
     color: var(--text-dimmed);
+    transition: opacity 0.2s ease;
 }
 
 .conversation-item .message-time {
@@ -271,6 +274,7 @@
     color: var(--text-dimmed);
     margin-left: 5px;
     white-space: nowrap;
+    transition: opacity 0.2s ease;
 }
 
 .conversation-item .contact-item {
@@ -373,4 +377,31 @@
 .highlight-search input {
   animation: highlight-pulse 1.5s ease-out infinite;
   border: 1px solid #3498db;
+}
+
+/* Add these styles at the end of the file */
+
+/* Smooth animation for chat updates */
+.chat-updating {
+  animation: highlight-chat 0.6s ease-out;
+  transition: transform 0.3s ease-out, opacity 0.3s ease-out;
+}
+
+@keyframes highlight-chat {
+  0% {
+    background-color: rgba(255, 255, 255, 0.1);
+  }
+  100% {
+    background-color: transparent;
+  }
+}
+
+/* Make sure contact items have a smooth transition for all properties */
+.contact-item {
+  transition: background-color 0.2s ease, transform 0.3s ease;
+}
+
+/* Add smooth transition for messages and times */
+.message-text, .message-time, .contact-name {
+  transition: opacity 0.2s ease;
 }

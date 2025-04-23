@@ -667,12 +667,25 @@ function sendMessageHandler(text, recipientId, chatMessages) {
     if (data.success && data.message) {
       addMessageToChat(data.message, chatMessages);
       
-      // Refresh sidebar to show updated chat list after a short delay
-      setTimeout(() => {
-        if (typeof loadSidebar === 'function') {
-          loadSidebar();
-        }
-      }, 500);
+      // Update sidebar chat entry without refreshing the whole sidebar
+      if (typeof updateSingleChat === 'function') {
+        // Create updated chat object for the sidebar
+        const chatData = {
+          user_id: recipientId,
+          last_message: text,
+          last_message_time: data.message.timestamp,
+          unread_count: 0 // It's our message, so no unread count
+        };
+        
+        updateSingleChat(chatData);
+      } else {
+        // Fallback to old method if updateSingleChat isn't available
+        setTimeout(() => {
+          if (typeof loadSidebar === 'function') {
+            loadSidebar();
+          }
+        }, 500);
+      }
     } else {
       throw new Error(data.error || 'Failed to send message');
     }
@@ -1110,13 +1123,26 @@ function sendDirectMessage(text, recipientId, chatMessages) {
     if (data.success && data.message) {
       addMessageToChat(data.message, chatMessages);
       
-      // Request sidebar refresh to show this chat
-      setTimeout(() => {
-        console.log('[FIX] Refreshing sidebar after successful message');
-        if (typeof loadSidebar === 'function') {
-          loadSidebar();
-        }
-      }, 500);
+      // Update sidebar chat entry without refreshing the whole sidebar
+      if (typeof updateSingleChat === 'function') {
+        // Create updated chat object for the sidebar
+        const chatData = {
+          user_id: recipientId,
+          last_message: text,
+          last_message_time: data.message.timestamp,
+          unread_count: 0 // It's our message, so no unread count
+        };
+        
+        updateSingleChat(chatData);
+      } else {
+        // Fallback to old method
+        setTimeout(() => {
+          console.log('[FIX] Refreshing sidebar after successful message');
+          if (typeof loadSidebar === 'function') {
+            loadSidebar();
+          }
+        }, 500);
+      }
     } else {
       throw new Error(data.error || 'Failed to send message');
     }
