@@ -81,6 +81,49 @@ function highlightActiveContact(userId) {
 }
 
 /**
+ * Create the chat UI
+ * @param {number} userId - ID of the user to chat with
+ * @param {string} userName - Name of the user to chat with
+ * @param {Object} blockStatus - Block status object
+ */
+function createChatUI(userId, userName, blockStatus) {
+  // Get user info from the server for complete details
+  getUserInfo(userId)
+    .then(user => {
+      // Mark this chat as the active chat
+      ChatApp.activeChat = {
+        id: userId,
+        name: userName
+      };
+      
+      // Create chat interface with user info
+      createChatInterface(user, {
+        isBlocked: blockStatus.is_blocked_by_you,
+        hasBlockedYou: blockStatus.has_blocked_you
+      });
+      
+      // Start polling for new messages
+      startMessagePolling(userId);
+    })
+    .catch(error => {
+      console.error('Error getting user info:', error);
+      
+      // Create chat interface with basic info
+      createChatInterface({
+        id: userId,
+        name: userName,
+        avatar_path: null
+      }, {
+        isBlocked: blockStatus.is_blocked_by_you,
+        hasBlockedYou: blockStatus.has_blocked_you
+      });
+      
+      // Start polling for new messages
+      startMessagePolling(userId);
+    });
+}
+
+/**
  * Create the chat interface
  */
 function createChatInterface(user, blockStatus) {
@@ -124,11 +167,11 @@ function createChatInterface(user, blockStatus) {
   userName.className = 'chat-user-name';
   userName.textContent = user.name;
   
-  // Menu button
+  // Menu button (three dots menu)
   const menuButton = document.createElement('button');
   menuButton.className = 'chat-menu-btn';
   menuButton.innerHTML = `
-    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
       <circle cx="12" cy="6" r="2"></circle>
       <circle cx="12" cy="12" r="2"></circle>
       <circle cx="12" cy="18" r="2"></circle>
@@ -137,9 +180,15 @@ function createChatInterface(user, blockStatus) {
   
   // Add click handler for menu button
   menuButton.addEventListener('click', function(e) {
-    e.stopPropagation();
-    showContactMenu(menuButton, user);
+    e.stopPropagation(); // Prevent click from bubbling to document
+    showChatMenu(this, user);
   });
+  
+  // Assemble the header
+  userInfo.appendChild(userAvatar);
+  userInfo.appendChild(userName);
+  chatHeader.appendChild(userInfo);
+  chatHeader.appendChild(menuButton);
   
   // Messages area
   const chatMessages = document.createElement('div');
@@ -148,12 +197,6 @@ function createChatInterface(user, blockStatus) {
   // Message input area
   const messageInputContainer = document.createElement('div');
   messageInputContainer.className = 'message-input-container';
-  
-  // IMPORTANT: Assemble the header first, regardless of block status
-  userInfo.appendChild(userAvatar);
-  userInfo.appendChild(userName);
-  chatHeader.appendChild(userInfo);
-  chatHeader.appendChild(menuButton);
   
   if (isBlocked) {
     // Show blocked state
@@ -190,7 +233,8 @@ function createChatInterface(user, blockStatus) {
     
     const inputField = document.createElement('input');
     inputField.type = 'text';
-    inputField.placeholder = 'Message';
+    inputField.id = 'messageInput';
+    inputField.placeholder = 'Type a message';
     
     // Send button
     const sendButton = document.createElement('button');
@@ -215,6 +259,8 @@ function createChatInterface(user, blockStatus) {
     sendButton.addEventListener('click', function() {
       if (this.classList.contains('active')) {
         sendMessageHandler(inputField.value, user.id, chatMessages);
+        inputField.value = '';
+        sendButton.classList.remove('active');
       }
     });
     
@@ -223,6 +269,8 @@ function createChatInterface(user, blockStatus) {
       if (e.key === 'Enter' && this.value.trim()) {
         e.preventDefault();
         sendMessageHandler(this.value, user.id, chatMessages);
+        this.value = '';
+        sendButton.classList.remove('active');
       }
     });
     
@@ -236,7 +284,7 @@ function createChatInterface(user, blockStatus) {
     messageInputContainer.appendChild(inputWrapper);
   }
   
-  // Assemble the full UI (always include header)
+  // Assemble the full UI
   mainContent.appendChild(chatHeader);
   mainContent.appendChild(chatMessages);
   mainContent.appendChild(messageInputContainer);
@@ -254,36 +302,46 @@ function createChatInterface(user, blockStatus) {
 }
 
 /**
- * Show contact menu when chat menu button is clicked
- * @param {HTMLElement} menuButton - The button that was clicked
+ * Show the chat menu (three dots menu)
+ * @param {HTMLElement} button - The button that was clicked
  * @param {Object} user - The user object for the current chat
  */
-function showContactMenu(menuButton, user) {
-  // Remove any existing menus
-  const existingMenu = document.getElementById('contactDropdownMenu');
+function showChatMenu(button, user) {
+  // Remove any existing dropdown menus
+  const existingMenu = document.getElementById('chatDropdownMenu');
   if (existingMenu) {
     existingMenu.remove();
   }
-
-  // Create menu
-  const contactMenu = document.createElement('div');
-  contactMenu.id = 'contactDropdownMenu';
-  contactMenu.className = 'dropdown-menu';
   
-  // Create menu options container
-  const menuOptions = document.createElement('div');
-  menuOptions.className = 'dropdown-menu-options';
+  // Create the dropdown menu
+  const dropdownMenu = document.createElement('div');
+  dropdownMenu.id = 'chatDropdownMenu';
+  dropdownMenu.className = 'dropdown-menu';
   
   // Get the button position
-  const buttonRect = menuButton.getBoundingClientRect();
+  const buttonRect = button.getBoundingClientRect();
   
-  // Check if user is a contact and if the user is blocked
-  Promise.all([checkContactStatus(user.id), checkBlockStatus(user.id)])
-    .then(([isContact, blockStatus]) => {
-      // Add appropriate menu options based on contact status
+  // Set the menu position initially
+  dropdownMenu.style.position = 'fixed';
+  dropdownMenu.style.top = buttonRect.bottom + 'px';
+  dropdownMenu.style.right = (window.innerWidth - buttonRect.right) + 'px';
+  dropdownMenu.style.zIndex = '1000';
+  
+  // Add the menu to the DOM so we can get its dimensions
+  document.body.appendChild(dropdownMenu);
+  
+  // Check if we should show contact status
+  checkContactStatus(user.id).then(isContact => {
+    // Check if user is blocked
+    checkBlockStatus(user.id).then(blockStatus => {
+      // Create menu items container
+      const menuItems = document.createElement('div');
+      menuItems.className = 'dropdown-menu-options';
+      
+      // Add/Remove contact option
       if (isContact) {
-        menuOptions.innerHTML += `
-          <div class="dropdown-option" data-action="remove-contact" data-user-id="${user.id}">
+        menuItems.innerHTML += `
+          <div class="dropdown-option" data-action="remove-contact">
             <div class="dropdown-option-icon">
               <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                 <path d="M16 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path>
@@ -296,8 +354,8 @@ function showContactMenu(menuButton, user) {
           </div>
         `;
       } else {
-        menuOptions.innerHTML += `
-          <div class="dropdown-option" data-action="add-contact" data-user-id="${user.id}">
+        menuItems.innerHTML += `
+          <div class="dropdown-option" data-action="add-contact">
             <div class="dropdown-option-icon">
               <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                 <path d="M16 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path>
@@ -311,10 +369,10 @@ function showContactMenu(menuButton, user) {
         `;
       }
       
-      // Add block/unblock option
-      if (blockStatus.isBlockedByYou) {
-        menuOptions.innerHTML += `
-          <div class="dropdown-option" data-action="unblock-user" data-user-id="${user.id}">
+      // Block/Unblock option
+      if (blockStatus.is_blocked_by_you) {
+        menuItems.innerHTML += `
+          <div class="dropdown-option" data-action="unblock-user">
             <div class="dropdown-option-icon">
               <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                 <circle cx="12" cy="12" r="10"></circle>
@@ -325,8 +383,8 @@ function showContactMenu(menuButton, user) {
           </div>
         `;
       } else {
-        menuOptions.innerHTML += `
-          <div class="dropdown-option" data-action="block-user" data-user-id="${user.id}">
+        menuItems.innerHTML += `
+          <div class="dropdown-option" data-action="block-user">
             <div class="dropdown-option-icon">
               <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                 <circle cx="12" cy="12" r="10"></circle>
@@ -338,9 +396,9 @@ function showContactMenu(menuButton, user) {
         `;
       }
       
-      // Add delete chat option
-      menuOptions.innerHTML += `
-        <div class="dropdown-option" data-action="delete-chat" data-user-id="${user.id}">
+      // Delete chat option
+      menuItems.innerHTML += `
+        <div class="dropdown-option" data-action="delete-chat">
           <div class="dropdown-option-icon">
             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
               <polyline points="3 6 5 6 21 6"></polyline>
@@ -351,90 +409,293 @@ function showContactMenu(menuButton, user) {
         </div>
       `;
       
-      // Add options to menu
-      contactMenu.appendChild(menuOptions);
-      
-      // Add menu to DOM
-      document.body.appendChild(contactMenu);
-      
-      // Position the menu
-      contactMenu.style.display = 'block';
-      contactMenu.style.position = 'fixed';
-      contactMenu.style.left = `${buttonRect.right - contactMenu.offsetWidth}px`;
-      contactMenu.style.top = `${buttonRect.bottom + 5}px`;
-      
-      // Make sure menu doesn't go off screen
-      const menuRect = contactMenu.getBoundingClientRect();
-      if (menuRect.right > window.innerWidth) {
-        contactMenu.style.left = `${window.innerWidth - menuRect.width - 5}px`;
-      }
-      if (menuRect.bottom > window.innerHeight) {
-        contactMenu.style.top = `${buttonRect.top - menuRect.height - 5}px`;
-      }
+      // Add menu items to dropdown
+      dropdownMenu.appendChild(menuItems);
       
       // Add click event listeners to menu options
-      contactMenu.querySelectorAll('.dropdown-option').forEach(option => {
+      const options = dropdownMenu.querySelectorAll('.dropdown-option');
+      options.forEach(option => {
         option.addEventListener('click', function() {
-          const action = this.dataset.action;
-          const userId = parseInt(this.dataset.userId);
+          const action = this.getAttribute('data-action');
           
-          // Handle different actions
-          switch(action) {
+          // Handle the action
+          switch (action) {
             case 'add-contact':
-              addToContacts(userId).then(() => {
+              addToContacts(user.id).then(() => {
                 showSuccessNotification(`Added ${user.name} to contacts`);
-                contactMenu.remove();
+                dropdownMenu.remove();
+                // Refresh sidebar to update contacts
+                loadSidebar();
               });
               break;
+              
             case 'remove-contact':
-              removeFromContacts(userId).then(() => {
+              removeFromContacts(user.id).then(() => {
                 showSuccessNotification(`Removed ${user.name} from contacts`);
-                contactMenu.remove();
+                dropdownMenu.remove();
+                // Refresh sidebar to update contacts
+                loadSidebar();
               });
               break;
+              
             case 'block-user':
-              showBlockConfirmation(userId, user.name);
-              contactMenu.remove();
+              showBlockConfirmation(user.id, user.name);
+              dropdownMenu.remove();
               break;
+              
             case 'unblock-user':
-              unblockUser(userId).then(() => {
+              unblockUser(user.id).then(() => {
                 showSuccessNotification(`Unblocked ${user.name}`);
-                contactMenu.remove();
-                // Reload the chat
-                openChat(userId, user.name);
+                dropdownMenu.remove();
+                // Reopen chat to show unblocked state
+                openChat(user.id, user.name);
               });
               break;
+              
             case 'delete-chat':
-              deleteChatHandler(userId, user.name);
-              contactMenu.remove();
+              deleteChatHandler(user.id, user.name);
+              dropdownMenu.remove();
               break;
           }
         });
       });
       
-      // Close menu when clicking outside
+      // Add event listener to close menu when clicking outside
       document.addEventListener('click', function closeMenu(e) {
-        if (!contactMenu.contains(e.target) && e.target !== menuButton) {
-          contactMenu.remove();
+        if (!dropdownMenu.contains(e.target) && e.target !== button) {
+          dropdownMenu.remove();
           document.removeEventListener('click', closeMenu);
         }
       });
       
-      // Close menu on escape key
-      document.addEventListener('keydown', function escHandler(e) {
+      // Add event listener to close menu when pressing escape
+      document.addEventListener('keydown', function escClose(e) {
         if (e.key === 'Escape') {
-          contactMenu.remove();
-          document.removeEventListener('keydown', escHandler);
+          dropdownMenu.remove();
+          document.removeEventListener('keydown', escClose);
         }
       });
-    })
-    .catch(error => {
-      console.error('Error checking contact/block status:', error);
+    });
+  });
+}
+
+/**
+ * Check if a user is in your contacts
+ * @param {number} userId - The user ID to check
+ * @returns {Promise<boolean>} - Promise resolving to true if user is a contact
+ */
+function checkContactStatus(userId) {
+  return fetch('/check_contact', {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json'
+    },
+    body: JSON.stringify({ contact_id: userId })
+  })
+  .then(response => response.json())
+  .then(data => {
+    return data.is_contact;
+  })
+  .catch(error => {
+    console.error('Error checking contact status:', error);
+    return false;
+  });
+}
+
+/**
+ * Remove user from contacts
+ * @param {number} userId - The user ID to remove
+ * @returns {Promise<boolean>} - Promise resolving to true if successful
+ */
+function removeFromContacts(userId) {
+  return fetch('/remove_contact', {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json'
+    },
+    body: JSON.stringify({ contact_id: userId })
+  })
+  .then(response => response.json())
+  .then(data => {
+    if (data.success) {
+      // Reload sidebar to update contacts list
+      loadSidebar();
+      return true;
+    } else {
+      throw new Error(data.error || 'Failed to remove contact');
+    }
+  })
+  .catch(error => {
+    console.error('Error removing contact:', error);
+    showErrorNotification('Failed to remove contact');
+    return false;
+  });
+}
+
+/**
+ * Block a user
+ * @param {number} userId - The user ID to block
+ * @returns {Promise<boolean>} - Promise resolving to true if successful
+ */
+function blockUser(userId) {
+  return fetch('/block_user', {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json'
+    },
+    body: JSON.stringify({ user_id: userId })
+  })
+  .then(response => response.json())
+  .then(data => {
+    if (data.success) {
+      return true;
+    } else {
+      throw new Error(data.error || 'Failed to block user');
+    }
+  })
+  .catch(error => {
+    console.error('Error blocking user:', error);
+    showErrorNotification('Failed to block user');
+    return false;
+  });
+}
+
+/**
+ * Handle blocking a user (with UI updates)
+ * @param {number} userId - The user ID to block
+ * @param {string} userName - The name of the user
+ */
+function blockUserHandler(userId, userName) {
+  blockUser(userId).then(success => {
+    if (success) {
+      showSuccessNotification(`You have blocked ${userName}`);
+      
+      // Update UI to show blocked state
+      const blockMessage = document.createElement('div');
+      blockMessage.className = 'block-message';
+      blockMessage.innerHTML = `
+        <div class="block-icon">
+          <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="#999" stroke-width="1.5">
+            <circle cx="12" cy="12" r="10"></circle>
+            <line x1="4.93" y1="4.93" x2="19.07" y2="19.07"></line>
+          </svg>
+        </div>
+        <p>You've blocked this user</p>
+        <button class="unblock-button">Unblock</button>
+      `;
+      
+      // Replace message area with block message
+      const chatMessages = document.querySelector('.chat-messages');
+      if (chatMessages) {
+        chatMessages.innerHTML = '';
+        chatMessages.appendChild(blockMessage);
+      }
+      
+      // Add unblock button handler
+      const unblockButton = document.querySelector('.unblock-button');
+      if (unblockButton) {
+        unblockButton.addEventListener('click', function() {
+          unblockUser(userId).then(() => {
+            showSuccessNotification(`Unblocked ${userName}`);
+            openChat(userId, userName);
+          });
+        });
+      }
+      
+      // Disable input area
+      const messageInputContainer = document.querySelector('.message-input-container');
+      if (messageInputContainer) {
+        messageInputContainer.innerHTML = `
+          <div class="blocking-message">
+            <span>You have blocked ${userName}</span>
+          </div>
+        `;
+      }
+      
+      // Update sidebar
+      loadSidebar();
+    }
+  });
+}
+
+/**
+ * Unblock a user
+ * @param {number} userId - The user ID to unblock
+ * @returns {Promise<boolean>} - Promise resolving to true if successful
+ */
+function unblockUser(userId) {
+  return fetch('/unblock_user', {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json'
+    },
+    body: JSON.stringify({ user_id: userId })
+  })
+  .then(response => response.json())
+  .then(data => {
+    if (data.success) {
+      // Refresh sidebar to update the blocked indicators
+      loadSidebar();
+      return true;
+    } else {
+      throw new Error(data.error || 'Failed to unblock user');
+    }
+  })
+  .catch(error => {
+    console.error('Error unblocking user:', error);
+    showErrorNotification('Failed to unblock user');
+    return false;
+  });
+}
+
+/**
+ * Delete a chat
+ * @param {number} userId - The user ID to delete chat with
+ * @returns {Promise<Object>} - Promise resolving to response data
+ */
+function deleteChat(userId) {
+  return fetch('/delete_chat', {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json'
+    },
+    body: JSON.stringify({ user_id: userId })
+  })
+  .then(response => response.json())
+  .then(data => {
+    if (data.success) {
+      // Refresh sidebar to update chat list
+      loadSidebar();
+      return data;
+    } else {
+      throw new Error(data.error || 'Failed to delete chat');
+    }
+  })
+  .catch(error => {
+    console.error('Error deleting chat:', error);
+    showErrorNotification('Failed to delete chat');
+    return { success: false, error: error.message };
+  });
+}
+
+/**
+ * Get user info from the server
+ * @param {number} userId - The user ID to get info for
+ * @returns {Promise<Object>} - Promise resolving to user data
+ */
+function getUserInfo(userId) {
+  return fetch(`/get_user_info?user_id=${userId}`)
+    .then(response => response.json())
+    .then(data => {
+      if (data.error) {
+        throw new Error(data.error);
+      }
+      return data;
     });
 }
 
 /**
- * Handler for deleting a chat
+ * Delete chat handler function
  */
 function deleteChatHandler(userId, userName) {
   console.log(`Deleting chat with user ${userId} (${userName})`);
