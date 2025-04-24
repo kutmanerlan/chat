@@ -604,11 +604,23 @@ function updateMessageDisplay(messageEl, message) {
 
 /**
  * Handle sending a message
+ * @param {string} text - The message text to send
+ * @param {number} recipientId - The ID of the message recipient
+ * @param {HTMLElement} chatMessages - The chat messages container element
+ * @returns {Promise} - A promise that resolves when the message is sent
  */
 function sendMessageHandler(text, recipientId, chatMessages) {
   if (!text.trim()) return;
   
   console.log(`Sending message to ${recipientId}: ${text}`);
+  
+  // Check if this might be the first message to this user
+  const isNewContact = isFirstMessageToUser(recipientId);
+  if (isNewContact) {
+    console.log('This appears to be a new contact, ensuring contact is created first');
+    // Add the user to contacts immediately before sending the message
+    addUserToContacts(recipientId);
+  }
   
   // Create a temporary message element to show immediately
   const tempMessage = createTempMessage(text);
@@ -630,7 +642,6 @@ function sendMessageHandler(text, recipientId, chatMessages) {
   // Clear input field immediately for better UX
   const inputField = document.querySelector('.message-input-field input');
   if (inputField) {
-    const oldText = inputField.value;
     inputField.value = '';
     
     // Update send button state
@@ -667,59 +678,21 @@ function sendMessageHandler(text, recipientId, chatMessages) {
     if (data.success && data.message) {
       addMessageToChat(data.message, chatMessages);
       
-      // Check if the user was already in the sidebar and return if found
-      const chatItems = document.querySelectorAll('.contact-item');
-      let userFoundInSidebar = false;
-      
-      for (let item of chatItems) {
-        if (item.dataset.userId === recipientId.toString()) {
-          userFoundInSidebar = true;
-          break;
-        }
-      }
-      
-      if (!userFoundInSidebar) {
-        console.log('[Messages] First message to new user - need to refresh sidebar');
-        
-        // Force an immediate sidebar refresh instead of waiting for interval
+      // If this was a new contact, refresh the sidebar to show the new chat
+      if (isNewContact) {
+        console.log('Refreshing sidebar after first message to new contact');
+        // Force refresh the sidebar immediately
         if (typeof loadSidebar === 'function') {
-          // Try to get user info to create a chat entry
-          fetch(`/get_user_info?user_id=${recipientId}`)
-            .then(resp => resp.json())
-            .then(userData => {
-              // Add user to contacts if they're not there yet
-              fetch('/add_contact', {
-                method: 'POST',
-                headers: {
-                  'Content-Type': 'application/json'
-                },
-                body: JSON.stringify({ contact_id: recipientId })
-              })
-              .then(() => {
-                console.log('[Messages] Added new user to contacts, refreshing sidebar');
-                // Force refresh sidebar
-                loadSidebar();
-              });
-            })
-            .catch(error => {
-              console.error('[Messages] Error getting user info for sidebar update:', error);
-              // Fallback to just refreshing sidebar
-              loadSidebar();
-            });
+          loadSidebar();
+        }
+        
+        // Remove any error notifications that might have appeared
+        if (typeof removeErrorNotificationByText === 'function') {
+          removeErrorNotificationByText('Failed to send message');
         }
       } else {
-        // Update sidebar chat entry without refreshing the whole sidebar
-        if (typeof updateSingleChat === 'function') {
-          // Create updated chat object for the sidebar
-          const chatData = {
-            user_id: recipientId,
-            last_message: text,
-            last_message_time: data.message.timestamp,
-            unread_count: 0 // It's our message, so no unread count
-          };
-          
-          updateSingleChat(chatData);
-        }
+        // Just update the single chat entry for existing contacts
+        updateChatInSidebar(recipientId, text, data.message.timestamp);
       }
     } else {
       throw new Error(data.error || 'Failed to send message');
@@ -749,19 +722,91 @@ function sendMessageHandler(text, recipientId, chatMessages) {
 }
 
 /**
- * Create a temporary message while sending
+ * Check if this is the first message to a user
+ * @param {number} userId - The user ID to check
+ * @returns {boolean} - True if this is the first message to the user
+ */
+function isFirstMessageToUser(userId) {
+  // Convert userId to string for comparison
+  const userIdStr = userId.toString();
+  
+  // Check if user exists in the sidebar
+  const contactItems = document.querySelectorAll('.contact-item');
+  for (let item of contactItems) {
+    if (item.dataset.userId === userIdStr) {
+      return false; // User found in sidebar
+    }
+  }
+  
+  console.log(`User ${userId} not found in sidebar, likely first message`);
+  return true; // User not found in sidebar
+}
+
+/**
+ * Add a user to contacts
+ * @param {number} userId - The user ID to add to contacts
+ */
+function addUserToContacts(userId) {
+  console.log(`Adding user ${userId} to contacts before sending message`);
+  
+  fetch('/add_contact', {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json'
+    },
+    body: JSON.stringify({ contact_id: userId })
+  })
+  .then(response => response.json())
+  .then(data => {
+    if (data.success) {
+      console.log('Successfully added contact:', data);
+      // Force refresh sidebar immediately
+      if (typeof loadSidebar === 'function') {
+        loadSidebar();
+      }
+    } else {
+      console.warn('Failed to add contact or already exists:', data);
+    }
+  })
+  .catch(error => {
+    console.error('Error adding contact:', error);
+  });
+}
+
+/**
+ * Update a single chat in the sidebar after sending a message
+ * @param {number} userId - The user ID to update
+ * @param {string} lastMessage - The last message text
+ * @param {string} timestamp - The message timestamp
+ */
+function updateChatInSidebar(userId, lastMessage, timestamp) {
+  // Use updateSingleChat if it exists
+  if (typeof updateSingleChat === 'function') {
+    const chatData = {
+      user_id: userId,
+      last_message: lastMessage,
+      last_message_time: timestamp,
+      unread_count: 0 // It's our message, so no unread count
+    };
+    
+    updateSingleChat(chatData);
+  }
+}
+
+/**
+ * Create a temporary message element
+ * @param {string} text - The message text
+ * @returns {HTMLElement} - The message element
  */
 function createTempMessage(text) {
-  const messageEl = document.createElement('div');
-  messageEl.className = 'message message-sent message-pending';
+  const message = document.createElement('div');
+  message.className = 'message message-sent message-pending';
   
-  // Format timestamp for current time
-  const now = new Date();
-  const hours = String(now.getHours()).padStart(2, '0');
-  const minutes = String(now.getMinutes()).padStart(2, '0');
+  const timestamp = new Date();
+  const hours = String(timestamp.getHours()).padStart(2, '0');
+  const minutes = String(timestamp.getMinutes()).padStart(2, '0');
   
-  // Add message content and time
-  messageEl.innerHTML = `
+  message.innerHTML = `
     <div class="message-content">${escapeHtml(text)}</div>
     <div class="message-time">
       ${hours}:${minutes}
@@ -769,75 +814,7 @@ function createTempMessage(text) {
     </div>
   `;
   
-  // Add appearance animation
-  setTimeout(() => {
-    messageEl.classList.add('message-visible');
-  }, 10);
-  
-  return messageEl;
-}
-
-/**
- * Add a new message to the chat
- * @param {Object} message - The message object
- * @param {Element} chatMessages - The chat messages container element
- * @param {boolean} isNewMessage - Whether this is a newly received message
- */
-function addMessageToChat(message, chatMessages, isNewMessage = false) {
-  // Get or create messages container
-  let messagesContainer = chatMessages.querySelector('.messages-container');
-  
-  // Remove "no messages" if present
-  const noMessages = chatMessages.querySelector('.no-messages');
-  if (noMessages) {
-    chatMessages.removeChild(noMessages);
-  }
-  
-  // Create container if it doesn't exist
-  if (!messagesContainer) {
-    messagesContainer = document.createElement('div');
-    messagesContainer.className = 'messages-container';
-    chatMessages.appendChild(messagesContainer);
-  }
-  
-  // Create and add the message element
-  const messageEl = createMessageElement(message);
-  
-  // If this is a new message that appeared during polling,
-  // add a special animation class
-  if (isNewMessage) {
-    messageEl.classList.add('message-new');
-    
-    // Play notification sound if message is from other user
-    if (parseInt(message.sender_id) !== parseInt(ChatApp.currentUser.user_id)) {
-      playMessageSound();
-    }
-  }
-  
-  messagesContainer.appendChild(messageEl);
-  
-  // Scroll to the new message
-  chatMessages.scrollTop = chatMessages.scrollHeight;
-}
-
-/**
- * Play message notification sound
- */
-function playMessageSound() {
-  // Create audio element if it doesn't exist
-  let messageSound = document.getElementById('message-notification-sound');
-  if (!messageSound) {
-    messageSound = document.createElement('audio');
-    messageSound.id = 'message-notification-sound';
-    messageSound.src = '/static/sounds/message.mp3'; // You'll need to add this file
-    messageSound.volume = 0.5;
-    document.body.appendChild(messageSound);
-  }
-  
-  // Play the sound
-  messageSound.play().catch(error => {
-    console.log('Could not play notification sound:', error);
-  });
+  return message;
 }
 
 /**

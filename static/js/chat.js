@@ -1788,3 +1788,408 @@ function deleteChat() {
     // This functionality has been removed
     console.warn('deleteChat function called but this feature has been removed');
 }
+
+/**
+ * Make sure a user is added to contacts if needed
+ */
+function addUserToContactsIfNeeded(userId) {
+    console.log('Checking if user needs to be added to contacts:', userId);
+    
+    // Check if this user is already in contacts by looking at the sidebar
+    const isNewContact = isFirstMessageToUser(userId);
+    
+    if (isNewContact) {
+        console.log('User not found in contacts, adding user:', userId);
+        // Add the user to contacts
+        fetch('/add_contact', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({ contact_id: userId })
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                console.log('User added to contacts:', data);
+                // Force refresh the sidebar immediately
+                if (typeof loadSidebar === 'function') {
+                    setTimeout(loadSidebar, 100);
+                }
+            } else {
+                console.log('User already in contacts or error adding contact:', data);
+            }
+        })
+        .catch(error => {
+            console.error('Error adding user to contacts:', error);
+        });
+    }
+}
+
+/**
+ * Check if this is the first message to a user by checking if they're in the sidebar
+ */
+function isFirstMessageToUser(userId) {
+    // Convert userId to string for comparison
+    const userIdStr = userId.toString();
+    
+    // Check if user exists in the sidebar
+    const contactItems = document.querySelectorAll('.contact-item');
+    for (let item of contactItems) {
+        if (item.dataset.userId === userIdStr) {
+            return false; // User found in contacts
+        }
+    }
+    
+    return true; // User not found in contacts
+}
+
+/**
+ * Set up message input field
+ */
+function setupMessageInput(userId) {
+    const inputField = document.querySelector('.message-input-field input');
+    const sendButton = document.querySelector('.send-button');
+    const chatMessages = document.querySelector('.chat-messages');
+    
+    if (!inputField || !sendButton || !chatMessages) return;
+    
+    // Update send button state based on input content
+    inputField.addEventListener('input', function() {
+        if (this.value.trim()) {
+            sendButton.classList.add('active');
+        } else {
+            sendButton.classList.remove('active');
+        }
+    });
+    
+    // Send message on Enter key
+    inputField.addEventListener('keydown', function(e) {
+        if (e.key === 'Enter' && !e.shiftKey && this.value.trim()) {
+            e.preventDefault();
+            sendMessage(this.value.trim(), userId, chatMessages);
+        }
+    });
+    
+    // Send message on button click
+    sendButton.addEventListener('click', function() {
+        if (inputField.value.trim()) {
+            sendMessage(inputField.value.trim(), userId, chatMessages);
+        }
+    });
+}
+
+/**
+ * Send a message to a user
+ */
+function sendMessage(text, recipientId, chatMessages) {
+    console.log(`Sending message: ${text} to user ${recipientId}`);
+    
+    // Create a temporary message element
+    const tempMessage = createTempMessage(text);
+    
+    // Get or create messages container
+    let messagesContainer = chatMessages.querySelector('.messages-container');
+    if (!messagesContainer) {
+        messagesContainer = document.createElement('div');
+        messagesContainer.className = 'messages-container';
+        chatMessages.appendChild(messagesContainer);
+    }
+    
+    // Add the temp message to the chat
+    messagesContainer.appendChild(tempMessage);
+    
+    // Scroll to the new message
+    chatMessages.scrollTop = chatMessages.scrollHeight;
+    
+    // Clear input field
+    const inputField = document.querySelector('.message-input-field input');
+    if (inputField) {
+        inputField.value = '';
+        
+        // Update send button state
+        const sendButton = document.querySelector('.send-button');
+        if (sendButton) sendButton.classList.remove('active');
+    }
+    
+    // Check if this is a first message to a new contact
+    const isNewContact = isFirstMessageToUser(recipientId);
+    
+    // If it's a new contact, make sure they are added to contacts first
+    if (isNewContact) {
+        console.log('First message to a new contact, ensuring contact is created');
+        addUserToContactsIfNeeded(recipientId);
+    }
+    
+    // Send the message to the server
+    fetch('/send_message', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({
+            recipient_id: recipientId,
+            content: text
+        })
+    })
+    .then(response => {
+        if (!response.ok) {
+            throw new Error(`Server responded with ${response.status}: ${response.statusText}`);
+        }
+        return response.json();
+    })
+    .then(data => {
+        console.log('Message sent successfully:', data);
+        
+        // Remove the temporary message
+        if (tempMessage && tempMessage.parentNode) {
+            tempMessage.parentNode.removeChild(tempMessage);
+        }
+        
+        // Add the real message with server data
+        if (data.success && data.message) {
+            addMessageToChat(data.message, chatMessages);
+            
+            // If this was a new contact, refresh the sidebar
+            if (isNewContact) {
+                console.log('Refreshing sidebar after first message to new contact');
+                if (typeof loadSidebar === 'function') {
+                    loadSidebar();
+                }
+                
+                // Remove any error notifications
+                if (typeof removeErrorNotificationByText === 'function') {
+                    removeErrorNotificationByText('Failed to send message');
+                }
+            } else {
+                // Update the single chat entry for existing contacts
+                if (typeof updateSingleChat === 'function') {
+                    const chatData = {
+                        user_id: recipientId,
+                        last_message: text,
+                        last_message_time: data.message.timestamp,
+                        unread_count: 0 // It's our message, so no unread count
+                    };
+                    
+                    updateSingleChat(chatData);
+                }
+            }
+        } else {
+            throw new Error(data.error || 'Failed to send message');
+        }
+    })
+    .catch(error => {
+        console.error('Error sending message:', error);
+        
+        // Replace temp message with error message
+        if (tempMessage && tempMessage.parentNode) {
+            tempMessage.classList.add('message-error');
+            const contentDiv = tempMessage.querySelector('.message-content');
+            if (contentDiv) {
+                contentDiv.innerHTML += '<div class="message-error-text">Failed to send</div>';
+            }
+        }
+        
+        // Show error notification
+        if (typeof showErrorNotification === 'function') {
+            showErrorNotification('Failed to send message. Please try again.');
+        }
+    });
+}
+
+/**
+ * Create a temporary message element while waiting for server response
+ */
+function createTempMessage(text) {
+    const message = document.createElement('div');
+    message.className = 'message message-sent message-pending';
+    
+    const timestamp = new Date();
+    const hours = String(timestamp.getHours()).padStart(2, '0');
+    const minutes = String(timestamp.getMinutes()).padStart(2, '0');
+    
+    message.innerHTML = `
+        <div class="message-content">${escapeHtml(text)}</div>
+        <div class="message-time">
+            ${hours}:${minutes}
+            <span class="message-status">Sending...</span>
+        </div>
+    `;
+    
+    return message;
+}
+
+/**
+ * Show chat menu (dropdown)
+ */
+function showChatMenu(event, userId, userName) {
+    // ...existing code...
+}
+
+/**
+ * Set up file upload for messages
+ */
+function setupFileUpload(userId, userName) {
+    // ...existing code...
+}
+
+/**
+ * Show file upload menu
+ */
+function showFileMenu(event, userId, userName) {
+    // ...existing code...
+}
+
+/**
+ * Show search in chat interface
+ */
+function showSearchInChat() {
+    // ...existing code...
+}
+
+/**
+ * Show user profile
+ */
+function showUserProfile(userId, userName) {
+    // ...existing code...
+}
+
+/**
+ * Show block confirmation dialog
+ */
+function showBlockConfirmation(userId, userName) {
+    // ...existing code...
+}
+
+/**
+ * Show blocked interface in chat
+ */
+function showBlockedInterface(userId, userName) {
+    // ...existing code...
+}
+
+/**
+ * Add a message to the chat
+ */
+function addMessageToChat(message, chatMessages) {
+    // Get or create messages container
+    let messagesContainer = chatMessages.querySelector('.messages-container');
+    if (!messagesContainer) {
+        messagesContainer = document.createElement('div');
+        messagesContainer.className = 'messages-container';
+        chatMessages.appendChild(messagesContainer);
+    }
+    
+    // Create the message element
+    const messageEl = createMessageElement(message);
+    
+    // Add the message to the chat
+    messagesContainer.appendChild(messageEl);
+    
+    // Scroll to the new message
+    chatMessages.scrollTop = chatMessages.scrollHeight;
+    
+    return messageEl;
+}
+
+/**
+ * Create a message element
+ */
+function createMessageElement(message) {
+    const messageEl = document.createElement('div');
+    
+    // Determine if this is a sent or received message
+    let isSent;
+    
+    // Handle case when ChatApp is not defined
+    if (typeof ChatApp !== 'undefined' && ChatApp.currentUser) {
+        isSent = parseInt(message.sender_id) === parseInt(ChatApp.currentUser.user_id);
+    } else {
+        // Fallback to session user_id if available
+        const userId = document.body.getAttribute('data-user-id');
+        isSent = userId && parseInt(message.sender_id) === parseInt(userId);
+    }
+    
+    messageEl.className = `message ${isSent ? 'message-sent' : 'message-received'}`;
+    messageEl.dataset.messageId = message.id;
+    messageEl.dataset.senderId = message.sender_id;
+    
+    // Format timestamp
+    const timestamp = new Date(message.timestamp);
+    const hours = String(timestamp.getHours()).padStart(2, '0');
+    const minutes = String(timestamp.getMinutes()).padStart(2, '0');
+    
+    // Check if this is a file message
+    let contentHTML = '';
+    
+    if (message.content && message.content.startsWith('FILE:')) {
+        // Handle file messages
+        const [prefix, filePath, fileName, isImage] = message.content.split(':');
+        const isImageFile = isImage === 'true';
+        
+        // Append file class
+        messageEl.classList.add('message-file');
+        
+        if (isImageFile) {
+            // Display image
+            contentHTML = `
+                <div class="message-content">
+                    <div class="message-image">
+                        <img src="${filePath}" alt="${fileName}" style="max-width: 200px; max-height: 200px; border-radius: 8px;">
+                    </div>
+                    <div class="message-file-name">${fileName}</div>
+                </div>
+            `;
+        } else {
+            // Create appropriate icon for files
+            contentHTML = `
+                <div class="message-content">
+                    <div class="message-file-icon">
+                        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2">
+                            <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
+                            <polyline points="14 2 14 8 20 8"></polyline>
+                        </svg>
+                    </div>
+                    <div class="message-file-name">
+                        <a href="${filePath}" target="_blank" download="${fileName}">${fileName}</a>
+                    </div>
+                </div>
+            `;
+        }
+    } else {
+        // Regular text message
+        const content = message.content || '';
+        contentHTML = `<div class="message-content">${escapeHtml(content)}</div>`;
+    }
+    
+    const timeHTML = `<div class="message-time">
+        ${hours}:${minutes}
+        ${message.is_edited ? '<span class="edited-indicator">· Edited</span>' : ''}
+    </div>`;
+    
+    messageEl.innerHTML = contentHTML + timeHTML;
+    
+    // Add appearance animation
+    setTimeout(() => {
+        messageEl.classList.add('message-visible');
+    }, 10);
+    
+    return messageEl;
+}
+
+/**
+ * Handle file selection and send files
+ */
+function handleFileSelection(files, user) {
+    // ...existing code...
+}
+
+// Make sure escapeHtml is defined if it's not imported
+if (typeof escapeHtml !== 'function') {
+    function escapeHtml(text) {
+        if (!text) return '';
+        const div = document.createElement('div');
+        div.textContent = text;
+        return div.innerHTML;
+    }
+}
