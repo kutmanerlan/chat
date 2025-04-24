@@ -220,15 +220,26 @@ def purge_all_data(keep_test_user=False):
             
             # Now delete from each table
             for table_name in delete_order:
-                # Convert to SQLAlchemy text object to make it executable
-                if table_name == 'user' and keep_test_user:
-                    # Delete all users except test user
-                    connection.execute(text(f"DELETE FROM {table_name} WHERE email != 'test@example.com'"))
-                else:
-                    connection.execute(text(f"DELETE FROM {table_name}"))
-                
-                # Reset auto-increment counter for SQLite
-                connection.execute(text(f"DELETE FROM sqlite_sequence WHERE name='{table_name}'"))
+                try:
+                    # Convert to SQLAlchemy text object to make it executable
+                    if table_name == 'user' and keep_test_user:
+                        # Delete all users except test user
+                        connection.execute(text(f"DELETE FROM {table_name} WHERE email != 'test@example.com'"))
+                    else:
+                        connection.execute(text(f"DELETE FROM {table_name}"))
+                    
+                    # Try to reset auto-increment counter - but don't fail if table doesn't exist
+                    try:
+                        # Check if sqlite_sequence table exists before trying to delete from it
+                        result = connection.execute(text("SELECT name FROM sqlite_master WHERE type='table' AND name='sqlite_sequence'"))
+                        has_sequence_table = result.fetchone() is not None
+                        
+                        if has_sequence_table:
+                            connection.execute(text(f"DELETE FROM sqlite_sequence WHERE name='{table_name}'"))
+                    except Exception as seq_error:
+                        logger.warning(f"Could not reset sequence for {table_name}: {str(seq_error)}")
+                except Exception as table_error:
+                    logger.error(f"Error deleting data from {table_name}: {str(table_error)}")
             
             connection.commit()
             
