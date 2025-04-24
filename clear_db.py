@@ -4,6 +4,7 @@ import argparse
 import logging
 from flask import Flask
 from flask_sqlalchemy import SQLAlchemy
+from sqlalchemy import text
 from datetime import datetime
 
 # Setup logging
@@ -219,14 +220,15 @@ def purge_all_data(keep_test_user=False):
             
             # Now delete from each table
             for table_name in delete_order:
+                # Convert to SQLAlchemy text object to make it executable
                 if table_name == 'user' and keep_test_user:
                     # Delete all users except test user
-                    connection.execute(f"DELETE FROM {table_name} WHERE email != 'test@example.com'")
+                    connection.execute(text(f"DELETE FROM {table_name} WHERE email != 'test@example.com'"))
                 else:
-                    connection.execute(f"DELETE FROM {table_name}")
+                    connection.execute(text(f"DELETE FROM {table_name}"))
                 
                 # Reset auto-increment counter for SQLite
-                connection.execute(f"DELETE FROM sqlite_sequence WHERE name='{table_name}'")
+                connection.execute(text(f"DELETE FROM sqlite_sequence WHERE name='{table_name}'"))
             
             connection.commit()
             
