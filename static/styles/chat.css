@@ -86,6 +86,8 @@
     margin-bottom: 0;
     padding: 0;
     transition: background-color 0.2s, color 0.2s;
+    position: relative;
+    z-index: 50;
 }
 
 .chat-menu-btn:hover {
@@ -96,6 +98,8 @@
 .chat-menu-btn svg {
     width: 24px;
     height: 24px;
+    stroke: currentColor;
+    fill: none;
 }
 
 /* Ensure circles in the menu icon are properly aligned vertically */
