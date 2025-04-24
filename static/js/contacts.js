@@ -217,29 +217,11 @@ function updateSingleChat(chatData) {
       unreadBadge.remove();
     }
     
-    // Add transition class for smooth movement
-    existingItem.classList.add('chat-updating');
-    
-    // Move to top of conversations 
-    // Clone the item to prevent layout jumps
-    const clonedItem = existingItem.cloneNode(true);
-    clonedItem.classList.add('chat-updating');
-    
-    // Insert at the top of list
-    if (contactsList.firstChild) {
-      contactsList.insertBefore(clonedItem, contactsList.firstChild);
-    } else {
-      contactsList.appendChild(clonedItem);
+    // Move to top of conversations without animation
+    // Instead of cloning and replacing with animation, we'll just move the element
+    if (contactsList.firstChild && existingItem !== contactsList.firstChild) {
+      contactsList.insertBefore(existingItem, contactsList.firstChild);
     }
-    
-    // Remove the old item with a delay
-    setTimeout(() => {
-      existingItem.remove();
-      // Remove transition class after animation completes
-      setTimeout(() => {
-        clonedItem.classList.remove('chat-updating');
-      }, 300);
-    }, 10);
   } else {
     // If it doesn't exist, we'll need to refresh the sidebar
     // This should be rare, only when starting a new conversation
