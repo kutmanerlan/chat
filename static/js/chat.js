@@ -1266,3 +1266,525 @@ function formatChatTime(date) {
         return date.toLocaleDateString([], { month: 'short', day: 'numeric' });
     }
 }
+
+// Chat functionality
+
+/**
+ * Open a chat with a user
+ */
+function openChat(userId, userName) {
+    console.log(`Opening chat with user ${userName} (ID: ${userId})`);
+    
+    // Update active user in global state
+    if (typeof ChatApp !== 'undefined') {
+        ChatApp.activeChat = {
+            userId: userId,
+            userName: userName
+        };
+    }
+    
+    // Find and mark active contact in sidebar
+    document.querySelectorAll('.contact-item').forEach(item => {
+        item.classList.remove('active');
+        if (item.dataset.userId === userId.toString()) {
+            item.classList.add('active');
+        }
+    });
+    
+    // Get the main content area
+    const mainContent = document.querySelector('.main-content');
+    if (!mainContent) return;
+    
+    // Create the chat interface
+    mainContent.innerHTML = `
+        <div class="chat-container">
+            <div class="chat-header" data-user-id="${userId}">
+                <div class="chat-user-info">
+                    <div class="chat-user-avatar">
+                        <div class="avatar-initials">${userName.charAt(0).toUpperCase()}</div>
+                    </div>
+                    <div class="chat-user-name">${userName}</div>
+                </div>
+                <button class="chat-menu-btn">
+                    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <circle cx="12" cy="12" r="1"></circle>
+                        <circle cx="19" cy="12" r="1"></circle>
+                        <circle cx="5" cy="12" r="1"></circle>
+                    </svg>
+                </button>
+            </div>
+            <div class="chat-messages">
+                <div class="loading-messages">Loading messages...</div>
+            </div>
+            <div class="message-input-container">
+                <div class="input-wrapper">
+                    <div class="clip-button-container">
+                        <button class="paperclip-button">
+                            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <path d="M21.44 11.05l-9.19 9.19a6 6 0 01-8.49-8.49l9.19-9.19a4 4 0 015.66 5.66l-9.2 9.19a2 2 0 01-2.83-2.83l8.49-8.48"></path>
+                            </svg>
+                        </button>
+                    </div>
+                    <div class="message-input-field">
+                        <input type="text" placeholder="Type a message">
+                    </div>
+                    <button class="send-button">
+                        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <path d="M22 2L11 13"></path>
+                            <path d="M22 2L15 22L11 13L2 9L22 2Z"></path>
+                        </svg>
+                    </button>
+                </div>
+            </div>
+        </div>
+    `;
+    
+    // Ensure the user is added to contacts immediately if it's a new contact
+    ensureUserIsContact(userId);
+    
+    // Load messages
+    loadMessages(userId);
+    
+    // Add event listener to chat menu button
+    const chatMenuBtn = mainContent.querySelector('.chat-menu-btn');
+    if (chatMenuBtn) {
+        chatMenuBtn.addEventListener('click', function(e) {
+            e.stopPropagation();
+            showChatMenu(e, userId, userName);
+        });
+    }
+    
+    // Set up message input
+    setupMessageInput(userId);
+    
+    // Set up file attachment
+    setupFileUpload(userId, userName);
+}
+
+/**
+ * Make sure a user is added to contacts
+ */
+function ensureUserIsContact(userId) {
+    console.log('Ensuring user is a contact:', userId);
+    
+    // Add the user to contacts immediately
+    fetch('/add_contact', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({ contact_id: userId })
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            console.log('User added to contacts:', data);
+            // Force refresh the sidebar immediately
+            if (typeof loadSidebar === 'function') {
+                setTimeout(loadSidebar, 100);
+            }
+        } else {
+            console.log('User already in contacts or error adding contact:', data);
+        }
+    })
+    .catch(error => {
+        console.error('Error ensuring user is contact:', error);
+    });
+}
+
+/**
+ * Set up message input field
+ */
+function setupMessageInput(userId) {
+    const inputField = document.querySelector('.message-input-field input');
+    const sendButton = document.querySelector('.send-button');
+    const chatMessages = document.querySelector('.chat-messages');
+    
+    if (!inputField || !sendButton || !chatMessages) return;
+    
+    // Update send button state based on input content
+    inputField.addEventListener('input', function() {
+        if (this.value.trim()) {
+            sendButton.classList.add('active');
+        } else {
+            sendButton.classList.remove('active');
+        }
+    });
+    
+    // Send message on Enter key
+    inputField.addEventListener('keydown', function(e) {
+        if (e.key === 'Enter' && !e.shiftKey && this.value.trim()) {
+            e.preventDefault();
+            const messageText = this.value;
+            sendMessageHandler(messageText, userId, chatMessages);
+        }
+    });
+    
+    // Send message on button click
+    sendButton.addEventListener('click', function() {
+        if (inputField.value.trim()) {
+            const messageText = inputField.value;
+            sendMessageHandler(messageText, userId, chatMessages);
+        }
+    });
+}
+
+/**
+ * Show chat menu (dropdown)
+ */
+function showChatMenu(event, userId, userName) {
+    // Remove any existing dropdown
+    const existingMenu = document.querySelector('.dropdown-menu');
+    if (existingMenu) {
+        existingMenu.remove();
+    }
+    
+    // Create menu
+    const dropdownMenu = document.createElement('div');
+    dropdownMenu.className = 'dropdown-menu';
+    
+    // Add menu options
+    dropdownMenu.innerHTML = `
+        <div class="dropdown-menu-options">
+            <div class="dropdown-option search-in-chat">
+                <div class="dropdown-option-icon">
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <circle cx="11" cy="11" r="8"></circle>
+                        <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
+                    </svg>
+                </div>
+                <div class="dropdown-option-label">Search in chat</div>
+            </div>
+            <div class="dropdown-option view-profile">
+                <div class="dropdown-option-icon">
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path>
+                        <circle cx="12" cy="7" r="4"></circle>
+                    </svg>
+                </div>
+                <div class="dropdown-option-label">View profile</div>
+            </div>
+            <div class="dropdown-option block-user">
+                <div class="dropdown-option-icon">
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <circle cx="12" cy="12" r="10"></circle>
+                        <line x1="4.93" y1="4.93" x2="19.07" y2="19.07"></line>
+                    </svg>
+                </div>
+                <div class="dropdown-option-label">Block user</div>
+            </div>
+        </div>
+    `;
+    
+    // Position menu
+    const rect = event.currentTarget.getBoundingClientRect();
+    dropdownMenu.style.position = 'absolute';
+    dropdownMenu.style.top = `${rect.bottom + 5}px`;
+    dropdownMenu.style.right = `20px`;
+    
+    // Add to DOM
+    document.body.appendChild(dropdownMenu);
+    
+    // Close when clicking outside
+    document.addEventListener('click', function closeMenu(e) {
+        if (!dropdownMenu.contains(e.target) && e.target !== event.currentTarget) {
+            dropdownMenu.remove();
+            document.removeEventListener('click', closeMenu);
+        }
+    });
+    
+    // Option click handlers
+    dropdownMenu.querySelector('.search-in-chat').addEventListener('click', function() {
+        dropdownMenu.remove();
+        // Add search functionality here
+        showSearchInChat();
+    });
+    
+    dropdownMenu.querySelector('.view-profile').addEventListener('click', function() {
+        dropdownMenu.remove();
+        // Add profile view functionality here
+        showUserProfile(userId, userName);
+    });
+    
+    dropdownMenu.querySelector('.block-user').addEventListener('click', function() {
+        dropdownMenu.remove();
+        // Add block functionality here
+        showBlockConfirmation(userId, userName);
+    });
+}
+
+/**
+ * Set up file upload for messages
+ */
+function setupFileUpload(userId, userName) {
+    const paperclipButton = document.querySelector('.paperclip-button');
+    if (!paperclipButton) return;
+    
+    paperclipButton.addEventListener('click', function(e) {
+        // Create and show file menu
+        showFileMenu(e, userId, userName);
+    });
+}
+
+/**
+ * Show file upload menu
+ */
+function showFileMenu(event, userId, userName) {
+    // Remove any existing menu
+    const existingMenu = document.querySelector('.file-upload-menu');
+    if (existingMenu) {
+        existingMenu.remove();
+    }
+    
+    // Create menu
+    const fileMenu = document.createElement('div');
+    fileMenu.className = 'file-upload-menu';
+    
+    // Add menu options
+    fileMenu.innerHTML = `
+        <div class="file-menu-options">
+            <div class="file-option photo-option">
+                <div class="file-option-icon">
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect>
+                        <circle cx="8.5" cy="8.5" r="1.5"></circle>
+                        <polyline points="21 15 16 10 5 21"></polyline>
+                    </svg>
+                </div>
+                <div class="file-option-label">Photo or Video</div>
+            </div>
+            <div class="file-option document-option">
+                <div class="file-option-icon">
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
+                        <polyline points="14 2 14 8 20 8"></polyline>
+                        <line x1="16" y1="13" x2="8" y2="13"></line>
+                        <line x1="16" y1="17" x2="8" y2="17"></line>
+                        <polyline points="10 9 9 9 8 9"></polyline>
+                    </svg>
+                </div>
+                <div class="file-option-label">Document</div>
+            </div>
+        </div>
+    `;
+    
+    // Position menu
+    const rect = event.currentTarget.getBoundingClientRect();
+    fileMenu.style.position = 'absolute';
+    fileMenu.style.bottom = `${window.innerHeight - rect.top + 5}px`;
+    fileMenu.style.left = `${rect.left}px`;
+    
+    // Add to DOM
+    document.body.appendChild(fileMenu);
+    
+    // Close when clicking outside
+    document.addEventListener('click', function closeMenu(e) {
+        if (!fileMenu.contains(e.target) && e.target !== event.currentTarget) {
+            fileMenu.remove();
+            document.removeEventListener('click', closeMenu);
+        }
+    });
+    
+    // Handle photo/video upload
+    const photoOption = fileMenu.querySelector('.photo-option');
+    photoOption.addEventListener('click', function() {
+        fileMenu.remove();
+        
+        // Create file input
+        const fileInput = document.createElement('input');
+        fileInput.type = 'file';
+        fileInput.accept = 'image/*,video/*';
+        fileInput.multiple = false;
+        fileInput.style.display = 'none';
+        
+        // Add to DOM
+        document.body.appendChild(fileInput);
+        
+        // Trigger click
+        fileInput.click();
+        
+        // Handle file selection
+        fileInput.addEventListener('change', function() {
+            if (this.files && this.files.length > 0) {
+                handleFileSelection(this.files, { id: userId, name: userName });
+            }
+            
+            // Remove input
+            document.body.removeChild(fileInput);
+        });
+    });
+    
+    // Handle document upload
+    const documentOption = fileMenu.querySelector('.document-option');
+    documentOption.addEventListener('click', function() {
+        fileMenu.remove();
+        
+        // Create file input
+        const fileInput = document.createElement('input');
+        fileInput.type = 'file';
+        fileInput.accept = '.pdf,.doc,.docx,.txt,.xlsx,.xls,.ppt,.pptx';
+        fileInput.multiple = false;
+        fileInput.style.display = 'none';
+        
+        // Add to DOM
+        document.body.appendChild(fileInput);
+        
+        // Trigger click
+        fileInput.click();
+        
+        // Handle file selection
+        fileInput.addEventListener('change', function() {
+            if (this.files && this.files.length > 0) {
+                handleFileSelection(this.files, { id: userId, name: userName });
+            }
+            
+            // Remove input
+            document.body.removeChild(fileInput);
+        });
+    });
+}
+
+/**
+ * Show search in chat interface
+ */
+function showSearchInChat() {
+    // Placeholder for future implementation
+    showNotification('Search in chat is not implemented yet', 'info');
+}
+
+/**
+ * Show user profile
+ */
+function showUserProfile(userId, userName) {
+    // Placeholder for future implementation
+    showNotification('User profile view is not implemented yet', 'info');
+}
+
+/**
+ * Show block confirmation dialog
+ */
+function showBlockConfirmation(userId, userName) {
+    // Create modal HTML
+    const modal = document.createElement('div');
+    modal.className = 'modal active';
+    modal.id = 'blockUserModal';
+    
+    modal.innerHTML = `
+        <div class="modal-content">
+            <h3>Block User</h3>
+            <p>Are you sure you want to block ${userName}?</p>
+            <p class="modal-description">You won't receive messages or notifications from this user.</p>
+            <div class="modal-buttons">
+                <button id="cancelBlock" class="btn-secondary">Cancel</button>
+                <button id="confirmBlock" class="btn-primary">Block</button>
+            </div>
+        </div>
+    `;
+    
+    // Add to DOM
+    document.body.appendChild(modal);
+    
+    // Cancel button
+    const cancelBtn = document.getElementById('cancelBlock');
+    cancelBtn.addEventListener('click', function() {
+        modal.remove();
+    });
+    
+    // Confirm button
+    const confirmBtn = document.getElementById('confirmBlock');
+    confirmBtn.addEventListener('click', function() {
+        // Call API to block user
+        blockUser(userId).then(data => {
+            if (data.success) {
+                showNotification(`You have blocked ${userName}`, 'block-user');
+                // Refresh sidebar
+                if (typeof loadSidebar === 'function') {
+                    loadSidebar();
+                }
+                // Show blocked interface in chat
+                showBlockedInterface(userId, userName);
+            } else {
+                showErrorNotification(data.error || 'Failed to block user');
+            }
+        }).catch(error => {
+            showErrorNotification('Failed to block user');
+        }).finally(() => {
+            modal.remove();
+        });
+    });
+}
+
+/**
+ * Show blocked interface in chat
+ */
+function showBlockedInterface(userId, userName) {
+    const chatMessages = document.querySelector('.chat-messages');
+    const inputContainer = document.querySelector('.message-input-container');
+    
+    if (chatMessages) {
+        chatMessages.innerHTML = `
+            <div class="block-message">
+                <div class="block-icon">
+                    <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="#999" stroke-width="1">
+                        <circle cx="12" cy="12" r="10"></circle>
+                        <line x1="4.93" y1="4.93" x2="19.07" y2="19.07"></line>
+                    </svg>
+                </div>
+                <div>You've blocked ${userName}</div>
+                <button class="unblock-button">Unblock</button>
+            </div>
+        `;
+        
+        // Add unblock button handler
+        const unblockBtn = chatMessages.querySelector('.unblock-button');
+        if (unblockBtn) {
+            unblockBtn.addEventListener('click', function() {
+                unblockUser(userId).then(data => {
+                    if (data.success) {
+                        showNotification(`You've unblocked ${userName}`, 'success');
+                        // Reload the chat
+                        openChat(userId, userName);
+                        // Refresh sidebar
+                        if (typeof loadSidebar === 'function') {
+                            loadSidebar();
+                        }
+                    } else {
+                        showErrorNotification(data.error || 'Failed to unblock user');
+                    }
+                }).catch(error => {
+                    showErrorNotification('Failed to unblock user');
+                });
+            });
+        }
+    }
+    
+    // Disable input field
+    if (inputContainer) {
+        inputContainer.innerHTML = `
+            <div class="blocking-message">
+                <span>You can't send messages to users you've blocked</span>
+            </div>
+        `;
+    }
+}
+
+/**
+ * Check if this is the first message to a user
+ */
+function isFirstMessageToUser(userId) {
+    // Check if the user exists in the sidebar
+    const contactItems = document.querySelectorAll('.contact-item');
+    for (let item of contactItems) {
+        if (item.dataset.userId === userId.toString()) {
+            return false; // User found in contacts
+        }
+    }
+    return true; // User not found in contacts
+}
+
+// Empty function for backwards compatibility
+// This should be kept to avoid errors (it's no longer used)
+function deleteChat() {
+    // This functionality has been removed
+    console.warn('deleteChat function called but this feature has been removed');
+}
