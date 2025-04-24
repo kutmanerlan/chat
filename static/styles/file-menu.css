@@ -8,11 +8,15 @@
   border-radius: 8px;
   box-shadow: 0 4px 12px rgba(0, 0, 0, 0.4);
   min-width: 200px;
-  display: none;
   overflow: hidden;
   animation: menu-fade-in 0.2s ease-out;
   position: fixed;
   z-index: 10000;
+}
+
+/* Make sure dropdown menu is visible when shown */
+.dropdown-menu {
+  display: block;
 }
 
 /* File menu specific styles */
@@ -53,7 +57,7 @@
   box-shadow: 0 4px 12px rgba(0, 0, 0, 0.4);
   min-width: 220px;
   z-index: 1000;
-  display: none;
+  display: block;
   position: absolute;
   animation: menu-fade-in 0.2s ease-out;
 }

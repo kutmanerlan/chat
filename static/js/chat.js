@@ -172,9 +172,9 @@ function createChatInterface(user, blockStatus) {
   menuButton.className = 'chat-menu-btn';
   menuButton.innerHTML = `
     <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-      <circle cx="12" cy="6" r="2"></circle>
+      <circle cx="12" cy="5" r="2"></circle>
       <circle cx="12" cy="12" r="2"></circle>
-      <circle cx="12" cy="18" r="2"></circle>
+      <circle cx="12" cy="19" r="2"></circle>
     </svg>
   `;
   
