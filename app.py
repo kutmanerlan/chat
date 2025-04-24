@@ -42,7 +42,7 @@ else:
     app.config['SERVER_NAME'] = 'localhost:5000'
 
 # Инициализация базы данных
-from models.user import db, User, Contact, Message, Block, DeletedChat  # Ensure DeletedChat is imported
+from models.user import db, User, Contact, Message, Block  # Removed DeletedChat from import
 db.init_app(app)
 
 # Функция для создания таблиц базы данных
@@ -1526,49 +1526,6 @@ def refresh_sidebar():
         logging.error(f"Error refreshing sidebar: {str(e)}")
         return jsonify({'success': False, 'error': str(e)})
 
-@app.route('/delete_chat', methods=['POST'])
-def delete_chat():
-    """Mark a chat as deleted for the current user"""
-    if 'user_id' not in session:
-        return jsonify({'success': False, 'error': 'Not logged in'})
-    
-    current_user_id = session['user_id']
-    data = request.json
-    
-    if not data or 'user_id' not in data:
-        return jsonify({'success': False, 'error': 'User ID is required'})
-    
-    user_id = data['user_id']
-    
-    try:
-        # Check if table exists by trying to query it
-        try:
-            existing = DeletedChat.query.filter_by(
-                user_id=current_user_id,
-                chat_with_user_id=user_id
-            ).first()
-        except Exception as table_error:
-            app.logger.error(f"Error querying DeletedChat table: {str(table_error)}")
-            # If table doesn't exist, let's try to create it on the fly
-            db.create_all()
-            existing = None
-            
-        # Now try to create the record
-        if not existing:
-            deleted_chat = DeletedChat(
-                user_id=current_user_id,
-                chat_with_user_id=user_id
-            )
-            db.session.add(deleted_chat)
-            db.session.commit()
-            app.logger.info(f"Chat between {current_user_id} and {user_id} marked as deleted")
-        
-        return jsonify({'success': True})
-    except Exception as e:
-        db.session.rollback()
-        app.logger.error(f"Error in delete_chat: {str(e)}")
-        return jsonify({'success': False, 'error': str(e)})
-
 # Debug endpoint to display database info (only available in development)
 @app.route('/debug/db_info')
 def debug_db_info():
@@ -1757,7 +1714,7 @@ else:
             logging.basicConfig(
                 filename='/tmp/flask_app_error.log', 
                 level=logging.DEBUG,
-                format='%(asctime)s - %(levelname)s - %(message)s'
+                format='%(asctime)s - %(levellevelname)s - %(message)s'
             )
             logging.info("Starting application via WSGI")
             try:

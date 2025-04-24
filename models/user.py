@@ -129,17 +129,3 @@ class Block(db.Model):
     
     # Index for fast lookup and uniqueness
     __table_args__ = (db.UniqueConstraint('user_id', 'blocked_user_id', name='_user_blocked_uc'),)
-
-# Model for tracking deleted chats
-class DeletedChat(db.Model):
-    id = db.Column(db.Integer, primary_key=True)
-    user_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
-    chat_with_user_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
-    deleted_at = db.Column(db.DateTime, default=datetime.utcnow)
-    
-    # Define relationships
-    user = db.relationship('User', foreign_keys=[user_id], backref=db.backref('deleted_chats', lazy='dynamic'))
-    chat_with_user = db.relationship('User', foreign_keys=[chat_with_user_id])
-    
-    # Index for fast lookup and uniqueness
-    __table_args__ = (db.UniqueConstraint('user_id', 'chat_with_user_id', name='_user_deleted_chat_uc'),)

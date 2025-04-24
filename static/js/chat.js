@@ -396,19 +396,6 @@ function showChatMenu(button, user) {
         `;
       }
       
-      // Delete chat option
-      menuItems.innerHTML += `
-        <div class="dropdown-option" data-action="delete-chat">
-          <div class="dropdown-option-icon">
-            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-              <polyline points="3 6 5 6 21 6"></polyline>
-              <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path>
-            </svg>
-          </div>
-          <div class="dropdown-option-label">Delete chat</div>
-        </div>
-      `;
-      
       // Add menu items to dropdown
       dropdownMenu.appendChild(menuItems);
       
@@ -450,11 +437,6 @@ function showChatMenu(button, user) {
                 // Reopen chat to show unblocked state
                 openChat(user.id, user.name);
               });
-              break;
-              
-            case 'delete-chat':
-              deleteChatHandler(user.id, user.name);
-              dropdownMenu.remove();
               break;
           }
         });
@@ -654,28 +636,7 @@ function unblockUser(userId) {
  * @returns {Promise<Object>} - Promise resolving to response data
  */
 function deleteChat(userId) {
-  return fetch('/delete_chat', {
-    method: 'POST',
-    headers: {
-      'Content-Type': 'application/json'
-    },
-    body: JSON.stringify({ user_id: userId })
-  })
-  .then(response => response.json())
-  .then(data => {
-    if (data.success) {
-      // Refresh sidebar to update chat list
-      loadSidebar();
-      return data;
-    } else {
-      throw new Error(data.error || 'Failed to delete chat');
-    }
-  })
-  .catch(error => {
-    console.error('Error deleting chat:', error);
-    showErrorNotification('Failed to delete chat');
-    return { success: false, error: error.message };
-  });
+  // This function has been removed as the delete chat feature is no longer needed
 }
 
 /**
@@ -691,108 +652,6 @@ function getUserInfo(userId) {
         throw new Error(data.error);
       }
       return data;
-    });
-}
-
-/**
- * Delete chat handler function
- */
-function deleteChatHandler(userId, userName) {
-  console.log(`Deleting chat with user ${userId} (${userName})`);
-  
-  // Show a custom confirmation modal instead of using browser confirm()
-  showDeleteChatConfirmation(userId, userName);
-}
-
-/**
- * Show delete chat confirmation modal
- */
-function showDeleteChatConfirmation(userId, userName) {
-  // Create the modal if it doesn't exist
-  let deleteChatModal = document.getElementById('deleteChatModal');
-  if (!deleteChatModal) {
-    deleteChatModal = document.createElement('div');
-    deleteChatModal.id = 'deleteChatModal';
-    deleteChatModal.className = 'modal';
-    deleteChatModal.innerHTML = `
-      <div class="modal-content">
-        <h3>Delete Chat</h3>
-        <p>Do you want to delete chat with <strong id="deleteChatUserName"></strong>?</p>
-        <p class="modal-description">This will remove the chat from your sidebar only.</p>
-        <div class="modal-buttons">
-          <button id="cancelDeleteChat" class="btn-secondary">Cancel</button>
-          <button id="confirmDeleteChat" class="btn-primary" style="background-color: #5a6268;">Delete</button>
-        </div>
-      </div>
-    `;
-    document.body.appendChild(deleteChatModal);
-    
-    // Cancel button handler
-    document.getElementById('cancelDeleteChat').addEventListener('click', function() {
-      deleteChatModal.classList.remove('active');
-      document.getElementById('overlay').classList.remove('active');
-    });
-  }
-  
-  // Update user name in the modal
-  document.getElementById('deleteChatUserName').textContent = userName;
-  
-  // Add confirm handler
-  const confirmBtn = document.getElementById('confirmDeleteChat');
-  // Remove existing event listeners to prevent duplicates
-  const newConfirmBtn = confirmBtn.cloneNode(true);
-  confirmBtn.parentNode.replaceChild(newConfirmBtn, confirmBtn);
-  
-  newConfirmBtn.addEventListener('click', function() {
-    // Execute the deletion without depending on server-side implementation
-    executeDeleteChat(userId, userName);
-    deleteChatModal.classList.remove('active');
-    document.getElementById('overlay').classList.remove('active');
-  });
-  
-  // Show the modal
-  deleteChatModal.classList.add('active');
-  document.getElementById('overlay').classList.add('active');
-}
-
-/**
- * Execute chat deletion after confirmation
- */
-function executeDeleteChat(userId, userName) {
-  deleteChat(userId)
-    .then(data => {
-      if (data.success) {
-        // First, remove this chat from the sidebar immediately (client-side)
-        const chatItem = document.querySelector(`.contact-item[data-user-id="${userId}"]`);
-        if (chatItem && chatItem.parentNode) {
-          chatItem.parentNode.removeChild(chatItem);
-        }
-        
-        showNotification(`Chat with ${userName} deleted`, 'delete-chat');
-        
-        // Reset main content area
-        const mainContent = document.querySelector('.main-content');
-        if (mainContent) {
-          mainContent.innerHTML = '';
-          
-          // Show a placeholder message
-          const emptyChat = document.createElement('div');
-          emptyChat.className = 'empty-chat-container';
-          emptyChat.innerHTML = '<div class="empty-chat-message">Select a chat to start messaging</div>';
-          
-          mainContent.appendChild(emptyChat);
-        }
-        
-        // Reset active chat
-        ChatApp.activeChat = null;
-        
-        // Stop any active polling
-        cleanupPolling();
-      }
-    })
-    .catch(error => {
-      console.error('Error deleting chat:', error);
-      showErrorNotification('Failed to delete chat. Please try again.');
     });
 }
 
