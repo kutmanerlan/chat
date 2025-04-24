@@ -128,10 +128,10 @@ function createChatInterface(user, blockStatus) {
   const menuButton = document.createElement('button');
   menuButton.className = 'chat-menu-btn';
   menuButton.innerHTML = `
-    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-      <circle cx="12" cy="5" r="1"></circle>
-      <circle cx="12" cy="12" r="1"></circle>
-      <circle cx="12" cy="19" r="1"></circle>
+    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+      <circle cx="12" cy="6" r="2"></circle>
+      <circle cx="12" cy="12" r="2"></circle>
+      <circle cx="12" cy="18" r="2"></circle>
     </svg>
   `;
   
@@ -430,161 +430,6 @@ function showContactMenu(menuButton, user) {
     })
     .catch(error => {
       console.error('Error checking contact/block status:', error);
-    });
-}
-
-/**
- * Check if a user is a contact of the current user
- * @param {number} userId - The user ID to check
- * @returns {Promise<boolean>} - Whether the user is a contact
- */
-function checkContactStatus(userId) {
-  return fetch('/check_contact', {
-    method: 'POST',
-    headers: {
-      'Content-Type': 'application/json'
-    },
-    body: JSON.stringify({ contact_id: userId })
-  })
-  .then(response => response.json())
-  .then(data => {
-    return data.is_contact;
-  })
-  .catch(error => {
-    console.error('Error checking contact status:', error);
-    return false;
-  });
-}
-
-/**
- * Check if a user is blocked by the current user
- * @param {number} userId - The user ID to check
- * @returns {Promise<Object>} - Block status object
- */
-function checkBlockStatus(userId) {
-  return fetch('/check_block_status', {
-    method: 'POST',
-    headers: {
-      'Content-Type': 'application/json'
-    },
-    body: JSON.stringify({ user_id: userId })
-  })
-  .then(response => response.json())
-  .then(data => {
-    return {
-      isBlockedByYou: data.is_blocked_by_you,
-      hasBlockedYou: data.has_blocked_you
-    };
-  })
-  .catch(error => {
-    console.error('Error checking block status:', error);
-    return { isBlockedByYou: false, hasBlockedYou: false };
-  });
-}
-
-/**
- * Show contact menu when chat menu button is clicked
- */
-function showContactMenu(menuButton, user) {
-  // Create menu if it doesn't exist
-  let contactMenu = document.getElementById('contactDropdownMenu');
-  if (!contactMenu) {
-    contactMenu = document.createElement('div');
-    contactMenu.id = 'contactDropdownMenu';
-    contactMenu.className = 'dropdown-menu';
-    document.body.appendChild(contactMenu);
-    
-    // Close menu when clicking outside
-    document.addEventListener('click', function(e) {
-      if (contactMenu && !contactMenu.contains(e.target) && 
-          !e.target.classList.contains('chat-menu-btn') && 
-          !e.target.closest('.chat-menu-btn')) {
-        contactMenu.style.display = 'none';
-      }
-    });
-  }
-  
-  // Get the button position
-  const buttonRect = menuButton.getBoundingClientRect();
-  
-  // Check if user is a contact and if the user is blocked
-  Promise.all([checkContactStatus(user.id), checkBlockStatus(user.id)])
-    .then(([isContact, blockStatus]) => {
-      // Update menu content
-      contactMenu.innerHTML = `
-        <div class="dropdown-menu-options">
-          ${isContact ? 
-            `<div class="dropdown-option" id="removeContactOption">
-              <div class="dropdown-option-icon">
-                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                  <path d="M17 7l-10 10"></path>
-                  <path d="M7 7l10 10"></path>
-                </svg>
-              </div>
-              <div class="dropdown-option-label">Remove from contacts</div>
-            </div>` : 
-            `<div class="dropdown-option" id="addContactOption">
-              <div class="dropdown-option-icon">
-                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                  <path d="M12 5v14"></path>
-                  <path d="M5 12h14"></path>
-                </svg>
-              </div>
-              <div class="dropdown-option-label">Add to contacts</div>
-            </div>`
-          }
-          
-          <!-- Block/Unblock option -->
-          <div class="dropdown-option ${blockStatus.isBlocked ? 'unblock-option' : 'block-option'}" id="${blockStatus.isBlocked ? 'unblockUserOption' : 'blockUserOption'}">
-            <div class="dropdown-option-icon">
-              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="${blockStatus.isBlocked ? 'currentColor' : '#e74c3c'}" stroke-width="2">
-                <circle cx="12" cy="12" r="10"></circle>
-                <line x1="4.93" y1="4.93" x2="19.07" y2="19.07"></line>
-              </svg>
-            </div>
-            <div class="dropdown-option-label" style="color: ${blockStatus.isBlocked ? 'inherit' : '#e74c3c'}">
-              ${blockStatus.isBlocked ? 'Unblock user' : 'Block user'}
-            </div>
-          </div>
-        </div>
-      `;
-      
-      // Position the menu
-      contactMenu.style.display = 'block';
-      contactMenu.style.position = 'fixed';
-      contactMenu.style.left = `${buttonRect.left - contactMenu.offsetWidth + buttonRect.width}px`;
-      contactMenu.style.top = `${buttonRect.bottom + 5}px`;
-      contactMenu.style.zIndex = '10000';
-      
-      // Add event listeners
-      if (isContact) {
-        document.getElementById('removeContactOption').addEventListener('click', function() {
-          removeContactHandler(user.id);
-          contactMenu.style.display = 'none';
-        });
-      } else {
-        document.getElementById('addContactOption').addEventListener('click', function() {
-          addContactHandler(user.id, user.name);
-          contactMenu.style.display = 'none';
-        });
-      }
-      
-      // Add block/unblock event listener
-      if (blockStatus.isBlocked) {
-        document.getElementById('unblockUserOption').addEventListener('click', function() {
-          unblockUserHandler(user.id, user.name);
-          contactMenu.style.display = 'none';
-        });
-      } else {
-        document.getElementById('blockUserOption').addEventListener('click', function() {
-          showBlockConfirmation(user.id, user.name);
-          contactMenu.style.display = 'none';
-        });
-      }
-    })
-    .catch(error => {
-      console.error('Error checking contact/block status:', error);
-      contactMenu.style.display = 'none';
     });
 }
 
