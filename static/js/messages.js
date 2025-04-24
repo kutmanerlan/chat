@@ -667,24 +667,59 @@ function sendMessageHandler(text, recipientId, chatMessages) {
     if (data.success && data.message) {
       addMessageToChat(data.message, chatMessages);
       
-      // Update sidebar chat entry without refreshing the whole sidebar
-      if (typeof updateSingleChat === 'function') {
-        // Create updated chat object for the sidebar
-        const chatData = {
-          user_id: recipientId,
-          last_message: text,
-          last_message_time: data.message.timestamp,
-          unread_count: 0 // It's our message, so no unread count
-        };
+      // Check if the user was already in the sidebar and return if found
+      const chatItems = document.querySelectorAll('.contact-item');
+      let userFoundInSidebar = false;
+      
+      for (let item of chatItems) {
+        if (item.dataset.userId === recipientId.toString()) {
+          userFoundInSidebar = true;
+          break;
+        }
+      }
+      
+      if (!userFoundInSidebar) {
+        console.log('[Messages] First message to new user - need to refresh sidebar');
         
-        updateSingleChat(chatData);
+        // Force an immediate sidebar refresh instead of waiting for interval
+        if (typeof loadSidebar === 'function') {
+          // Try to get user info to create a chat entry
+          fetch(`/get_user_info?user_id=${recipientId}`)
+            .then(resp => resp.json())
+            .then(userData => {
+              // Add user to contacts if they're not there yet
+              fetch('/add_contact', {
+                method: 'POST',
+                headers: {
+                  'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({ contact_id: recipientId })
+              })
+              .then(() => {
+                console.log('[Messages] Added new user to contacts, refreshing sidebar');
+                // Force refresh sidebar
+                loadSidebar();
+              });
+            })
+            .catch(error => {
+              console.error('[Messages] Error getting user info for sidebar update:', error);
+              // Fallback to just refreshing sidebar
+              loadSidebar();
+            });
+        }
       } else {
-        // Fallback to old method if updateSingleChat isn't available
-        setTimeout(() => {
-          if (typeof loadSidebar === 'function') {
-            loadSidebar();
-          }
-        }, 500);
+        // Update sidebar chat entry without refreshing the whole sidebar
+        if (typeof updateSingleChat === 'function') {
+          // Create updated chat object for the sidebar
+          const chatData = {
+            user_id: recipientId,
+            last_message: text,
+            last_message_time: data.message.timestamp,
+            unread_count: 0 // It's our message, so no unread count
+          };
+          
+          updateSingleChat(chatData);
+        }
       }
     } else {
       throw new Error(data.error || 'Failed to send message');
