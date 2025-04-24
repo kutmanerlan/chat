@@ -91,24 +91,3 @@
 .btn-secondary:hover {
     background-color: #404040;
 }
-
-/* Modal styles for delete confirmation */
-#deleteChatModal .modal-content h3 {
-  margin-bottom: 15px;
-  font-size: 18px;
-}
-
-#deleteChatModal .modal-description {
-  color: #999;
-  margin-top: 8px;
-  font-size: 14px;
-}
-
-#deleteChatModal #confirmDeleteChat {
-  background-color: #5a6268;  /* Gray color for delete button */
-  color: white;
-}
-
-#deleteChatModal #confirmDeleteChat:hover {
-  background-color: #484e53;  /* Darker gray on hover */
-}

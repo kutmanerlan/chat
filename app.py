@@ -4,7 +4,6 @@ import os
 from werkzeug.security import generate_password_hash, check_password_hash
 from email_utils import generate_confirmation_token, send_confirmation_email, is_email_valid, send_reset_password_email
 import datetime
-from sqlalchemy import func, or_, and_  # Add missing SQLAlchemy imports
 
 # Try to import git, but continue if it's not available
 git_available = False
@@ -42,7 +41,7 @@ else:
     app.config['SERVER_NAME'] = 'localhost:5000'
 
 # Инициализация базы данных
-from models.user import db, User, Contact, Message, Block  # Removed DeletedChat from import
+from models.user import db, User, Contact, Message, Block
 db.init_app(app)
 
 # Функция для создания таблиц базы данных
@@ -493,11 +492,8 @@ def main():
     if hasattr(user, 'avatar_path') and user.avatar_path:
         session['avatar_path'] = user.avatar_path
     
-    # Pass debug flag to template - only True if in development mode
-    debug_mode = app.debug
-    
     # Добавляем антикэширующие заголовки
-    response = make_response(render_template('dashboard.html', user=user, debug=debug_mode))
+    response = make_response(render_template('dashboard.html', user=user))
     response.headers['Cache-Control'] = 'no-store, no-cache, must-revalidate, max-age=0'
     response.headers['Pragma'] = 'no-cache'
     response.headers['Expires'] = '0'
@@ -826,190 +822,88 @@ def get_contacts():
         logging.error(f"Ошибка при получении контактов: {str(e)}")
         return jsonify({'success': False, 'error': 'Failed to retrieve contacts'}), 500
 
+# Маршрут для получения списка чатов пользователя
 @app.route('/get_chat_list')
 def get_chat_list():
-    """Get list of users the current user has chats with"""
     if 'user_id' not in session:
-        return jsonify({'success': False, 'error': 'Not logged in'})
-    
-    current_user_id = session['user_id']
+        return jsonify({'success': False, 'error': 'Unauthorized'}), 401
     
     try:
-        # Log the request for debugging
-        app.logger.info(f"User {current_user_id} requesting chat list")
-        
-        # SIMPLIFIED QUERY APPROACH:
-        # 1. First get ALL users who have exchanged messages with the current user
-        message_partners_query = db.session.query(
-            User
-        ).filter(
-            User.id != current_user_id,
-            or_(
-                and_(
-                    Message.sender_id == User.id,
-                    Message.recipient_id == current_user_id
-                ),
-                and_(
-                    Message.recipient_id == User.id,
-                    Message.sender_id == current_user_id
-                )
-            )
+        # Получаем уникальных пользователей, с которыми есть переписка
+        # Подзапрос для получения id пользователей, с которыми общались
+        subquery1 = db.session.query(Message.recipient_id.label('user_id')).filter(
+            Message.sender_id == session['user_id']
         ).distinct()
         
-        # Get all message partners without filtering by deleted status
-        message_partners = message_partners_query.all()
+        subquery2 = db.session.query(Message.sender_id.label('user_id')).filter(
+            Message.recipient_id == session['user_id']
+        ).distinct()
         
-        # Log how many users we found for this user
-        app.logger.info(f"Found {len(message_partners)} chat partners for user {current_user_id}")
+        # Объединяем подзапросы
+        chat_user_ids = subquery1.union(subquery2).all()
+        chat_user_ids = [item.user_id for item in chat_user_ids]
         
-        # Prepare the chat list
-        chat_list = []
+        # Получаем пользователей из списка ID
+        chat_users = User.query.filter(User.id.in_(chat_user_ids)).all()
         
-        # Get contact status
-        contact_ids_query = db.session.query(
-            Contact.contact_id
-        ).filter(
-            Contact.user_id == current_user_id
-        )
-        contact_ids = [row[0] for row in contact_ids_query.all()]
-        
-        # Get block status
-        blocked_ids_query = db.session.query(
-            Block.blocked_user_id
-        ).filter(
-            Block.user_id == current_user_id
-        )
-        blocked_ids = [row[0] for row in blocked_ids_query.all()]
-        
-        blocked_by_ids_query = db.session.query(
-            Block.user_id
-        ).filter(
-            Block.blocked_user_id == current_user_id
-        )
-        blocked_by_ids = [row[0] for row in blocked_by_ids_query.all()]
-        
-        # Process each chat partner
-        for user in message_partners:
-            # Get last message
-            last_message_query = db.session.query(
-                Message
-            ).filter(
-                or_(
-                    and_(Message.sender_id == current_user_id, Message.recipient_id == user.id),
-                    and_(Message.recipient_id == current_user_id, Message.sender_id == user.id)
-                )
-            ).order_by(Message.timestamp.desc()).first()
-            
-            # In case no messages were found (shouldn't happen, but just to be safe)
-            if not last_message_query:
-                continue
-                
-            # Count unread messages
-            unread_count_query = db.session.query(
-                func.count(Message.id)
-            ).filter(
-                Message.sender_id == user.id,
-                Message.recipient_id == current_user_id,
-                Message.is_read == False
-            ).scalar()
-            
-            # Add chat to the list
-            chat_list.append({
-                'user_id': user.id,
-                'name': user.name,
-                'avatar_path': user.avatar_path,
-                'last_message': last_message_query.content,
-                'last_message_time': last_message_query.timestamp.isoformat(),
-                'unread_count': unread_count_query,
-                'is_contact': user.id in contact_ids,
-                'is_blocked_by_you': user.id in blocked_ids,
-                'has_blocked_you': user.id in blocked_by_ids
-            })
-            
-        # Sort by last message time
-        chat_list.sort(key=lambda x: x['last_message_time'], reverse=True)
-        
-        return jsonify({'success': True, 'chats': chat_list})
-    
-    except Exception as e:
-        app.logger.error(f"Error in get_chat_list: {str(e)}")
-        return jsonify({'success': False, 'error': str(e)})
-
-# Маршрут для получения списка чатов пользователя
-@app.route('/get_chat_list_with_deleted')
-def get_chat_list_filtered():
-    if 'user_id' not in session:
-        return jsonify({'success': False, 'error': 'Not logged in'})
-    
-    current_user_id = session['user_id']
-    
-    try:
-        # Get the list of users the current user has deleted chats with
-        deleted_chats = DeletedChat.query.filter_by(user_id=current_user_id).with_entities(DeletedChat.chat_with_user_id).all()
-        deleted_user_ids = [chat.chat_with_user_id for chat in deleted_chats]
-        
-        # Get users that have conversations with the current user
-        # Filter out users with whom the current user has deleted chats
-        users_with_conversations = db.session.query(User).join(
-            Message, 
-            or_(
-                and_(Message.sender_id == User.id, Message.recipient_id == current_user_id),
-                and_(Message.recipient_id == User.id, Message.sender_id == current_user_id)
-            )
-        ).filter(User.id != current_user_id).filter(User.id.notin_(deleted_user_ids)).distinct().all()
-        
-        # Get contacts of the current user
-        contacts = Contact.query.filter_by(user_id=current_user_id).all()
-        contact_ids = [contact.contact_id for contact in contacts]
-        
-        # Get blocks
-        blocks_made = Block.query.filter_by(user_id=current_user_id).all()
-        blocks_received = Block.query.filter_by(blocked_user_id=current_user_id).all()
-        
-        blocked_ids = [block.blocked_user_id for blocks in blocks_made]
-        blocked_by_ids = [row[0] for row in blocks_received]
-        
-        # Prepare chat list
-        chat_list = []
-        
-        for user in users_with_conversations:
-            # Get the last message between the users
+        # Формируем информацию о чатах
+        chats = []
+        for user in chat_users:
+            # Получаем последнее сообщение
             last_message = Message.query.filter(
-                or_(
-                    and_(Message.sender_id == current_user_id, Message.recipient_id == user.id),
-                    and_(Message.recipient_id == current_user_id, Message.sender_id == user.id)
-                )
+                ((Message.sender_id == session['user_id']) & (Message.recipient_id == user.id)) |
+                ((Message.sender_id == user.id) & (Message.recipient_id == session['user_id']))
             ).order_by(Message.timestamp.desc()).first()
             
-            # Count unread messages
-            unread_count = Message.query.filter_by(
-                sender_id=user.id,
-                recipient_id=current_user_id,
-                is_read=False
+            # Считаем непрочитанные сообщения
+            unread_count = Message.query.filter(
+                (Message.sender_id == user.id) &
+                (Message.recipient_id == session['user_id']) &
+                (Message.is_read == False)
             ).count()
             
-            # Add user to chat list
-            chat_list.append({
+            # Проверяем, является ли пользователь контактом
+            is_contact = Contact.query.filter_by(
+                user_id=session['user_id'],
+                contact_id=user.id
+            ).first() is not None
+            
+            # Check if any blocks exist between users
+            is_blocked_by_you = Block.query.filter_by(
+                user_id=session['user_id'],
+                blocked_user_id=user.id
+            ).first() is not None
+            
+            has_blocked_you = Block.query.filter_by(
+                user_id=user.id,
+                blocked_user_id=session['user_id']
+            ).first() is not None
+            
+            # Добавляем информацию о чате
+            chat_info = {
                 'user_id': user.id,
                 'name': user.name,
-                'avatar_path': user.avatar_path,
-                'last_message': last_message.content if last_message else '',
-                'last_message_time': last_message.timestamp.isoformat() if last_message else '',
+                'avatar_path': user.avatar_path if hasattr(user, 'avatar_path') else None,
+                'last_message': last_message.content if last_message else "",
+                'last_timestamp': last_message.timestamp.isoformat() if last_message else None,
                 'unread_count': unread_count,
-                'is_contact': user.id in contact_ids,
-                'is_blocked_by_you': user.id in blocked_ids,
-                'has_blocked_you': user.id in blocked_by_ids
-            })
+                'is_contact': is_contact,
+                'is_blocked_by_you': is_blocked_by_you,
+                'has_blocked_you': has_blocked_you
+            }
+            chats.append(chat_info)
         
-        # Sort by last message time
-        chat_list.sort(key=lambda x: x['last_message_time'], reverse=True)
+        # Сортируем чаты по времени последнего сообщения (новые сверху)
+        chats.sort(key=lambda x: x['last_timestamp'] if x['last_timestamp'] else "", reverse=True)
         
-        return jsonify({'success': True, 'chats': chat_list})
-    
+        return jsonify({
+            'success': True,
+            'chats': chats
+        })
     except Exception as e:
-        logging.error(f"Error getting chat list: {str(e)}")
-        return jsonify({'success': False, 'error': str(e)})
-        
+        logging.error(f"Ошибка при получении списка чатов: {str(e)}")
+        return jsonify({'success': False, 'error': 'Failed to retrieve chat list'}), 500
+
 # Маршрут для добавления пользователя в контакты
 @app.route('/add_contact', methods=['POST'])
 def add_contact():
@@ -1056,6 +950,7 @@ def add_contact():
             user_id=session['user_id'],
             contact_id=contact_id
         )
+        
         db.session.add(new_contact)
         db.session.commit()
         
@@ -1098,13 +993,15 @@ def send_message():
             user_id=session['user_id'],
             blocked_user_id=recipient_id
         ).first()
-        if blocked_by_sender:
-            return jsonify({'success': False, 'error': 'You cannot send messages to this user because you have blocked them'}), 403
         
         blocked_by_recipient = Block.query.filter_by(
             user_id=recipient_id,
             blocked_user_id=session['user_id']
         ).first()
+        
+        if blocked_by_sender:
+            return jsonify({'success': False, 'error': 'You cannot send messages to this user because you have blocked them'}), 403
+        
         if blocked_by_recipient:
             return jsonify({'success': False, 'error': 'You cannot send messages to this user because they have blocked you'}), 403
         
@@ -1115,6 +1012,7 @@ def send_message():
             content=content,
             is_read=False
         )
+        
         db.session.add(new_message)
         db.session.commit()
         
@@ -1131,77 +1029,42 @@ def send_message():
 # Route for getting message history between two users
 @app.route('/get_messages')
 def get_messages():
-    user_id = request.args.get('user_id')
-    last_message_id = request.args.get('last_message_id', 0, type=int)
-    page = request.args.get('page', 1, type=int)
-    limit = request.args.get('limit', 30, type=int)  # Default to 30 messages per page
-    
-    # Cap the limit to prevent performance issues
-    if limit > 50:
-        limit = 50
-    
-    if not user_id:
-        return jsonify({'success': False, 'error': 'User ID is required'})
-    
     if 'user_id' not in session:
-        return jsonify({'success': False, 'error': 'Not logged in'})
-    
-    current_user_id = session['user_id']
+        return jsonify({'success': False, 'error': 'Not authenticated'}), 401
     
     try:
-        # Get block status
-        block_query = Block.query.filter(
-            ((Block.user_id == current_user_id) & (Block.blocked_user_id == user_id)) |
-            ((Block.user_id == user_id) & (Block.blocked_user_id == current_user_id))
-        ).first()
+        user_id = request.args.get('user_id')
         
-        # Get messages - only new ones if last_message_id is provided
-        query = Message.query.filter(
-            (Message.sender_id == current_user_id) & 
-            (Message.recipient_id == user_id) |
-            (Message.sender_id == user_id) & 
-            (Message.recipient_id == current_user_id)
-        )
+        if not user_id:
+            return jsonify({'success': False, 'error': 'Missing user_id'}), 400
         
-        if last_message_id > 0:
-            # Filter for only new messages if last_message_id is provided
-            query = query.filter(Message.id > last_message_id)
-        else:
-            # Apply pagination for regular message loads
-            # Order by most recent first, then offset for pagination
-            query = query.order_by(Message.timestamp.desc())
-            # Calculate offset
-            offset = (page - 1) * limit
-            query = query.offset(offset).limit(limit)
+        # Get messages between users
+        messages_query = Message.query.filter(
+            ((Message.sender_id == session['user_id']) & (Message.recipient_id == user_id)) |
+            ((Message.sender_id == user_id) & (Message.recipient_id == session['user_id']))
+        ).order_by(Message.timestamp.asc())
         
-        # Get messages
-        if last_message_id > 0:
-            # For polling - keep in chronological order
-            messages = query.order_by(Message.timestamp).all()
-        else:
-            # For pagination - get messages and reverse to chronological order
-            messages = query.all()
-            messages = messages[::-1]  # Reverse the list
+        messages = [message.to_dict() for message in messages_query.all()]
         
-        # Convert messages to dict format
-        message_list = [message.to_dict() for message in messages]
+        # Mark messages as read
+        unread_messages = Message.query.filter_by(
+            sender_id=user_id,
+            recipient_id=session['user_id'],
+            is_read=False
+        ).all()
         
-        # Mark received messages as read
-        for message in messages:
-            if message.recipient_id == current_user_id and not message.is_read:
-                message.is_read = True
+        for message in unread_messages:
+            message.is_read = True
+        
         db.session.commit()
         
         return jsonify({
             'success': True,
-            'messages': message_list,
-            'page': page,
-            'has_more': len(message_list) >= limit
+            'messages': messages
         })
     except Exception as e:
-        db.session.rollback()
         logging.error(f"Error getting messages: {str(e)}")
-        return jsonify({'success': False, 'error': str(e)})
+        return jsonify({'success': False, 'error': 'Server error'}), 500
 
 # Route for getting recent conversations (users you've messaged with)
 @app.route('/get_recent_conversations')
@@ -1278,7 +1141,7 @@ def edit_message():
         
         if not message:
             return jsonify({'error': 'Message not found'}), 404
-        
+            
         # Check if user is the sender
         if message.sender_id != session['user_id']:
             return jsonify({'error': 'You can only edit your own messages'}), 403
@@ -1299,11 +1162,12 @@ def edit_message():
             'success': True,
             'message': message.to_dict()
         })
+        
     except Exception as e:
         db.session.rollback()
         logging.error(f"Error editing message: {str(e)}")
         return jsonify({'error': 'Server error'}), 500
-        
+
 # Route to check block status
 @app.route('/check_block_status', methods=['POST'])
 def check_block_status():
@@ -1337,7 +1201,7 @@ def check_block_status():
     except Exception as e:
         logging.error(f"Error checking block status: {str(e)}")
         return jsonify({'success': False, 'error': 'Failed to check block status'}), 500
-        
+
 # Route to block a user
 @app.route('/block_user', methods=['POST'])
 def block_user():
@@ -1374,6 +1238,7 @@ def block_user():
             user_id=session['user_id'],
             contact_id=user_id
         ).first()
+        
         if contact1:
             db.session.delete(contact1)
         
@@ -1382,8 +1247,10 @@ def block_user():
             user_id=user_id,
             contact_id=session['user_id']
         ).first()
+        
         if contact2:
             db.session.delete(contact2)
+        
         db.session.commit()
         
         return jsonify({'success': True, 'message': 'User blocked successfully'})
@@ -1391,7 +1258,7 @@ def block_user():
         db.session.rollback()
         logging.error(f"Error blocking user: {str(e)}")
         return jsonify({'success': False, 'error': 'Failed to block user'}), 500
-        
+
 # Route to unblock a user
 @app.route('/unblock_user', methods=['POST'])
 def unblock_user():
@@ -1422,301 +1289,24 @@ def unblock_user():
         logging.error(f"Error unblocking user: {str(e)}")
         return jsonify({'success': False, 'error': 'Failed to unblock user'}), 500
 
-# Add file upload configurations
-UPLOAD_FOLDER = os.path.join(basedir, 'static', 'uploads')
-MESSAGE_FILES_FOLDER = os.path.join(UPLOAD_FOLDER, 'message_files')
-ALLOWED_EXTENSIONS = {'png', 'jpg', 'jpeg', 'gif', 'pdf', 'doc', 'docx', 'xls', 'xlsx', 'txt', 'zip', 'rar'}
-app.config['UPLOAD_FOLDER'] = UPLOAD_FOLDER
-app.config['MAX_CONTENT_LENGTH'] = 10 * 1024 * 1024  # 10MB max
-# Create folders if they don't exist
-os.makedirs(MESSAGE_FILES_FOLDER, exist_ok=True)
-
-def allowed_file(filename):
-    return '.' in filename and filename.rsplit('.', 1)[1].lower() in ALLOWED_EXTENSIONS
-
-# Route for uploading files in messages
-@app.route('/upload_message_file', methods=['POST'])
-def upload_message_file():
-    if 'user_id' not in session:
-        return jsonify({'success': False, 'error': 'Not logged in'})
-    
-    # Check if recipient ID is provided
-    recipient_id = request.form.get('recipient_id')
-    if not recipient_id:
-        return jsonify({'success': False, 'error': 'Recipient ID is required'})
-    
-    # Check if file is provided
-    if 'file' not in request.files:
-        return jsonify({'success': False, 'error': 'No file provided'})
-    
-    file = request.files['file']
-    
-    # Check if file has a name
-    if file.filename == '':
-        return jsonify({'success': False, 'error': 'No file selected'})
-    
-    # Check if file type is allowed
-    if file and allowed_file(file.filename):
-        # Generate a unique filename
-        original_filename = secure_filename(file.filename)
-        file_ext = original_filename.rsplit('.', 1)[1].lower() if '.' in original_filename else ''
-        unique_filename = f"{uuid.uuid4().hex}.{file_ext}" if file_ext else f"{uuid.uuid4().hex}"
-        
-        # Save the file
-        file_path = os.path.join(MESSAGE_FILES_FOLDER, unique_filename)
-        file.save(file_path)
-        
-        # Get relative path for storage in database
-        relative_path = os.path.join('uploads', 'message_files', unique_filename).replace('\\', '/')
-        
-        try:
-            # Determine if this is an image
-            is_image = file_ext.lower() in ['jpg', 'jpeg', 'png', 'gif']
-            
-            # Create message content with file info
-            content = f"FILE:{relative_path}:{original_filename}:{is_image}"
-            
-            # Save message to database
-            new_message = Message(
-                sender_id=session['user_id'],
-                recipient_id=recipient_id,
-                content=content,
-                is_read=False
-            )
-            db.session.add(new_message)
-            db.session.commit()
-            
-            # Return success response with message info
-            return jsonify({
-                'success': True,
-                'message': new_message.to_dict(),
-                'file_path': url_for('static', filename=relative_path),
-                'file_name': original_filename,
-                'is_image': is_image
-            })
-        except Exception as e:
-            db.session.rollback()
-            logging.error(f"Error saving message with file: {str(e)}")
-            return jsonify({'success': False, 'error': str(e)})
-    else:
-        return jsonify({'success': False, 'error': 'File type not allowed'})
-
-# Add or update this route
-@app.route('/refresh_sidebar', methods=['GET'])
-def refresh_sidebar():
-    """Force a sidebar refresh to show current block/contact status"""
-    if 'user_id' not in session:
-        return jsonify({'success': False, 'error': 'Not logged in'})
-    
-    current_user_id = session['user_id']
-    
-    try:
-        # Get chats
-        chats = get_chat_list_data(current_user_id)
-        
-        # Get contacts
-        contacts = get_contacts_data(current_user_id)
-        
-        return jsonify({
-            'success': True,
-            'chats': chats,
-            'contacts': contacts
-        })
-    except Exception as e:
-        logging.error(f"Error refreshing sidebar: {str(e)}")
-        return jsonify({'success': False, 'error': str(e)})
-
-# Debug endpoint to display database info (only available in development)
-@app.route('/debug/db_info')
-def debug_db_info():
-    # Only allow if in debug mode
-    if not app.debug:
-        return jsonify({'error': 'Only available in debug mode'}), 403
-    
-    try:
-        # Get counts from various tables
-        user_count = User.query.count()
-        message_count = Message.query.count()
-        contact_count = Contact.query.count()
-        block_count = Block.query.count()
-        deleted_chat_count = DeletedChat.query.count()
-        
-        # Get deleted chat info
-        if 'user_id' in session:
-            user_id = session['user_id']
-            deleted_chats = DeletedChat.query.filter_by(user_id=user_id).all()
-            deleted_chat_data = [
-                {
-                    'id': dc.id,
-                    'chat_with_user_id': dc.chat_with_user_id,
-                    'deleted_at': dc.deleted_at.isoformat()
-                }
-                for dc in deleted_chats
-            ]
-        else:
-            deleted_chat_data = []
-            user_id = None
-        
-        # Return database info
-        return jsonify({
-            'counts': {
-                'users': user_count,
-                'messages': message_count,
-                'contacts': contact_count,
-                'blocks': block_count,
-                'deleted_chats': deleted_chat_count
-            },
-            'current_user_id': user_id,
-            'deleted_chats': deleted_chat_data
-        })
-    except Exception as e:
-        logging.error(f"Error in debug endpoint: {str(e)}", exc_info=True)
-        return jsonify({'error': str(e)}), 500
-
-@app.route('/debug/database')
-def debug_database():
-    """Debug endpoint to check database state for the current user"""
-    if 'user_id' not in session:
-        return jsonify({'error': 'Not logged in'}), 401
-    
-    current_user_id = session['user_id']
-    
-    try:
-        # Check if user exists
-        user = User.query.get(current_user_id)
-        if not user:
-            return jsonify({'error': 'User not found'}), 404
-        
-        # Check for any messages involving this user
-        sent_messages = Message.query.filter_by(sender_id=current_user_id).count()
-        received_messages = Message.query.filter_by(recipient_id=current_user_id).count()
-        
-        # Check for deleted chats - FIX THE INDENTATION HERE
-        deleted_chats = []
-        deleted_chat_ids = []
-        try:
-            # This line had the incorrect indentation
-            deleted_chats = DeletedChat.query.filter_by(user_id=current_user_id).all()
-            deleted_chat_ids = [dc.chat_with_user_id for dc in deleted_chats]
-        except Exception as e:
-            app.logger.error(f"Error querying DeletedChat: {str(e)}")
-        
-        # Get users who have exchanged messages with this user
-        chat_users = []
-        try:
-            # First get all messages sent by current user
-            sent_to_users = db.session.query(User.id, User.name).join(
-                Message, Message.recipient_id == User.id
-            ).filter(Message.sender_id == current_user_id).distinct().all()
-                
-            # Then get all messages received by current user
-            received_from_users = db.session.query(User.id, User.name).join(
-                Message, Message.sender_id == User.id
-            ).filter(Message.recipient_id == current_user_id).distinct().all()
-            
-            # Combine the lists and remove duplicates
-            user_dict = {}
-            for user_id, user_name in sent_to_users + received_from_users:
-                user_dict[user_id] = user_name
-            chat_users = [{'id': user_id, 'name': name} for user_id, name in user_dict.items() 
-                          if user_id != current_user_id]
-        except Exception as e:
-            app.logger.error(f"Error getting chat users: {str(e)}")
-        
-        # Check if table exists by trying to access the MetaData
-        all_tables = [table.name for table in db.metadata.tables.values()]
-        
-        # Return the debug information
-        return jsonify({
-            'user_id': current_user_id,
-            'database_info': {
-                'tables': all_tables
-            },
-            'message_counts': {
-                'sent': sent_messages,
-                'received': received_messages,
-                'total': sent_messages + received_messages
-            },
-            'deleted_chats': {
-                'count': len(deleted_chats),
-                'user_ids': deleted_chat_ids
-            },
-            'chat_users': {
-                'count': len(chat_users),
-                'users': chat_users
-            }
-        })
-    except Exception as e:
-        app.logger.error(f"Error in debug endpoint: {str(e)}")
-        return jsonify({'error': str(e)}), 500
-
-@app.route('/repair_tables', methods=['POST'])
-def repair_tables():
-    """Force recreation of missing tables"""
-    if 'user_id' not in session:
-        return jsonify({'success': False, 'error': 'Not logged in'})
-    
-    try:
-        # Log the repair attempt
-        app.logger.info(f"Attempting to repair database tables")
-        # Create all tables that don't exist
-        db.create_all()
-        app.logger.info("Database tables created/repaired successfully")
-        return jsonify({'success': True, 'message': 'Tables repaired successfully'})
-    except Exception as e:
-        app.logger.error(f"Error repairing tables: {str(e)}")
-        return jsonify({'success': False, 'error': str(e)})
-
-@app.route('/clear_deleted_chats', methods=['POST'])
-def clear_deleted_chats():
-    """Clear deleted chat records for the current user"""
-    if 'user_id' not in session:
-        return jsonify({'success': False, 'error': 'Not logged in'})
-    
-    try:
-        data = request.get_json()
-        # If a specific user_id is provided, only clear that chat
-        user_id = data.get('user_id', None)
-        
-        if user_id:
-            # Clear only the specific chat
-            DeletedChat.query.filter_by(
-                user_id=session['user_id'],
-                chat_with_user_id=user_id
-            ).delete()
-        else:
-            # Clear all deleted chat records for the current user
-            DeletedChat.query.filter_by(user_id=session['user_id']).delete()
-            
-        db.session.commit()
-        
-        return jsonify({
-            'success': True, 
-            'message': 'Deleted chat records cleared successfully'
-        })
-    except Exception as e:
-        db.session.rollback()
-        app.logger.error(f"Error clearing deleted chats: {str(e)}")
-        return jsonify({'success': False, 'error': str(e)})
-
 if __name__ == '__main__':
-    # Initialize the database in the application context
+    # Инициализация базы данных в контексте приложения
     with app.app_context():
         create_tables()
-    # Temporarily disable SERVER_NAME for local execution
+    # Временно отключаем SERVER_NAME для локального запуска
     app.config['SERVER_NAME'] = None
-    # Set host='0.0.0.0' to make the application accessible from outside
+    # Устанавливаем host='0.0.0.0', чтобы приложение было доступно извне
     app.run(debug=True, host='0.0.0.0')
 else:
-    # For WSGI execution (PythonAnywhere)
+    # Для запуска через WSGI (PythonAnywhere)
     try:
         with app.app_context():
             logging.basicConfig(
                 filename='/tmp/flask_app_error.log', 
                 level=logging.DEBUG,
-                format='%(asctime)s - %(levellevelname)s - %(message)s'
+                format='%(asctime)s - %(уровень)s - %(message)s'
             )
-            logging.info("Starting application via WSGI")
+            logging.info("Запускаем приложение через WSGI")
             try:
                 # Защищенный вызов create_tables
                 create_tables_success = create_tables()
@@ -1725,7 +1315,7 @@ else:
                 else:
                     logging.warning("Не удалось обновить схему базы данных, но приложение продолжит работу")
                 
-                # Проверка наличия папки для аватаров2
+                # Проверка наличия папки для аватаров
                 if not os.path.exists(app.config['UPLOAD_FOLDER']):
                     os.makedirs(app.config['UPLOAD_FOLDER'], exist_ok=True)
                     logging.info(f"Создана папка для аватаров: {app.config['UPLOAD_FOLDER']}")

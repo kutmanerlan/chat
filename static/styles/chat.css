@@ -2,16 +2,6 @@
  * Chat CSS - chat interface components
  */
 
-/* Chat container - add flex display */
-.chat-container {
-    display: flex;
-    flex-direction: column;
-    height: 100%;
-    width: 100%;
-    position: relative;
-    overflow: hidden;
-}
-
 /* Chat header */
 .chat-header {
     position: relative;
@@ -85,9 +75,6 @@
     margin-top: 0;
     margin-bottom: 0;
     padding: 0;
-    transition: background-color 0.2s, color 0.2s;
-    position: relative;
-    z-index: 50;
 }
 
 .chat-menu-btn:hover {
@@ -95,22 +82,10 @@
     color: white;
 }
 
-.chat-menu-btn svg {
-    width: 24px;
-    height: 24px;
-    stroke: currentColor;
-    fill: none;
-}
-
-/* Ensure circles in the menu icon are properly aligned vertically */
-.chat-menu-btn svg circle {
-    fill: currentColor;
-}
-
-/* Chat messages area - fix height calculation */
+/* Chat messages area */
 .chat-messages {
     flex-grow: 1;
-    height: calc(100vh - 128px); /* Ensure proper height calculation */
+    height: calc(100vh - 128px);
     padding: 20px 16px;
     overflow-y: auto;
     display: flex;

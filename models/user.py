@@ -11,18 +11,18 @@ class User(db.Model):
     password_hash = db.Column(db.String(200), nullable=False)
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
     
-    # Add missing fields that are used in app.py
+    # Добавляем недостающие поля, которые используются в app.py
     email_confirmed = db.Column(db.Boolean, default=False)
     confirmation_token = db.Column(db.String(100), nullable=True)
     token_expiration = db.Column(db.DateTime, nullable=True)
     
-    # Field for storing the avatar path
+    # Добавляем поле для хранения пути к аватарке
     avatar_path = db.Column(db.String(255), nullable=True)
     
-    # Field for storing user information/bio
+    # Новое поле для хранения информации о пользователе
     bio = db.Column(db.String(500), nullable=True)
     
-    # Define relationship for contacts
+    # Определение отношения для контактов
     contacts = db.relationship('Contact', 
                               foreign_keys='Contact.user_id',
                               backref=db.backref('owner', lazy='joined'),
@@ -48,13 +48,13 @@ class User(db.Model):
     def check_password(self, password):
         return check_password_hash(self.password_hash, password)
     
-    # Method for getting avatar URL or default avatar
+    # Метод для получения URL аватарки или стандартного аватара
     def get_avatar(self):
         if self.avatar_path:
             return self.avatar_path
-        return None  # Will return default avatar with initials
+        return None  # Вернется стандартный аватар с инициалами
     
-    # Method for user authentication
+    # Метод для авторизации пользователя
     @classmethod
     def authenticate(cls, email, password):
         user = cls.query.filter_by(email=email).first()
@@ -62,17 +62,17 @@ class User(db.Model):
             return user
         return None
 
-# Model for storing user contacts
+# Модель для хранения контактов пользователей
 class Contact(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     user_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
     contact_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
     added_at = db.Column(db.DateTime, default=datetime.utcnow)
     
-    # Relationship with the contact user
+    # Связь с пользователем-контактом
     contact_user = db.relationship('User', foreign_keys=[contact_id], lazy='joined')
     
-    # Index for fast lookup and uniqueness
+    # Индекс для быстрого поиска и уникальности
     __table_args__ = (db.UniqueConstraint('user_id', 'contact_id', name='_user_contact_uc'),)
 
 # Model for storing messages between users

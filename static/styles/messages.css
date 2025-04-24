@@ -15,38 +15,6 @@
     word-wrap: break-word;
     overflow-wrap: break-word;
     hyphens: auto;
-    opacity: 0;
-    transform: translateY(10px);
-    transition: opacity 0.2s ease-out, transform 0.2s ease-out;
-    will-change: transform, opacity;
-    backface-visibility: hidden;
-    perspective: 1000px;
-    transform: translateZ(0);
-    -webkit-font-smoothing: subpixel-antialiased;
-}
-
-.message-visible {
-    opacity: 1;
-    transform: translateY(0);
-}
-
-.message-new {
-    animation: newMessagePulse 0.6s ease-out;
-}
-
-@keyframes newMessagePulse {
-    0% {
-        transform: translateZ(0) scale(0.95);
-        box-shadow: 0 0 0 0 rgba(255, 255, 255, 0.1);
-    }
-    70% {
-        transform: translateZ(0) scale(1);
-        box-shadow: 0 0 0 5px rgba(255, 255, 255, 0);
-    }
-    100% {
-        transform: translateZ(0) scale(1);
-        box-shadow: 0 0 0 0 rgba(255, 255, 255, 0);
-    }
 }
 
 .message-content {
@@ -89,20 +57,14 @@
 }
 
 .message-image {
-    position: relative;
     margin-bottom: 8px;
 }
 
 .message-file-icon {
-    position: relative;
     display: flex;
     align-items: center;
     justify-content: center;
     margin-bottom: 8px;
-    width: 60px;
-    height: 60px;
-    background-color: rgba(255, 255, 255, 0.1);
-    border-radius: 8px;
 }
 
 .message-file-name {
@@ -110,74 +72,4 @@
     opacity: 0.9;
     margin-bottom: 4px;
     word-break: break-all;
-}
-
-/* File upload styles */
-.message-loading {
-  opacity: 0.8;
-}
-
-.upload-overlay {
-  position: absolute;
-  top: 0;
-  left: 0;
-  width: 100%;
-  height: 100%;
-  background-color: rgba(0, 0, 0, 0.3);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  border-radius: 8px;
-}
-
-.upload-spinner {
-  width: 30px;
-  height: 30px;
-  border: 3px solid rgba(255, 255, 255, 0.3);
-  border-radius: 50%;
-  border-top-color: #fff;
-  animation: spin 1s linear infinite;
-}
-
-@keyframes spin {
-  0% { transform: rotate(0deg); }
-  100% { transform: rotate(360deg); }
-}
-
-.message-file a {
-  color: #55aaff;
-  text-decoration: none;
-}
-
-.message-file a:hover {
-  text-decoration: underline;
-}
-
-/* Pagination styles */
-.load-more-container {
-  text-align: center;
-  padding: 15px 0;
-  margin-bottom: 10px;
-}
-
-.load-more-btn {
-  padding: 8px 15px;
-  background-color: #333;
-  border: none;
-  border-radius: 4px;
-  color: white;
-  cursor: pointer;
-  font-size: 13px;
-  transition: background-color 0.2s ease;
-  opacity: 0.8;
-}
-
-.load-more-btn:hover {
-  background-color: #444;
-  opacity: 1;
-}
-
-.load-more-btn:disabled {
-  opacity: 0.5;
-  cursor: not-allowed;
 }

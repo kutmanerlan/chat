@@ -37,11 +37,6 @@
   background-color: #e53935; /* Red background for block action */
 }
 
-/* Special styling for delete chat notification */
-.notification.delete-chat {
-  background-color: #5a6268; /* Gray background for delete actions */
-}
-
 .notification.info {
   background-color: #1e88e5;
 }

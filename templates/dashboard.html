@@ -7,22 +7,16 @@
   <!-- Include modular CSS files -->
   <link rel="stylesheet" href="{{ url_for('static', filename='styles/main.css') }}">
   
-  <!-- Make sure scripts are loaded in the correct order - core.js must be first,
-       and other scripts that define functions used by core.js must come before it -->
-  <script src="{{ url_for('static', filename='js/api.js') }}"></script>
-  <script src="{{ url_for('static', filename='js/notifications.js') }}"></script>
-  <script src="{{ url_for('static', filename='js/contacts.js') }}"></script>
-  <script src="{{ url_for('static', filename='js/messages.js') }}"></script>
-  <script src="{{ url_for('static', filename='js/chat.js') }}"></script>
-  <script src="{{ url_for('static', filename='js/ui.js') }}"></script>
-  <script src="{{ url_for('static', filename='js/search.js') }}"></script>
-  <script src="{{ url_for('static', filename='js/core.js') }}"></script>
-  <script src="{{ url_for('static', filename='js/main.js') }}"></script>
-  
-  <!-- Add this line to conditionally include the debug script -->
-  {% if debug %}
-  <script src="{{ url_for('static', filename='js/debug.js') }}"></script>
-  {% endif %}
+  <!-- Include modular JavaScript files -->
+  <script src="{{ url_for('static', filename='js/core.js') }}" defer></script>
+  <script src="{{ url_for('static', filename='js/api.js') }}" defer></script>
+  <script src="{{ url_for('static', filename='js/ui.js') }}" defer></script>
+  <script src="{{ url_for('static', filename='js/chat.js') }}" defer></script>
+  <script src="{{ url_for('static', filename='js/messages.js') }}" defer></script>
+  <script src="{{ url_for('static', filename='js/contacts.js') }}" defer></script>
+  <script src="{{ url_for('static', filename='js/search.js') }}" defer></script>
+  <script src="{{ url_for('static', filename='js/notifications.js') }}" defer></script>
+  <script src="{{ url_for('static', filename='js/main.js') }}" defer></script>
 </head>
 <body>
   <!-- Боковая панель -->

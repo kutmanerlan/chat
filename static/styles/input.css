@@ -2,7 +2,7 @@
  * Input CSS - message input area components
  */
 
-/* Message input container - ensure it stays fixed at bottom */
+/* Message input container */
 .message-input-container {
     width: 100%;
     height: 68px;
@@ -14,8 +14,6 @@
     position: relative;
     z-index: 10;
     box-sizing: border-box;
-    flex-shrink: 0; /* Prevent shrinking */
-    bottom: 0; /* Stick to bottom */
 }
 
 .input-wrapper {

@@ -53,21 +53,3 @@ function createNotification(message, type) {
   
   return notification;
 }
-
-/**
- * Remove error notifications that match a specific text
- */
-function removeErrorNotificationByText(text) {
-  const notifications = document.querySelectorAll('.notification.error');
-  notifications.forEach(notification => {
-    if (notification.textContent.includes(text)) {
-      // Remove the notification
-      notification.classList.add('hide');
-      setTimeout(() => {
-        if (notification.parentNode) {
-          notification.parentNode.removeChild(notification);
-        }
-      }, 300);
-    }
-  });
-}

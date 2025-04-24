@@ -38,7 +38,7 @@
 .message-edit-input {
   min-height: 24px;
   padding: 4px 8px;
-  background-color: #9b9b9b; /* Edit this to change the input background color */
+  background-color: #333;
   border-radius: 6px;
   outline: none;
   max-width: 100%;
@@ -69,21 +69,21 @@
 }
 
 .message-edit-buttons .save-edit-btn {
-  background-color: #3a3a3a; /* Edit this to change the save button color */
+  background-color: #4a76a8;
   color: white;
 }
 
 .message-edit-buttons .save-edit-btn:hover {
-  background-color: #7dbd58; /* Edit this to change the save button hover color */
+  background-color: #5888bd;
 }
 
 .message-edit-buttons .cancel-edit-btn {
-  background-color: #3a3a3a; /* Edit this to change the cancel button color */
+  background-color: #3a3a3a;
   color: #eaeaea;
 }
 
 .message-edit-buttons .cancel-edit-btn:hover {
-  background-color: #ca6666; /* Edit this to change the cancel button hover color */
+  background-color: #4c4c4c;
 }
 
 .message-edit-buttons.disabled button {

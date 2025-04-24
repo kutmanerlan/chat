@@ -6,77 +6,40 @@
  * Load messages for a conversation
  */
 function loadMessages(userId) {
-  console.log(`[Messages] Loading messages for user ID: ${userId}`);
-  
   const chatMessages = document.querySelector('.chat-messages');
-  if (!chatMessages) {
-    console.error('[Messages] Chat messages container not found');
-    return Promise.reject(new Error('Chat messages container not found'));
-  }
+  if (!chatMessages) return Promise.reject(new Error('Chat messages container not found'));
   
   // Show loading indicator
-  chatMessages.innerHTML = '<div class="loading-messages">Loading messages...</div>';
+  chatMessages.innerHTML = '';
+  const loadingIndicator = document.createElement('div');
+  loadingIndicator.className = 'loading-messages';
+  loadingIndicator.textContent = 'Loading messages...';
+  loadingIndicator.style.textAlign = 'center';
+  loadingIndicator.style.padding = '20px';
+  loadingIndicator.style.color = '#888';
+  chatMessages.appendChild(loadingIndicator);
   
-  // Check if userId is valid
-  if (!userId) {
-    console.error('[Messages] Invalid user ID provided to loadMessages');
-    chatMessages.innerHTML = '<div class="error-message">Error: Invalid conversation</div>';
-    return Promise.reject(new Error('Invalid user ID'));
-  }
-  
-  // Store pagination info
-  if (typeof ChatApp !== 'undefined') {
-    ChatApp.messagePage = 1;
-    ChatApp.messageLimit = 30; // Load only 30 messages at a time
-    ChatApp.hasMoreMessages = true;
-    ChatApp.currentChatId = userId;
-  } else {
-    console.warn('[Messages] ChatApp not defined, falling back to local variables');
-    window.messagePage = 1;
-    window.messageLimit = 30;
-    window.hasMoreMessages = true;
-    window.currentChatId = userId;
-  }
-  
-  // Fetch messages with pagination
-  return fetchMessages(userId, 1, typeof ChatApp !== 'undefined' ? ChatApp.messageLimit : 30)
+  // Fetch messages
+  return fetchMessages(userId)
     .then(data => {
-      console.log(`[Messages] Fetched ${data.messages ? data.messages.length : 0} messages`);
+      console.log('Messages loaded:', data);
       
       // Clear loading indicator
       chatMessages.innerHTML = '';
       
-      // Create messages container
-      const messagesContainer = document.createElement('div');
-      messagesContainer.className = 'messages-container';
-      chatMessages.appendChild(messagesContainer);
-      
-      // Check if we have messages
+      // Render messages
       if (data.success && data.messages && data.messages.length > 0) {
-        // Add load more button if needed
-        if (data.messages.length >= (typeof ChatApp !== 'undefined' ? ChatApp.messageLimit : 30)) {
-          addLoadMoreButton(chatMessages, userId);
-        } else {
-          if (typeof ChatApp !== 'undefined') {
-            ChatApp.hasMoreMessages = false;
-          } else {
-            window.hasMoreMessages = false;
-          }
-        }
-        
         renderMessages(data.messages, chatMessages);
       } else {
         // Show "no messages" placeholder
         const noMessages = document.createElement('div');
         noMessages.className = 'no-messages';
         noMessages.textContent = 'No messages yet';
-        messagesContainer.appendChild(noMessages);
+        chatMessages.appendChild(noMessages);
       }
-      
-      return data;
     })
     .catch(error => {
-      console.error('[Messages] Error loading messages:', error);
+      console.error('Error loading messages:', error);
       
       // Show error message
       chatMessages.innerHTML = '';
@@ -93,150 +56,22 @@ function loadMessages(userId) {
 }
 
 /**
- * Add "Load More" button for pagination
- */
-function addLoadMoreButton(chatMessages, userId) {
-  // Create container for the button
-  const loadMoreContainer = document.createElement('div');
-  loadMoreContainer.className = 'load-more-container';
-  loadMoreContainer.style.textAlign = 'center';
-  loadMoreContainer.style.padding = '15px 0';
-  loadMoreContainer.style.marginBottom = '10px';
-  
-  // Create the button
-  const loadMoreButton = document.createElement('button');
-  loadMoreButton.className = 'load-more-btn';
-  loadMoreButton.textContent = 'Load older messages';
-  loadMoreButton.style.padding = '8px 15px';
-  loadMoreButton.style.backgroundColor = '#333';
-  loadMoreButton.style.border = 'none';
-  loadMoreButton.style.borderRadius = '4px';
-  loadMoreButton.style.color = 'white';
-  loadMoreButton.style.cursor = 'pointer';
-  
-  // Add click handler
-  loadMoreButton.addEventListener('click', function() {
-    // Change button to loading state
-    loadMoreButton.textContent = 'Loading...';
-    loadMoreButton.disabled = true;
-    
-    // Load next page of messages
-    ChatApp.messagePage++;
-    
-    fetchMessages(userId, ChatApp.messagePage, ChatApp.messageLimit)
-      .then(data => {
-        if (data.success && data.messages && data.messages.length > 0) {
-          // Get current scroll position
-          const scrollPos = chatMessages.scrollHeight - chatMessages.scrollTop;
-          
-          // Prepend messages to the beginning 
-          const messagesContainer = chatMessages.querySelector('.messages-container');
-          const oldHeight = chatMessages.scrollHeight;
-          
-          // Render messages at the top
-          const fragment = document.createDocumentFragment();
-          data.messages.forEach(message => {
-            const messageEl = createMessageElement(message);
-            messageEl.classList.add('message-visible'); // Make immediately visible
-            fragment.appendChild(messageEl);
-          });
-          
-          // Insert at the beginning, before the load more button
-          messagesContainer.insertBefore(fragment, messagesContainer.firstChild);
-          
-          // Maintain scroll position
-          chatMessages.scrollTop = chatMessages.scrollHeight - scrollPos;
-          
-          // Update load more button state
-          if (data.messages.length < ChatApp.messageLimit) {
-            // No more messages to load
-            loadMoreContainer.remove();
-            ChatApp.hasMoreMessages = false;
-          } else {
-            // Reset button state
-            loadMoreButton.textContent = 'Load older messages';
-            loadMoreButton.disabled = false;
-          }
-        } else {
-          // No more messages
-          loadMoreContainer.remove();
-          ChatApp.hasMoreMessages = false;
-        }
-      })
-      .catch(error => {
-        console.error('Error loading more messages:', error);
-        loadMoreButton.textContent = 'Failed to load. Try again';
-        loadMoreButton.disabled = false;
-      });
-  });
-  
-  // Add button to container
-  loadMoreContainer.appendChild(loadMoreButton);
-  
-  // Add to DOM
-  const messagesContainer = chatMessages.querySelector('.messages-container') || chatMessages;
-  messagesContainer.insertBefore(loadMoreContainer, messagesContainer.firstChild);
-}
-
-/**
  * Render messages in the chat
  */
 function renderMessages(messages, chatMessages) {
-  console.log(`[Messages] Rendering ${messages.length} messages`);
+  // Create messages container
+  const messagesContainer = document.createElement('div');
+  messagesContainer.className = 'messages-container';
+  chatMessages.appendChild(messagesContainer);
   
-  // Create messages container if it doesn't exist
-  let messagesContainer = chatMessages.querySelector('.messages-container');
-  if (!messagesContainer) {
-    messagesContainer = document.createElement('div');
-    messagesContainer.className = 'messages-container';
-    chatMessages.appendChild(messagesContainer);
-  }
-  
-  // Clear any existing "no messages" elements
-  const noMessagesElement = messagesContainer.querySelector('.no-messages');
-  if (noMessagesElement) {
-    messagesContainer.removeChild(noMessagesElement);
-  }
-  
-  // Limit the number of DOM elements for performance
-  const maxVisibleMessages = 100; // Maximum messages to keep in DOM
-  const currentMessages = messagesContainer.querySelectorAll('.message');
-  
-  // If we already have too many messages, remove oldest ones
-  if (currentMessages.length > maxVisibleMessages) {
-    for (let i = 0; i < currentMessages.length - maxVisibleMessages; i++) {
-      if (currentMessages[i] && currentMessages[i].parentNode) {
-        currentMessages[i].parentNode.removeChild(currentMessages[i]);
-      }
-    }
-  }
-  
-  // Create a document fragment for better performance
-  const fragment = document.createDocumentFragment();
-  
-  // Add each message to the fragment
+  // Add each message
   messages.forEach(message => {
-    try {
-      const messageEl = createMessageElement(message);
-      fragment.appendChild(messageEl);
-    } catch(err) {
-      console.error('[Messages] Error creating message element:', err, message);
-    }
+    const messageEl = createMessageElement(message);
+    messagesContainer.appendChild(messageEl);
   });
   
-  // Append all messages at once
-  messagesContainer.appendChild(fragment);
-  
-  // Use requestAnimationFrame for smoother scrolling
-  requestAnimationFrame(() => {
-    chatMessages.scrollTop = chatMessages.scrollHeight;
-    
-    // Make messages visible with a slight delay for animation
-    setTimeout(() => {
-      const newMessages = messagesContainer.querySelectorAll('.message:not(.message-visible)');
-      newMessages.forEach(msg => msg.classList.add('message-visible'));
-    }, 50);
-  });
+  // Scroll to bottom
+  chatMessages.scrollTop = chatMessages.scrollHeight;
 }
 
 /**
@@ -246,17 +81,7 @@ function createMessageElement(message) {
   const messageEl = document.createElement('div');
   
   // Determine if this is a sent or received message
-  let isSent;
-  
-  // Handle case when ChatApp is not defined
-  if (typeof ChatApp !== 'undefined' && ChatApp.currentUser) {
-    isSent = parseInt(message.sender_id) === parseInt(ChatApp.currentUser.user_id);
-  } else {
-    // Fallback to session user_id if available
-    const userId = document.body.getAttribute('data-user-id');
-    isSent = userId && parseInt(message.sender_id) === parseInt(userId);
-  }
-  
+  const isSent = parseInt(message.sender_id) === parseInt(ChatApp.currentUser.user_id);
   messageEl.className = `message ${isSent ? 'message-sent' : 'message-received'}`;
   messageEl.dataset.messageId = message.id;
   messageEl.dataset.senderId = message.sender_id;
@@ -269,52 +94,8 @@ function createMessageElement(message) {
   // Check if is_edited exists, default to false if not
   const isEdited = message.is_edited === true;
   
-  // Check if this is a file message
-  let contentHTML = '';
-  
-  if (message.content && message.content.startsWith('FILE:')) {
-    // Parse file information
-    const [prefix, filePath, fileName, isImage] = message.content.split(':');
-    const isImageFile = isImage === 'true';
-    
-    // Append file class
-    messageEl.classList.add('message-file');
-    
-    if (isImageFile) {
-      // Display image
-      contentHTML = `
-        <div class="message-content">
-          <div class="message-image">
-            <img src="${filePath}" alt="${fileName}" style="max-width: 200px; max-height: 200px; border-radius: 8px;">
-          </div>
-          <div class="message-file-name">${fileName}</div>
-        </div>
-      `;
-    } else {
-      // Create appropriate icon based on file extension
-      const fileExt = fileName.split('.').pop().toLowerCase();
-      let iconSvg = `
-        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2">
-          <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
-          <polyline points="14 2 14 8 20 8"></polyline>
-        </svg>
-      `;
-      
-      contentHTML = `
-        <div class="message-content">
-          <div class="message-file-icon">${iconSvg}</div>
-          <div class="message-file-name">
-            <a href="${filePath}" target="_blank" download="${fileName}">${fileName}</a>
-          </div>
-        </div>
-      `;
-    }
-  } else {
-    // Regular text message
-    const content = message.content || '';
-    contentHTML = `<div class="message-content">${escapeHtml(content)}</div>`;
-  }
-  
+  // Add message content
+  const contentHTML = `<div class="message-content">${escapeHtml(message.content)}</div>`;
   const timeHTML = `<div class="message-time">
     ${hours}:${minutes}
     ${isEdited ? '<span class="edited-indicator">· Edited</span>' : ''}
@@ -325,15 +106,8 @@ function createMessageElement(message) {
   // Add context menu event listener
   messageEl.addEventListener('contextmenu', function(e) {
     e.preventDefault();
-    if (typeof showMessageContextMenu === 'function') {
-      showMessageContextMenu(e, message, messageEl);
-    }
+    showMessageContextMenu(e, message, messageEl);
   });
-  
-  // Add appearance animation
-  setTimeout(() => {
-    messageEl.classList.add('message-visible');
-  }, 10);
   
   return messageEl;
 }
@@ -604,217 +378,68 @@ function updateMessageDisplay(messageEl, message) {
 
 /**
  * Handle sending a message
- * @param {string} text - The message text to send
- * @param {number} recipientId - The ID of the message recipient
- * @param {HTMLElement} chatMessages - The chat messages container element
- * @returns {Promise} - A promise that resolves when the message is sent
  */
 function sendMessageHandler(text, recipientId, chatMessages) {
   if (!text.trim()) return;
   
   console.log(`Sending message to ${recipientId}: ${text}`);
   
-  // Check if this might be the first message to this user
-  const isNewContact = isFirstMessageToUser(recipientId);
-  if (isNewContact) {
-    console.log('This appears to be a new contact, ensuring contact is created first');
-    // Add the user to contacts immediately before sending the message
-    addUserToContacts(recipientId);
-  }
-  
-  // Create a temporary message element to show immediately
-  const tempMessage = createTempMessage(text);
-  
+  return sendMessage(recipientId, text)
+    .then(data => {
+      if (!data.success) throw new Error(data.error || 'Failed to send message');
+      
+      // Display the new message
+      addMessageToChat(data.message, chatMessages);
+      
+      // Clear input field
+      const inputField = document.querySelector('.message-input-field input');
+      if (inputField) {
+        inputField.value = '';
+        inputField.focus();
+        
+        // Update send button state
+        const sendButton = document.querySelector('.send-button');
+        if (sendButton) sendButton.classList.remove('active');
+      }
+      
+      // Refresh sidebar to show updated chat list
+      loadSidebar();
+      
+      return data;
+    })
+    .catch(error => {
+      console.error('Error sending message:', error);
+      showErrorNotification('Failed to send message. Please try again.');
+      return Promise.reject(error);
+    });
+}
+
+/**
+ * Add a new message to the chat
+ */
+function addMessageToChat(message, chatMessages) {
   // Get or create messages container
   let messagesContainer = chatMessages.querySelector('.messages-container');
+  
+  // Remove "no messages" if present
+  const noMessages = chatMessages.querySelector('.no-messages');
+  if (noMessages) {
+    chatMessages.removeChild(noMessages);
+  }
+  
+  // Create container if it doesn't exist
   if (!messagesContainer) {
     messagesContainer = document.createElement('div');
     messagesContainer.className = 'messages-container';
     chatMessages.appendChild(messagesContainer);
   }
   
-  // Add the temp message to the chat
-  messagesContainer.appendChild(tempMessage);
+  // Create and add the message element
+  const messageEl = createMessageElement(message);
+  messagesContainer.appendChild(messageEl);
   
   // Scroll to the new message
   chatMessages.scrollTop = chatMessages.scrollHeight;
-  
-  // Clear input field immediately for better UX
-  const inputField = document.querySelector('.message-input-field input');
-  if (inputField) {
-    inputField.value = '';
-    
-    // Update send button state
-    const sendButton = document.querySelector('.send-button');
-    if (sendButton) sendButton.classList.remove('active');
-  }
-  
-  // Send the message to the server
-  return fetch('/send_message', {
-    method: 'POST',
-    headers: {
-      'Content-Type': 'application/json'
-    },
-    body: JSON.stringify({
-      recipient_id: recipientId,
-      content: text
-    })
-  })
-  .then(response => {
-    if (!response.ok) {
-      throw new Error(`Server returned ${response.status}: ${response.statusText}`);
-    }
-    return response.json();
-  })
-  .then(data => {
-    console.log('Message sent successfully:', data);
-    
-    // Remove the temporary message
-    if (tempMessage && tempMessage.parentNode) {
-      tempMessage.parentNode.removeChild(tempMessage);
-    }
-    
-    // Add the real message with server data
-    if (data.success && data.message) {
-      addMessageToChat(data.message, chatMessages);
-      
-      // If this was a new contact, refresh the sidebar to show the new chat
-      if (isNewContact) {
-        console.log('Refreshing sidebar after first message to new contact');
-        // Force refresh the sidebar immediately
-        if (typeof loadSidebar === 'function') {
-          loadSidebar();
-        }
-        
-        // Remove any error notifications that might have appeared
-        if (typeof removeErrorNotificationByText === 'function') {
-          removeErrorNotificationByText('Failed to send message');
-        }
-      } else {
-        // Just update the single chat entry for existing contacts
-        updateChatInSidebar(recipientId, text, data.message.timestamp);
-      }
-    } else {
-      throw new Error(data.error || 'Failed to send message');
-    }
-    
-    return data;
-  })
-  .catch(error => {
-    console.error('Error sending message:', error);
-    
-    // Replace temp message with error message
-    if (tempMessage && tempMessage.parentNode) {
-      tempMessage.classList.add('message-error');
-      const contentDiv = tempMessage.querySelector('.message-content');
-      if (contentDiv) {
-        contentDiv.innerHTML += '<div class="message-error-text">Failed to send</div>';
-      }
-    }
-    
-    // Show error notification
-    if (typeof showErrorNotification === 'function') {
-      showErrorNotification('Failed to send message. Please try again.');
-    }
-    
-    return Promise.reject(error);
-  });
-}
-
-/**
- * Check if this is the first message to a user
- * @param {number} userId - The user ID to check
- * @returns {boolean} - True if this is the first message to the user
- */
-function isFirstMessageToUser(userId) {
-  // Convert userId to string for comparison
-  const userIdStr = userId.toString();
-  
-  // Check if user exists in the sidebar
-  const contactItems = document.querySelectorAll('.contact-item');
-  for (let item of contactItems) {
-    if (item.dataset.userId === userIdStr) {
-      return false; // User found in sidebar
-    }
-  }
-  
-  console.log(`User ${userId} not found in sidebar, likely first message`);
-  return true; // User not found in sidebar
-}
-
-/**
- * Add a user to contacts
- * @param {number} userId - The user ID to add to contacts
- */
-function addUserToContacts(userId) {
-  console.log(`Adding user ${userId} to contacts before sending message`);
-  
-  fetch('/add_contact', {
-    method: 'POST',
-    headers: {
-      'Content-Type': 'application/json'
-    },
-    body: JSON.stringify({ contact_id: userId })
-  })
-  .then(response => response.json())
-  .then(data => {
-    if (data.success) {
-      console.log('Successfully added contact:', data);
-      // Force refresh sidebar immediately
-      if (typeof loadSidebar === 'function') {
-        loadSidebar();
-      }
-    } else {
-      console.warn('Failed to add contact or already exists:', data);
-    }
-  })
-  .catch(error => {
-    console.error('Error adding contact:', error);
-  });
-}
-
-/**
- * Update a single chat in the sidebar after sending a message
- * @param {number} userId - The user ID to update
- * @param {string} lastMessage - The last message text
- * @param {string} timestamp - The message timestamp
- */
-function updateChatInSidebar(userId, lastMessage, timestamp) {
-  // Use updateSingleChat if it exists
-  if (typeof updateSingleChat === 'function') {
-    const chatData = {
-      user_id: userId,
-      last_message: lastMessage,
-      last_message_time: timestamp,
-      unread_count: 0 // It's our message, so no unread count
-    };
-    
-    updateSingleChat(chatData);
-  }
-}
-
-/**
- * Create a temporary message element
- * @param {string} text - The message text
- * @returns {HTMLElement} - The message element
- */
-function createTempMessage(text) {
-  const message = document.createElement('div');
-  message.className = 'message message-sent message-pending';
-  
-  const timestamp = new Date();
-  const hours = String(timestamp.getHours()).padStart(2, '0');
-  const minutes = String(timestamp.getMinutes()).padStart(2, '0');
-  
-  message.innerHTML = `
-    <div class="message-content">${escapeHtml(text)}</div>
-    <div class="message-time">
-      ${hours}:${minutes}
-      <span class="message-status">Sending...</span>
-    </div>
-  `;
-  
-  return message;
 }
 
 /**
@@ -827,451 +452,73 @@ function handleFileSelection(files, user) {
   const chatMessages = document.querySelector('.chat-messages');
   if (!chatMessages) return;
   
-  // Process each file
-  Array.from(files).forEach(file => {
-    // Create a loading message placeholder
-    const loadingMessage = createLoadingFileMessage(file);
-    
-    // Add to chat
-    let messagesContainer = chatMessages.querySelector('.messages-container');
-    if (!messagesContainer) {
-      messagesContainer = document.createElement('div');
-      messagesContainer.className = 'messages-container';
-      chatMessages.appendChild(messagesContainer);
-    }
-    messagesContainer.appendChild(loadingMessage);
-    
-    // Scroll to the loading message
-    chatMessages.scrollTop = chatMessages.scrollHeight;
-    
-    // Create form data for upload
-    const formData = new FormData();
-    formData.append('file', file);
-    formData.append('recipient_id', user.id);
-    
-    // Send file to server
-    fetch('/upload_message_file', {
-      method: 'POST',
-      body: formData
-    })
-    .then(response => {
-      if (!response.ok) throw new Error('Failed to upload file');
-      return response.json();
-    })
-    .then(data => {
-      if (data.success) {
-        // Replace loading message with actual message
-        messagesContainer.removeChild(loadingMessage);
-        addMessageToChat(data.message, chatMessages);
-        
-        // Refresh sidebar
-        loadSidebar();
-      } else {
-        throw new Error(data.error || 'Failed to upload file');
-      }
-    })
-    .catch(error => {
-      console.error('Error uploading file:', error);
-      
-      // Remove loading message
-      messagesContainer.removeChild(loadingMessage);
-      
-      // Show error notification
-      showErrorNotification('Failed to upload file: ' + error.message);
-    });
-  });
-}
-
-/**
- * Create a loading message for file upload
- */
-function createLoadingFileMessage(file) {
-  const message = document.createElement('div');
-  message.className = 'message message-sent message-file message-loading';
-  
-  // Format timestamp
-  const now = new Date();
-  const hours = String(now.getHours()).padStart(2, '0');
-  const minutes = String(now.getMinutes()).padStart(2, '0');
-  
-  // Determine file type
-  const isImage = file.type.startsWith('image/');
-  const fileExt = file.name.split('.').pop().toLowerCase();
-  
-  // Create content based on file type
-  let fileContent = '';
-  
-  if (isImage) {
-    // For images, show a preview
-    const imageUrl = URL.createObjectURL(file);
-    fileContent = `
-      <div class="message-content">
-        <div class="message-image">
-          <img src="${imageUrl}" alt="${file.name}" style="max-width: 200px; max-height: 200px; border-radius: 8px; opacity: 0.7;">
-          <div class="upload-overlay">
-            <div class="upload-spinner"></div>
-          </div>
-        </div>
-        <div class="message-file-name">${file.name} (${formatFileSize(file.size)})</div>
-      </div>
-    `;
-  } else {
-    // For other files, show appropriate icon
-    let iconSvg = `
-      <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2">
-        <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
-        <polyline points="14 2 14 8 20 8"></polyline>
-      </svg>
-    `;
-    
-    fileContent = `
-      <div class="message-content">
-        <div class="message-file-icon">
-          ${iconSvg}
-          <div class="upload-overlay">
-            <div class="upload-spinner"></div>
-          </div>
-        </div>
-        <div class="message-file-name">${file.name} (${formatFileSize(file.size)})</div>
-      </div>
-    `;
-  }
-  
-  // Add time
-  message.innerHTML = `
-    ${fileContent}
-    <div class="message-time">${hours}:${minutes} · Uploading...</div>
-  `;
-  
-  return message;
-}
-
-// Helper function for fetchMessages if it's missing
-if (typeof fetchMessages !== 'function') {
-  console.warn('[Messages] fetchMessages not found, creating fallback function');
-  window.fetchMessages = function(userId, page = 1, limit = 30, lastMessageId = 0) {
-    let url = `/get_messages?user_id=${userId}&page=${page}&limit=${limit}`;
-    
-    if (lastMessageId > 0) {
-      url += `&last_message_id=${lastMessageId}`;
-    }
-    
-    return fetch(url)
-      .then(response => {
-        if (!response.ok) {
-          throw new Error('Failed to fetch messages');
-        }
-        return response.json();
-      });
-  };
-}
-
-// Helper function to escape HTML if it's missing
-if (typeof escapeHtml !== 'function') {
-  console.warn('[Messages] escapeHtml not found, creating function');
-  window.escapeHtml = function(text) {
-    if (!text) return '';
-    const div = document.createElement('div');
-    div.textContent = text;
-    return div.innerHTML;
-  };
-}
-
-// Helper function for formatFileSize if it's missing
-if (typeof formatFileSize !== 'function') {
-  console.warn('[Messages] formatFileSize not found, creating function');
-  window.formatFileSize = function(bytes) {
-    if (!bytes) return '0 bytes';
-    if (bytes < 1024) return bytes + ' bytes';
-    else if (bytes < 1048576) return (bytes / 1024).toFixed(1) + ' KB';
-    else return (bytes / 1048576).toFixed(1) + ' MB';
-  };
-}
-
-/**
- * Direct fix for message sending
- */
-function fixMessageSending() {
-  console.log('[FIX] Installing direct message sending fix');
-  
-  // Find all necessary elements
-  const chatMessages = document.querySelector('.chat-messages');
-  const messageInput = document.querySelector('.message-input-field input');
-  const sendButton = document.querySelector('.send-button');
-  
-  if (!chatMessages || !messageInput || !sendButton) {
-    console.error('[FIX] Could not find all required elements for message sending');
-    return;
-  }
-  
-  // Get the recipient ID from the active chat
-  let recipientId = null;
-  if (typeof ChatApp !== 'undefined' && ChatApp.activeChat) {
-    recipientId = ChatApp.activeChat.userId;
-  } else {
-    // Try to extract recipient ID from the URL or data attributes
-    const chatHeader = document.querySelector('.chat-header');
-    if (chatHeader) {
-      recipientId = chatHeader.getAttribute('data-user-id');
-    }
-  }
-  
-  if (!recipientId) {
-    console.error('[FIX] Could not determine recipient ID');
-    return;
-  }
-  
-  console.log(`[FIX] Setting up message handlers for recipient ${recipientId}`);
-  
-  // Set up input handler
-  messageInput.addEventListener('input', function() {
-    if (this.value.trim()) {
-      sendButton.classList.add('active');
-    } else {
-      sendButton.classList.remove('active');
-    }
-  });
-  
-  // Set up keydown handler
-  messageInput.addEventListener('keydown', function(e) {
-    if (e.key === 'Enter' && !e.shiftKey && this.value.trim()) {
-      e.preventDefault();
-      const text = this.value.trim();
-      console.log(`[FIX] Sending message via Enter key: ${text}`);
-      sendDirectMessage(text, recipientId, chatMessages);
-    }
-  });
-  
-  // Set up click handler
-  sendButton.addEventListener('click', function() {
-    const text = messageInput.value.trim();
-    if (text) {
-      console.log(`[FIX] Sending message via button click: ${text}`);
-      sendDirectMessage(text, recipientId, chatMessages);
-    }
-  });
-  
-  console.log('[FIX] Message sending fix installed');
-}
-
-/**
- * Direct message sending implementation
- */
-function sendDirectMessage(text, recipientId, chatMessages) {
-  // Create a temporary message immediately
-  const tempMessageEl = document.createElement('div');
-  tempMessageEl.className = 'message message-sent message-pending';
-  
-  // Format timestamp
-  const now = new Date();
-  const hours = String(now.getHours()).padStart(2, '0');
-  const minutes = String(now.getMinutes()).padStart(2, '0');
-  
-  // Add content
-  tempMessageEl.innerHTML = `
-    <div class="message-content">${escapeHtml(text)}</div>
-    <div class="message-time">
-      ${hours}:${minutes}
-      <span class="message-status">Sending...</span>
-    </div>
-  `;
-  
-  // Find or create messages container
+  // Get or create messages container
   let messagesContainer = chatMessages.querySelector('.messages-container');
-  if (!messagesContainer) {
-    console.log('[FIX] Creating messages container as it does not exist');
+  const noMessages = chatMessages.querySelector('.no-messages');
+  if (noMessages) {
+    chatMessages.removeChild(noMessages);
     messagesContainer = document.createElement('div');
     messagesContainer.className = 'messages-container';
     chatMessages.appendChild(messagesContainer);
   }
   
-  // Add the temp message
-  messagesContainer.appendChild(tempMessageEl);
-  
-  // Make it visible
-  setTimeout(() => {
-    tempMessageEl.classList.add('message-visible');
-  }, 10);
-  
-  // Scroll to the new message
-  chatMessages.scrollTop = chatMessages.scrollHeight;
-  
-  // Clear the input field
-  const messageInput = document.querySelector('.message-input-field input');
-  if (messageInput) {
-    messageInput.value = '';
-    
-    // Update send button state
-    const sendButton = document.querySelector('.send-button');
-    if (sendButton) sendButton.classList.remove('active');
+  if (!messagesContainer) {
+    messagesContainer = document.createElement('div');
+    messagesContainer.className = 'messages-container';
+    chatMessages.appendChild(messagesContainer);
   }
   
-  // Send the actual message to the server
-  fetch('/send_message', {
-    method: 'POST',
-    headers: {
-      'Content-Type': 'application/json'
-    },
-    body: JSON.stringify({
-      recipient_id: recipientId,
-      content: text
-    })
-  })
-  .then(response => {
-    if (!response.ok) {
-      throw new Error(`Server returned ${response.status}: ${response.statusText}`);
-    }
-    return response.json();
-  })
-  .then(data => {
-    console.log('[FIX] Message sent successfully:', data);
+  // Process each file
+  Array.from(files).forEach(file => {
+    // Create message element to show the file
+    const message = document.createElement('div');
+    message.className = 'message message-sent message-file';
     
-    // Remove the temporary message
-    if (tempMessageEl && tempMessageEl.parentNode) {
-      tempMessageEl.parentNode.removeChild(tempMessageEl);
-    }
+    // Format timestamp
+    const now = new Date();
+    const hours = String(now.getHours()).padStart(2, '0');
+    const minutes = String(now.getMinutes()).padStart(2, '0');
     
-    // Add the real message with server data
-    if (data.success && data.message) {
-      addMessageToChat(data.message, chatMessages);
-      
-      // Update sidebar chat entry without refreshing the whole sidebar
-      if (typeof updateSingleChat === 'function') {
-        // Create updated chat object for the sidebar
-        const chatData = {
-          user_id: recipientId,
-          last_message: text,
-          last_message_time: data.message.timestamp,
-          unread_count: 0 // It's our message, so no unread count
-        };
-        
-        updateSingleChat(chatData);
-      } else {
-        // Fallback to old method
-        setTimeout(() => {
-          console.log('[FIX] Refreshing sidebar after successful message');
-          if (typeof loadSidebar === 'function') {
-            loadSidebar();
-          }
-        }, 500);
-      }
+    // Determine file type and create content
+    const isImage = file.type.startsWith('image/');
+    let fileContent;
+    
+    if (isImage) {
+      const imageUrl = URL.createObjectURL(file);
+      fileContent = `
+        <div class="message-image">
+          <img src="${imageUrl}" alt="${file.name}" style="max-width: 200px; max-height: 200px; border-radius: 8px;">
+        </div>
+        <div class="message-file-name">${file.name} (${formatFileSize(file.size)})</div>
+      `;
     } else {
-      throw new Error(data.error || 'Failed to send message');
+      // Icon based on file type
+      let iconSvg = `
+        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2">
+          <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
+          <polyline points="14 2 14 8 20 8"></polyline>
+        </svg>
+      `;
+      
+      fileContent = `
+        <div class="message-file-icon">${iconSvg}</div>
+        <div class="message-file-name">${file.name} (${formatFileSize(file.size)})</div>
+      `;
     }
-  })
-  .catch(error => {
-    console.error('[FIX] Error sending message:', error);
     
-    // Show error on temporary message
-    if (tempMessageEl && tempMessageEl.parentNode) {
-      tempMessageEl.classList.add('message-error');
-      const contentDiv = tempMessageEl.querySelector('.message-content');
-      if (contentDiv) {
-        contentDiv.innerHTML += '<div class="message-error-text">Failed to send</div>';
-      }
-    }
+    // Add content to message
+    message.innerHTML = `
+      ${fileContent}
+      <div class="message-time">${hours}:${minutes}</div>
+    `;
     
-    // Show error notification
-    if (typeof showErrorNotification === 'function') {
-      showErrorNotification('Failed to send message. Please try again.');
-    }
+    // Add message to container
+    messagesContainer.appendChild(message);
+    
+    // Scroll to new message
+    chatMessages.scrollTop = chatMessages.scrollHeight;
+    
+    // TODO: Send file to server (implement server-side handling)
+    // This would involve using FormData and fetch to upload the file
   });
 }
-
-// Make sure to add this CSS to the page for the fixing
-function addFixStyles() {
-  const styleEl = document.createElement('style');
-  styleEl.textContent = `
-    .message-pending {
-      opacity: 0.7;
-    }
-    .message-status {
-      font-size: 10px;
-      color: rgba(255, 255, 255, 0.6);
-      margin-left: 5px;
-    }
-    .message-error .message-content {
-      position: relative;
-    }
-    .message-error-text {
-      color: #e57373;
-      font-size: 11px;
-      margin-top: 4px;
-      font-style: italic;
-    }
-    .message {
-      max-width: 50%;
-      padding: 10px 12px;
-      position: relative;
-      margin-bottom: 6px;
-      line-height: 1.4;
-      border-radius: 8px;
-      animation: fadeIn 0.2s ease-out;
-      box-shadow: 0 1px 2px rgba(0, 0, 0, 0.2);
-      word-wrap: break-word;
-      overflow-wrap: break-word;
-      hyphens: auto;
-      opacity: 0;
-      transform: translateY(10px);
-      transition: opacity 0.2s ease-out, transform 0.2s ease-out;
-    }
-    .message-visible {
-      opacity: 1;
-      transform: translateY(0);
-    }
-    .message-sent {
-      background-color: #b4b4b4;
-      color: white;
-      align-self: flex-end;
-      border-radius: 8px 8px 2px 8px;
-      margin-left: auto;
-    }
-    .message-received {
-      background-color: #222222;
-      color: white;
-      align-self: flex-start;
-      border-radius: 8px 8px 8px 2px;
-      margin-right: auto;
-    }
-    .messages-container {
-      display: flex;
-      flex-direction: column;
-      gap: 8px;
-      width: 100%;
-    }
-  `;
-  document.head.appendChild(styleEl);
-}
-
-// Call this function when DOM content is loaded
-document.addEventListener('DOMContentLoaded', function() {
-  // Wait a bit for other scripts to initialize
-  setTimeout(() => {
-    // Add the fix styles first
-    addFixStyles();
-    
-    // Set up a mutation observer to detect when chat is opened
-    const observer = new MutationObserver(function(mutations) {
-      for (let mutation of mutations) {
-        if (mutation.addedNodes.length) {
-          // Check if a chat container was added
-          const chatContainer = document.querySelector('.chat-container');
-          if (chatContainer) {
-            console.log('[FIX] Detected chat container, applying message sending fix');
-            fixMessageSending();
-          }
-        }
-      }
-    });
-    
-    // Start observing
-    observer.observe(document.body, { childList: true, subtree: true });
-    
-    // Also try to fix immediately if chat is already open
-    const existingChat = document.querySelector('.chat-container');
-    if (existingChat) {
-      console.log('[FIX] Found existing chat container, applying message sending fix');
-      fixMessageSending();
-    }
-  }, 500);
-});

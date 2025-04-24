@@ -1,308 +1,417 @@
 /**
- * Handle loading and displaying contacts and conversation
+ * Contact management functions
  */
 
 /**
- * Load and display sidebar chats and contacts
+ * Load user contacts and chats
  */
 function loadSidebar() {
-  console.log('Loading sidebar data');
-  const contactsList = document.getElementById('contactsList');
-  
-  if (!contactsList) {
-    console.error('Contacts list container not found');
-    return;
-  }
-  
-  // Show loading indicator
-  contactsList.innerHTML = '<div class="loading-sidebar">Loading chats...</div>';
-  
-  // Load chats
-  fetch('/get_chat_list')
-    .then(response => {
-      if (!response.ok) {
-        throw new Error(`Failed to load chat list: ${response.status} ${response.statusText}`);
-      }
-      return response.json();
-    })
-    .then(data => {
-      if (!data.success) {
-        throw new Error(data.error || 'Failed to load chats');
+  // Load both contacts and chats
+  Promise.all([fetchContacts(), fetchChatList()])
+    .then(([contactsData, chatsData]) => {
+      // Store data in app state
+      if (contactsData.contacts) {
+        ChatApp.contacts = contactsData.contacts;
       }
       
-      // Clear the container
-      contactsList.innerHTML = '';
-      
-      // Process chats (there are no separate sections anymore - all in one list)
-      const chatList = data.chats || [];
-      
-      if (chatList.length === 0) {
-        // No chats found
-        const noChatsMessage = document.createElement('div');
-        noChatsMessage.className = 'no-items-message';
-        noChatsMessage.textContent = 'No chats yet. Use search to find people.';
-        contactsList.appendChild(noChatsMessage);
-      } else {
-        // Create and add chat items
-        chatList.forEach(chat => {
-          const chatItem = createChatItem(chat);
-          contactsList.appendChild(chatItem);
-        });
+      if (chatsData.chats) {
+        ChatApp.chats = chatsData.chats;
       }
+      
+      // Render sidebar items
+      renderSidebar(ChatApp.contacts, ChatApp.chats);
     })
     .catch(error => {
-      console.error('Error loading sidebar:', error);
-      
-      // Show error message
-      contactsList.innerHTML = `
-        <div class="sidebar-error">
-          Failed to load chats. <a href="#" onclick="loadSidebar(); return false;">Retry</a>
-        </div>
-      `;
+      console.error('Error loading sidebar data:', error);
+      showErrorNotification('Failed to load contacts and chats');
     });
 }
 
 /**
- * Create a chat item for the sidebar
+ * Fetch contacts from the server
  */
-function createChatItem(chat) {
-  const item = document.createElement('div');
-  item.className = 'contact-item conversation-item';
-  item.dataset.userId = chat.user_id;
+function fetchContacts() {
+  return fetch('/get_contacts', {
+    method: 'GET',
+    headers: {
+      'Cache-Control': 'no-cache',
+      'Content-Type': 'application/json'
+    }
+  })
+  .then(response => {
+    if (!response.ok) throw new Error('Failed to load contacts');
+    return response.json();
+  });
+}
+
+/**
+ * Fetch chat list from the server
+ */
+function fetchChatList() {
+  return fetch('/get_chat_list', {
+    method: 'GET',
+    headers: {
+      'Cache-Control': 'no-cache',
+      'Content-Type': 'application/json'
+    }
+  })
+  .then(response => {
+    if (!response.ok) throw new Error('Failed to load chats');
+    return response.json();
+  });
+}
+
+/**
+ * Render the sidebar with contacts and chats
+ */
+function renderSidebar(contacts, chats) {
+  const contactsList = document.getElementById('contactsList');
+  const noContactsMessage = document.querySelector('.no-contacts-message');
   
-  // Avatar (with image or initials)
-  const avatar = document.createElement('div');
-  avatar.className = 'contact-avatar';
+  if (!contactsList) return;
   
-  if (chat.avatar_path) {
-    const img = document.createElement('img');
-    img.src = chat.avatar_path;
-    img.alt = chat.name;
-    img.onerror = function() {
-      this.remove();
-      const initials = document.createElement('div');
-      initials.className = 'avatar-initials';
-      initials.textContent = getInitials(chat.name);
-      avatar.appendChild(initials);
-    };
-    avatar.appendChild(img);
+  // Clear existing items
+  contactsList.innerHTML = '';
+  
+  // Create chats section
+  const chatSection = document.createElement('div');
+  chatSection.className = 'sidebar-section chats-section';
+  
+  const chatTitle = document.createElement('div');
+  chatTitle.className = 'section-title';
+  chatTitle.textContent = 'Chats';
+  chatSection.appendChild(chatTitle);
+  
+  // Add chats
+  if (chats && chats.length > 0) {
+    chats.forEach(chat => {
+      const chatItem = createChatElement(chat);
+      chatSection.appendChild(chatItem);
+    });
+    contactsList.appendChild(chatSection);
+    
+    // Hide "no contacts" message
+    if (noContactsMessage) noContactsMessage.style.display = 'none';
   } else {
-    const initials = document.createElement('div');
-    initials.className = 'avatar-initials';
-    initials.textContent = getInitials(chat.name);
-    avatar.appendChild(initials);
+    // If no chats, show a message in the section
+    const noChatsMsg = document.createElement('div');
+    noChatsMsg.className = 'no-items-message';
+    noChatsMsg.textContent = 'No chats yet';
+    chatSection.appendChild(noChatsMsg);
+    contactsList.appendChild(chatSection);
+  }
+  
+  // Removed: Separator and contacts section
+}
+
+/**
+ * Create a contact element
+ */
+function createContactElement(contact) {
+  const contactItem = document.createElement('div');
+  contactItem.className = 'contact-item';
+  contactItem.dataset.contactId = contact.id;
+  
+  // Avatar
+  const contactAvatar = document.createElement('div');
+  contactAvatar.className = 'contact-avatar';
+  
+  if (contact.avatar_path) {
+    contactAvatar.innerHTML = `<img src="${contact.avatar_path}" alt="${contact.name}">`;
+  } else {
+    contactAvatar.innerHTML = `<div class="avatar-initials">${contact.name.charAt(0)}</div>`;
   }
   
   // Contact info
-  const info = document.createElement('div');
-  info.className = 'contact-info';
+  const contactInfo = document.createElement('div');
+  contactInfo.className = 'contact-info';
   
-  const name = document.createElement('div');
-  name.className = 'contact-name';
-  name.textContent = chat.name;
+  const contactName = document.createElement('div');
+  contactName.className = 'contact-name';
   
-  // Last message
+  // Add "C" indicator for contacts
+  contactName.innerHTML = `${contact.name} <span class="contact-indicator">C</span>`;
+  
+  // Assemble elements
+  contactInfo.appendChild(contactName);
+  
+  contactItem.appendChild(contactAvatar);
+  contactItem.appendChild(contactInfo);
+  
+  // Add click handler
+  contactItem.addEventListener('click', () => {
+    openChatWithUser(contact.id, contact.name);
+  });
+  
+  return contactItem;
+}
+
+/**
+ * Create a chat element
+ */
+function createChatElement(chat) {
+  const chatItem = document.createElement('div');
+  chatItem.className = 'contact-item chat-item';
+  chatItem.dataset.userId = chat.user_id;
+  
+  // Avatar
+  const userAvatar = document.createElement('div');
+  userAvatar.className = 'contact-avatar';
+  
+  if (chat.avatar_path) {
+    userAvatar.innerHTML = `<img src="${chat.avatar_path}" alt="${chat.name}">`;
+  } else {
+    userAvatar.innerHTML = `<div class="avatar-initials">${chat.name.charAt(0)}</div>`;
+  }
+  
+  // User info
+  const userInfo = document.createElement('div');
+  userInfo.className = 'contact-info';
+  
+  const userName = document.createElement('div');
+  userName.className = 'contact-name';
+  userName.textContent = chat.name;  // Just set the name text, without the indicator
+  
+  // Last message preview
   const lastMessage = document.createElement('div');
   lastMessage.className = 'last-message';
   
-  const messageText = document.createElement('div');
-  messageText.className = 'message-text';
-  messageText.textContent = formatMessagePreview(chat.last_message);
-  
-  const messageTime = document.createElement('div');
-  messageTime.className = 'message-time';
-  if (chat.last_message_time) {
-    messageTime.textContent = formatTimestamp(new Date(chat.last_message_time));
+  // Truncate message if needed
+  let messagePreview = chat.last_message;
+  if (messagePreview.length > 25) {
+    messagePreview = messagePreview.substring(0, 25) + '...';
   }
+  lastMessage.textContent = messagePreview;
   
-  lastMessage.appendChild(messageText);
-  lastMessage.appendChild(messageTime);
-  
-  info.appendChild(name);
-  info.appendChild(lastMessage);
-  
-  // Add elements to item
-  item.appendChild(avatar);
-  item.appendChild(info);
-  
-  // Add unread badge if there are unread messages
-  if (chat.unread_count && chat.unread_count > 0) {
+  // Unread badge
+  if (chat.unread_count > 0) {
     const unreadBadge = document.createElement('div');
     unreadBadge.className = 'unread-badge';
-    unreadBadge.textContent = chat.unread_count > 99 ? '99+' : chat.unread_count;
-    item.appendChild(unreadBadge);
+    unreadBadge.textContent = chat.unread_count;
+    chatItem.appendChild(unreadBadge);
   }
   
-  // Add block indicator if needed
+  // Priority: Show block indicator first, then contact indicator if not blocked
   if (chat.is_blocked_by_you) {
-    const blockIndicator = document.createElement('div');
+    const blockIndicator = document.createElement('span');
     blockIndicator.className = 'block-indicator blocked-by-you';
-    blockIndicator.textContent = 'Blocked';
-    item.appendChild(blockIndicator);
+    blockIndicator.textContent = 'B';
+    blockIndicator.setAttribute('data-tooltip', 'You have blocked this user');
+    
+    // Add event listeners for showing/hiding tooltip
+    blockIndicator.addEventListener('mouseenter', showTooltip);
+    blockIndicator.addEventListener('mouseleave', hideTooltip);
+    
+    chatItem.appendChild(blockIndicator);
   } else if (chat.has_blocked_you) {
-    const blockIndicator = document.createElement('div');
+    const blockIndicator = document.createElement('span');
     blockIndicator.className = 'block-indicator blocked-you';
-    blockIndicator.textContent = 'Blocked you';
-    item.appendChild(blockIndicator);
-  }
-  
-  // Add contact indicator if this is a contact
-  if (chat.is_contact) {
-    const contactIndicator = document.createElement('div');
+    blockIndicator.textContent = 'B';
+    blockIndicator.setAttribute('data-tooltip', 'This user has blocked you');
+    
+    // Add event listeners for showing/hiding tooltip
+    blockIndicator.addEventListener('mouseenter', showTooltip);
+    blockIndicator.addEventListener('mouseleave', hideTooltip);
+    
+    chatItem.appendChild(blockIndicator);
+  } else if (chat.is_contact) {
+    // Only show contact indicator if not blocked
+    const contactIndicator = document.createElement('span');
     contactIndicator.className = 'contact-indicator';
-    contactIndicator.textContent = 'Contact';
-    item.appendChild(contactIndicator);
+    contactIndicator.textContent = 'C';
+    contactIndicator.setAttribute('data-tooltip', 'This user is in your contacts');
+    
+    // Add event listeners for showing/hiding tooltip
+    contactIndicator.addEventListener('mouseenter', showTooltip);
+    contactIndicator.addEventListener('mouseleave', hideTooltip);
+    
+    chatItem.appendChild(contactIndicator);
   }
   
-  // Add click event
-  item.addEventListener('click', function() {
-    // Remove active class from other items
-    document.querySelectorAll('.contact-item.active').forEach(el => {
-      el.classList.remove('active');
-    });
-    
-    // Add active class to this item
-    this.classList.add('active');
-    
-    // Open chat
-    openChat(chat.user_id, chat.name);
+  // Assemble elements
+  userInfo.appendChild(userName);
+  userInfo.appendChild(lastMessage);
+  
+  chatItem.appendChild(userAvatar);
+  chatItem.appendChild(userInfo);
+  
+  // Add click handler
+  chatItem.addEventListener('click', () => {
+    openChatWithUser(chat.user_id, chat.name);
   });
   
-  return item;
+  return chatItem;
 }
 
 /**
- * Update a single chat in the sidebar without refreshing the whole sidebar
- * @param {Object} chatData - The updated chat data
+ * Show tooltip when hovering over contact indicator
  */
-function updateSingleChat(chatData) {
-  if (!chatData || !chatData.user_id) {
-    console.error('[Contacts] Invalid chat data provided to updateSingleChat');
-    return;
+function showTooltip(event) {
+  // Remove any existing tooltips
+  hideAllTooltips();
+  
+  const targetElement = event.currentTarget;
+  const tooltipText = targetElement.getAttribute('data-tooltip');
+  
+  // Create tooltip element
+  const tooltip = document.createElement('div');
+  tooltip.className = 'dynamic-tooltip';
+  tooltip.textContent = tooltipText;
+  tooltip.id = 'contact-tooltip';
+  document.body.appendChild(tooltip);
+  
+  // Position tooltip above the indicator
+  const rect = targetElement.getBoundingClientRect();
+  const centerX = rect.left + rect.width / 2;
+  tooltip.style.left = `${centerX}px`;
+  tooltip.style.top = `${rect.top - 40}px`; // Position above with some margin
+}
+
+/**
+ * Hide tooltip when not hovering
+ */
+function hideTooltip() {
+  hideAllTooltips();
+}
+
+/**
+ * Helper to remove all tooltips
+ */
+function hideAllTooltips() {
+  const existingTooltip = document.getElementById('contact-tooltip');
+  if (existingTooltip) {
+    document.body.removeChild(existingTooltip);
   }
-  
-  console.log('[Contacts] Updating single chat:', chatData.user_id);
-  
-  // Find the existing chat item
-  const contactsList = document.getElementById('contactsList');
-  if (!contactsList) return;
-  
-  const existingItem = contactsList.querySelector(`.contact-item[data-user-id="${chatData.user_id}"]`);
-  
-  if (existingItem) {
-    // If it exists, update its content (last message, time)
-    const lastMessageEl = existingItem.querySelector('.message-text');
-    const timeEl = existingItem.querySelector('.message-time');
-    
-    if (lastMessageEl) {
-      lastMessageEl.textContent = formatMessagePreview(chatData.last_message) || '';
-    }
-    
-    if (timeEl && chatData.last_message_time) {
-      timeEl.textContent = formatTimestamp(new Date(chatData.last_message_time));
-    }
-    
-    // Update unread badge if needed
-    const unreadBadge = existingItem.querySelector('.unread-badge');
-    if (chatData.unread_count && chatData.unread_count > 0) {
-      if (unreadBadge) {
-        unreadBadge.textContent = chatData.unread_count > 99 ? '99+' : chatData.unread_count;
-      } else {
-        const newBadge = document.createElement('div');
-        newBadge.className = 'unread-badge';
-        newBadge.textContent = chatData.unread_count > 99 ? '99+' : chatData.unread_count;
-        existingItem.appendChild(newBadge);
+}
+
+/**
+ * Handler for adding a contact
+ */
+function addContactHandler(userId, userName) {
+  addToContacts(userId)
+    .then(data => {
+      if (data.success) {
+        showSuccessNotification(`${userName} added to contacts`);
+        loadSidebar(); // Reload to show updated contacts
+        
+        // Update menu in chat interface
+        updateContactMenu(userId, true);
       }
-    } else if (unreadBadge) {
-      unreadBadge.remove();
-    }
+    })
+    .catch(error => {
+      showErrorNotification('Failed to add contact. Please try again.');
+    });
+}
+
+/**
+ * Handler for removing a contact
+ */
+function removeContactHandler(userId) {
+  removeFromContacts(userId)
+    .then(data => {
+      if (data.success) {
+        showNotification('Contact removed', 'remove-contact');
+        loadSidebar(); // Reload to show updated contacts
+        
+        // Update menu in chat interface
+        updateContactMenu(userId, false);
+      }
+    })
+    .catch(error => {
+      showErrorNotification('Failed to remove contact. Please try again.');
+    });
+}
+
+/**
+ * Update contact menu after adding/removing contact
+ */
+function updateContactMenu(userId, isAdded) {
+  const dropdown = document.getElementById('contactDropdownMenu');
+  if (!dropdown) return;
+  
+  if (isAdded) {
+    dropdown.innerHTML = `
+      <div class="dropdown-menu-options">
+        <div class="dropdown-option" id="removeContactOption">
+          <div class="dropdown-option-icon">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <path d="M17 7l-10 10"></path>
+              <path d="M7 7l10 10"></path>
+            </svg>
+          </div>
+          <div class="dropdown-option-label">Remove from contacts</div>
+        </div>
+      </div>
+    `;
     
-    // Move to top of conversations without animation
-    // Instead of cloning and replacing with animation, we'll just move the element
-    if (contactsList.firstChild && existingItem !== contactsList.firstChild) {
-      contactsList.insertBefore(existingItem, contactsList.firstChild);
-    }
+    document.getElementById('removeContactOption').addEventListener('click', function() {
+      removeContactHandler(userId);
+      dropdown.style.display = 'none';
+    });
   } else {
-    // If it doesn't exist, we'll need to refresh the sidebar
-    // This should be rare, only when starting a new conversation
-    console.log('[Contacts] Chat not found in sidebar, refreshing');
-    loadSidebar();
+    dropdown.innerHTML = `
+      <div class="dropdown-menu-options">
+        <div class="dropdown-option" id="addContactOption">
+          <div class="dropdown-option-icon">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <path d="M12 5v14"></path>
+              <path d="M5 12h14"></path>
+            </svg>
+          </div>
+          <div class="dropdown-option-label">Add to contacts</div>
+        </div>
+      </div>
+    `;
+    
+    document.getElementById('addContactOption').addEventListener('click', function() {
+      const userName = document.querySelector('.chat-user-name').textContent;
+      addContactHandler(userId, userName);
+      dropdown.style.display = 'none';
+    });
   }
 }
 
 /**
- * Format timestamp for sidebar display
+ * Handler for blocking a user
  */
-function formatTimestamp(date) {
-  if (!date) return '';
-  
-  const now = new Date();
-  const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
-  const yesterday = new Date(today);
-  yesterday.setDate(yesterday.getDate() - 1);
-  
-  // Check if the date is today
-  if (date >= today) {
-    return date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
-  }
-  
-  // Check if the date is yesterday
-  if (date >= yesterday) {
-    return 'Yesterday';
-  }
-  
-  // Otherwise show day name for this week, or date for older
-  const dayDiff = Math.round((today - date) / (1000 * 60 * 60 * 24));
-  if (dayDiff < 7) {
-    const days = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
-    return days[date.getDay()];
-  }
-  
-  // For older messages
-  return date.toLocaleDateString([], { month: 'short', day: 'numeric' });
+function blockUserHandler(userId, userName) {
+  blockUser(userId)
+    .then(data => {
+      if (data.success) {
+        showNotification(`You have blocked ${userName}`, 'block-user');
+        loadSidebar(); // Reload to show updated UI
+        
+        // Redirect to main screen if currently chatting with blocked user
+        if (ChatApp.activeChat && ChatApp.activeChat.id == userId) {
+          // Instead of clearing the interface, reopen the chat with the blocked state
+          // This will ensure the header with avatar and name remains visible
+          openChatWithUser(userId, userName);
+        }
+      }
+    })
+    .catch(error => {
+      showErrorNotification('Failed to block user. Please try again.');
+    });
 }
 
 /**
- * Format message preview for the sidebar
+ * Handler for unblocking a user
  */
-function formatMessagePreview(message) {
-  if (!message) return '';
-  
-  // Check if this is a file message
-  if (message.startsWith('FILE:')) {
-    const parts = message.split(':');
-    const fileName = parts[2] || 'File';
-    return `📎 ${fileName}`;
-  }
-  
-  // Limit length
-  if (message.length > 30) {
-    return message.substring(0, 30) + '...';
-  }
-  
-  return message;
+function unblockUserHandler(userId, userName) {
+  unblockUser(userId)
+    .then(data => {
+      if (data.success) {
+        showSuccessNotification(`${userName} has been unblocked`);
+        loadSidebar(); // Reload to show updated UI
+        
+        // If we're in the block message screen, reload the chat
+        const blockMessage = document.querySelector('.block-message');
+        if (blockMessage && ChatApp.activeChat && ChatApp.activeChat.id == userId) {
+          openChatWithUser(userId, userName);
+        }
+      }
+    })
+    .catch(error => {
+      showErrorNotification('Failed to unblock user. Please try again.');
+    });
 }
-
-/**
- * Get initials from a name
- */
-function getInitials(name) {
-  if (!name) return '?';
-  
-  // Split the name and get the first letter of each part
-  const parts = name.split(' ');
-  if (parts.length === 1) {
-    return parts[0].charAt(0).toUpperCase();
-  } else {
-    return (parts[0].charAt(0) + parts[parts.length - 1].charAt(0)).toUpperCase();
-  }
-}
-
-// Initialize contacts when the page loads
-document.addEventListener('DOMContentLoaded', function() {
-  // Load sidebar
-  loadSidebar();
-  
-  // Set up periodic refresh
-  setInterval(loadSidebar, 30000);
-});
