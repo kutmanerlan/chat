@@ -219,7 +219,6 @@ class GroupMessage(db.Model):
             'id': self.id,
             'group_id': self.group_id,
             'sender_id': self.sender_id,
-            'sender_name': self.sender.name if self.sender else 'Unknown',
             'content': self.content,
             'timestamp': self.timestamp.isoformat(),
             'is_edited': self.is_edited,

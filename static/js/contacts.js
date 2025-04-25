@@ -3,15 +3,21 @@
  */
 
 /**
- * Load user contacts and chats
+ * Load user contacts, groups and chats
  */
 function loadSidebar() {
-  // Load both contacts and chats
-  Promise.all([fetchContacts(), fetchChatList()])
-    .then(([contactsData, chatsData]) => {
+  // Load contacts, groups and chats
+  Promise.all([fetchContacts(), fetchUserGroups(), fetchChatList()])
+    .then(([contactsData, groupsData, chatsData]) => {
       // Store data in app state
       if (contactsData.contacts) {
         ChatApp.contacts = contactsData.contacts;
+      }
+      
+      if (groupsData.success && groupsData.groups) {
+        ChatApp.groups = groupsData.groups;
+      } else {
+        ChatApp.groups = [];
       }
       
       if (chatsData.chats) {
@@ -19,7 +25,7 @@ function loadSidebar() {
       }
       
       // Render sidebar items
-      renderSidebar(ChatApp.contacts, ChatApp.chats);
+      renderSidebar(ChatApp.contacts, ChatApp.groups, ChatApp.chats);
     })
     .catch(error => {
       console.error('Error loading sidebar data:', error);
@@ -28,43 +34,9 @@ function loadSidebar() {
 }
 
 /**
- * Fetch contacts from the server
+ * Render the sidebar with contacts, groups and chats
  */
-function fetchContacts() {
-  return fetch('/get_contacts', {
-    method: 'GET',
-    headers: {
-      'Cache-Control': 'no-cache',
-      'Content-Type': 'application/json'
-    }
-  })
-  .then(response => {
-    if (!response.ok) throw new Error('Failed to load contacts');
-    return response.json();
-  });
-}
-
-/**
- * Fetch chat list from the server
- */
-function fetchChatList() {
-  return fetch('/get_chat_list', {
-    method: 'GET',
-    headers: {
-      'Cache-Control': 'no-cache',
-      'Content-Type': 'application/json'
-    }
-  })
-  .then(response => {
-    if (!response.ok) throw new Error('Failed to load chats');
-    return response.json();
-  });
-}
-
-/**
- * Render the sidebar with contacts and chats
- */
-function renderSidebar(contacts, chats) {
+function renderSidebar(contacts, groups, chats) {
   const contactsList = document.getElementById('contactsList');
   const noContactsMessage = document.querySelector('.no-contacts-message');
   
@@ -72,6 +44,30 @@ function renderSidebar(contacts, chats) {
   
   // Clear existing items
   contactsList.innerHTML = '';
+  
+  // Create groups section
+  if (groups && groups.length > 0) {
+    const groupSection = document.createElement('div');
+    groupSection.className = 'sidebar-section groups-section';
+    
+    const groupTitle = document.createElement('div');
+    groupTitle.className = 'section-title';
+    groupTitle.textContent = 'Groups';
+    groupSection.appendChild(groupTitle);
+    
+    // Add groups
+    groups.forEach(group => {
+      const groupItem = createGroupElement(group);
+      groupSection.appendChild(groupItem);
+    });
+    
+    contactsList.appendChild(groupSection);
+    
+    // Add separator
+    const separator1 = document.createElement('div');
+    separator1.className = 'sidebar-separator';
+    contactsList.appendChild(separator1);
+  }
   
   // Create chats section
   const chatSection = document.createElement('div');
@@ -100,8 +96,70 @@ function renderSidebar(contacts, chats) {
     chatSection.appendChild(noChatsMsg);
     contactsList.appendChild(chatSection);
   }
+}
+
+/**
+ * Create a group element
+ */
+function createGroupElement(group) {
+  const groupItem = document.createElement('div');
+  groupItem.className = 'contact-item group-item';
+  groupItem.dataset.groupId = group.id;
   
-  // Removed: Separator and contacts section
+  // Group avatar
+  const groupAvatar = document.createElement('div');
+  groupAvatar.className = 'contact-avatar group-avatar';
+  
+  // Use first letter of group name for avatar
+  groupAvatar.innerHTML = `<div class="avatar-initials">${group.name.charAt(0)}</div>`;
+  
+  // Group info
+  const groupInfo = document.createElement('div');
+  groupInfo.className = 'contact-info';
+  
+  const groupName = document.createElement('div');
+  groupName.className = 'contact-name';
+  groupName.textContent = group.name;
+  
+  // Show members count or last message if available
+  const groupDetails = document.createElement('div');
+  groupDetails.className = 'last-message';
+  
+  if (group.last_message) {
+    let messagePreview = group.last_message.content;
+    if (messagePreview.length > 25) {
+      messagePreview = messagePreview.substring(0, 25) + '...';
+    }
+    
+    // Show sender name + message
+    const senderName = group.last_message.sender_name || 'Someone';
+    groupDetails.textContent = `${senderName}: ${messagePreview}`;
+  } else {
+    // If no messages, show members count
+    groupDetails.textContent = `${group.member_count || 0} members`;
+  }
+  
+  // Unread badge
+  if (group.unread_count && group.unread_count > 0) {
+    const unreadBadge = document.createElement('div');
+    unreadBadge.className = 'unread-badge';
+    unreadBadge.textContent = group.unread_count;
+    groupItem.appendChild(unreadBadge);
+  }
+  
+  // Assemble elements
+  groupInfo.appendChild(groupName);
+  groupInfo.appendChild(groupDetails);
+  
+  groupItem.appendChild(groupAvatar);
+  groupItem.appendChild(groupInfo);
+  
+  // Add click handler
+  groupItem.addEventListener('click', () => {
+    openGroupChat(group.id, group.name);
+  });
+  
+  return groupItem;
 }
 
 /**

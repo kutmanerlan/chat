@@ -1,58 +1,57 @@
 /**
- * Chat interface and message display functions
+ * Chat functionality for direct messaging
  */
 
 /**
- * Open a chat with a user
+ * Open chat with a user
  */
 function openChatWithUser(userId, userName) {
   // Store active chat info
-  ChatApp.activeChat = { id: userId, name: userName };
+  ChatApp.activeChat = { id: userId, name: userName, type: 'user' };
   
-  // Get user info and check block status
-  Promise.all([getUserInfo(userId), checkBlockStatus(userId)])
-    .then(([userData, blockStatus]) => {
-      // Create the chat interface with block status
-      createChatInterface(userData, blockStatus);
+  console.log(`Opening chat with user: ${userName} (${userId})`);
+  
+  // Check if user is blocked first
+  checkBlockStatus(userId)
+    .then(blockData => {
+      if (blockData.isBlockedByYou) {
+        // Show blocked by you interface
+        createBlockedByYouInterface(userId, userName);
+        highlightActiveItem(userId);
+        return Promise.reject({ handled: true });
+      } else if (blockData.hasBlockedYou) {
+        // Show blocked by them interface
+        createBlockedByThemInterface(userId, userName);
+        highlightActiveItem(userId);
+        return Promise.reject({ handled: true });
+      } else {
+        // Get user info
+        return getUserInfo(userId);
+      }
+    })
+    .then(userData => {
+      // Create chat interface
+      createChatInterface(userData);
       
       // Load messages
-      loadMessages(userId);
-      
-      // Highlight active contact in sidebar
-      highlightActiveContact(userId);
+      return loadMessages(userId);
+    })
+    .then(() => {
+      // Highlight active chat in sidebar
+      highlightActiveItem(userId);
     })
     .catch(error => {
-      console.error('Error opening chat:', error);
-      showErrorNotification('Failed to open chat. Please try again.');
+      if (!error.handled) {
+        console.error('Error opening chat:', error);
+        showErrorNotification('Failed to open chat. Please try again.');
+      }
     });
-}
-
-/**
- * Highlight the active contact in the sidebar
- */
-function highlightActiveContact(userId) {
-  // Remove active class from all contacts
-  document.querySelectorAll('.contact-item').forEach(item => {
-    item.classList.remove('active');
-  });
-  
-  // Find and highlight contact
-  const contactElement = document.querySelector(`.contact-item[data-contact-id="${userId}"], .contact-item[data-user-id="${userId}"]`);
-  if (contactElement) {
-    contactElement.classList.add('active');
-    
-    // Remove unread badge if exists
-    const badge = contactElement.querySelector('.unread-badge');
-    if (badge) contactElement.removeChild(badge);
-  }
 }
 
 /**
  * Create the chat interface
  */
-function createChatInterface(user, blockStatus) {
-  console.log('Creating chat interface for:', user);
-  
+function createChatInterface(user) {
   const mainContent = document.querySelector('.main-content');
   if (!mainContent) {
     console.error('Main content container not found');
@@ -61,12 +60,6 @@ function createChatInterface(user, blockStatus) {
   
   // Clear existing content
   mainContent.innerHTML = '';
-  
-  // Determine if messaging is blocked
-  const isBlocked = blockStatus.isBlocked || blockStatus.hasBlockedYou;
-  const blockMessage = blockStatus.isBlocked ? 
-    `You have blocked ${user.name}` : 
-    blockStatus.hasBlockedYou ? `${user.name} has blocked you` : '';
   
   // Create header
   const chatHeader = document.createElement('div');
@@ -95,7 +88,7 @@ function createChatInterface(user, blockStatus) {
   const menuButton = document.createElement('button');
   menuButton.className = 'chat-menu-btn';
   menuButton.innerHTML = `
-    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
       <circle cx="12" cy="5" r="1"></circle>
       <circle cx="12" cy="12" r="1"></circle>
       <circle cx="12" cy="19" r="1"></circle>
@@ -105,7 +98,7 @@ function createChatInterface(user, blockStatus) {
   // Menu button click handler
   menuButton.addEventListener('click', function(e) {
     e.stopPropagation();
-    showContactMenu(menuButton, user);
+    showContactMenu(menuButton, user.id, user.name);
   });
   
   // Messages area
@@ -116,94 +109,90 @@ function createChatInterface(user, blockStatus) {
   const messageInputContainer = document.createElement('div');
   messageInputContainer.className = 'message-input-container';
   
-  // IMPORTANT: Assemble the header first, regardless of block status
+  // Create input wrapper
+  const inputWrapper = document.createElement('div');
+  inputWrapper.className = 'input-wrapper';
+  
+  // Clip button
+  const clipButtonContainer = document.createElement('div');
+  clipButtonContainer.className = 'clip-button-container';
+  
+  const paperclipButton = document.createElement('button');
+  paperclipButton.className = 'paperclip-button';
+  paperclipButton.innerHTML = `
+    <svg viewBox="0 0 24 24" width="24" height="24" stroke="currentColor" stroke-width="2" fill="none">
+      <path d="M21.44 11.05l-9.19 9.19a6 6 0 0 1-8.49-8.49l9.19-9.19a4 4 0 0 1 5.66 5.66l-9.2 9.19a2 2 0 0 1-2.83-2.83l8.49-8.48"></path>
+    </svg>
+  `;
+  
+  // Add click handler to paperclip button
+  paperclipButton.addEventListener('click', function(e) {
+    e.preventDefault();
+    showFileUploadMenu(paperclipButton, user);
+  });
+  
+  // Input field
+  const messageInputField = document.createElement('div');
+  messageInputField.className = 'message-input-field';
+  
+  const inputField = document.createElement('input');
+  inputField.type = 'text';
+  inputField.placeholder = 'Message';
+  
+  // Send button
+  const sendButton = document.createElement('button');
+  sendButton.className = 'send-button';
+  sendButton.innerHTML = `
+    <svg viewBox="0 0 24 24" width="24" height="24" stroke="currentColor" stroke-width="2" fill="none">
+      <line x1="22" y1="2" x2="11" y2="13"></line>
+      <polygon points="22 2 15 22 11 13 2 9 22 2"></polygon>
+    </svg>
+  `;
+  
+  // Add input event handlers
+  inputField.addEventListener('input', function() {
+    if (this.value.trim()) {
+      sendButton.classList.add('active');
+    } else {
+      sendButton.classList.remove('active');
+    }
+  });
+  
+  // Add send handlers
+  sendButton.addEventListener('click', function() {
+    const text = inputField.value.trim();
+    if (text) {
+      sendMessageHandler(text, user.id, chatMessages);
+    }
+  });
+  
+  // Add enter key handler
+  inputField.addEventListener('keydown', function(e) {
+    if (e.key === 'Enter' && !e.shiftKey) {
+      e.preventDefault();
+      const text = this.value.trim();
+      if (text) {
+        sendMessageHandler(text, user.id, chatMessages);
+      }
+    }
+  });
+  
+  // Assemble everything
   userInfo.appendChild(userAvatar);
   userInfo.appendChild(userName);
+  
   chatHeader.appendChild(userInfo);
   chatHeader.appendChild(menuButton);
   
-  if (isBlocked) {
-    // Show blocked state
-    messageInputContainer.innerHTML = `
-      <div class="blocking-message">
-        <span>${blockMessage}</span>
-      </div>
-    `;
-  } else {
-    // Regular input for non-blocked users
-    const inputWrapper = document.createElement('div');
-    inputWrapper.className = 'input-wrapper';
-    
-    // Clip button
-    const clipButtonContainer = document.createElement('div');
-    clipButtonContainer.className = 'clip-button-container';
-    
-    const paperclipButton = document.createElement('button');
-    paperclipButton.className = 'paperclip-button';
-    paperclipButton.innerHTML = `
-      <svg viewBox="0 0 24 24" width="24" height="24" stroke="currentColor" stroke-width="2" fill="none">
-        <path d="M21.44 11.05l-9.19 9.19a6 6 0 0 1-8.49-8.49l9.19-9.19a4 4 0 0 1 5.66 5.66l-9.2 9.19a2 2 0 0 1-2.83-2.83l8.49-8.48"></path>
-      </svg>
-    `;
-    
-    // Add click event to paperclip button
-    paperclipButton.addEventListener('click', function() {
-      showFileMenu(null, user);
-    });
-    
-    // Input field
-    const messageInputField = document.createElement('div');
-    messageInputField.className = 'message-input-field';
-    
-    const inputField = document.createElement('input');
-    inputField.type = 'text';
-    inputField.placeholder = 'Message';
-    
-    // Send button
-    const sendButton = document.createElement('button');
-    sendButton.className = 'send-button';
-    sendButton.innerHTML = `
-      <svg viewBox="0 0 24 24" width="24" height="24" stroke="currentColor" stroke-width="2" fill="none">
-        <line x1="22" y1="2" x2="11" y2="13"></line>
-        <polygon points="22 2 15 22 11 13 2 9 22 2"></polygon>
-      </svg>
-    `;
-    
-    // Add input event handlers
-    inputField.addEventListener('input', function() {
-      if (this.value.trim()) {
-        sendButton.classList.add('active');
-      } else {
-        sendButton.classList.remove('active');
-      }
-    });
-    
-    // Add send handlers
-    sendButton.addEventListener('click', function() {
-      if (this.classList.contains('active')) {
-        sendMessageHandler(inputField.value, user.id, chatMessages);
-      }
-    });
-    
-    // Add enter key handler
-    inputField.addEventListener('keydown', function(e) {
-      if (e.key === 'Enter' && this.value.trim()) {
-        e.preventDefault();
-        sendMessageHandler(this.value, user.id, chatMessages);
-      }
-    });
-    
-    clipButtonContainer.appendChild(paperclipButton);
-    messageInputField.appendChild(inputField);
-    
-    inputWrapper.appendChild(clipButtonContainer);
-    inputWrapper.appendChild(messageInputField);
-    inputWrapper.appendChild(sendButton);
-    
-    messageInputContainer.appendChild(inputWrapper);
-  }
+  clipButtonContainer.appendChild(paperclipButton);
+  messageInputField.appendChild(inputField);
   
-  // Assemble the full UI (always include header)
+  inputWrapper.appendChild(clipButtonContainer);
+  inputWrapper.appendChild(messageInputField);
+  inputWrapper.appendChild(sendButton);
+  
+  messageInputContainer.appendChild(inputWrapper);
+  
   mainContent.appendChild(chatHeader);
   mainContent.appendChild(chatMessages);
   mainContent.appendChild(messageInputContainer);
@@ -211,272 +200,417 @@ function createChatInterface(user, blockStatus) {
   // Show chat content
   mainContent.style.display = 'flex';
   
-  // Focus input field if not blocked
-  if (!isBlocked) {
-    const inputField = document.querySelector('.message-input-field input');
-    if (inputField) {
-      setTimeout(() => inputField.focus(), 0);
-    }
-  }
+  // Focus input field
+  inputField.focus();
 }
 
 /**
- * Show contact menu when chat menu button is clicked
+ * Show contact menu
  */
-function showContactMenu(menuButton, user) {
-  // Create menu if it doesn't exist
-  let contactMenu = document.getElementById('contactDropdownMenu');
-  if (!contactMenu) {
-    contactMenu = document.createElement('div');
-    contactMenu.id = 'contactDropdownMenu';
-    contactMenu.className = 'dropdown-menu';
-    document.body.appendChild(contactMenu);
-    
-    // Close menu when clicking outside
-    document.addEventListener('click', function(e) {
-      if (contactMenu && !contactMenu.contains(e.target) && 
-          !e.target.classList.contains('chat-menu-btn') && 
-          !e.target.closest('.chat-menu-btn')) {
-        contactMenu.style.display = 'none';
+function showContactMenu(menuButton, userId, userName) {
+  // Check contact status
+  checkContactStatus(userId)
+    .then(isContact => {
+      // Create menu if it doesn't exist
+      let contactMenu = document.getElementById('contactDropdownMenu');
+      if (!contactMenu) {
+        contactMenu = document.createElement('div');
+        contactMenu.id = 'contactDropdownMenu';
+        contactMenu.className = 'dropdown-menu';
+        document.body.appendChild(contactMenu);
       }
-    });
-  }
-  
-  // Get the button position
-  const buttonRect = menuButton.getBoundingClientRect();
-  
-  // Check if user is a contact and if the user is blocked
-  Promise.all([checkContactStatus(user.id), checkBlockStatus(user.id)])
-    .then(([isContact, blockStatus]) => {
-      // Update menu content
-      contactMenu.innerHTML = `
-        <div class="dropdown-menu-options">
-          ${isContact ? 
-            `<div class="dropdown-option" id="removeContactOption">
-              <div class="dropdown-option-icon">
-                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                  <path d="M17 7l-10 10"></path>
-                  <path d="M7 7l10 10"></path>
-                </svg>
+      
+      // Clear any existing content
+      contactMenu.innerHTML = '';
+      
+      // Get the button position
+      const buttonRect = menuButton.getBoundingClientRect();
+      
+      // Check if the user is blocked
+      checkBlockStatus(userId)
+        .then(blockData => {
+          let menuItems = '';
+          
+          // Show unblock option if user is blocked by you
+          if (blockData.isBlockedByYou) {
+            menuItems = `
+              <div class="dropdown-menu-options">
+                <div class="dropdown-option" id="unblockUserOption">
+                  <div class="dropdown-option-icon">
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#4CAF50" stroke-width="2">
+                      <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"></path>
+                      <polyline points="16 17 21 12 16 7"></polyline>
+                      <line x1="21" y1="12" x2="9" y2="12"></line>
+                    </svg>
+                  </div>
+                  <div class="dropdown-option-label" style="color: #4CAF50;">Unblock User</div>
+                </div>
               </div>
-              <div class="dropdown-option-label">Remove from contacts</div>
-            </div>` : 
-            `<div class="dropdown-option" id="addContactOption">
-              <div class="dropdown-option-icon">
-                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                  <path d="M12 5v14"></path>
-                  <path d="M5 12h14"></path>
-                </svg>
+            `;
+          } else {
+            // Add to contacts option if not a contact
+            if (!isContact) {
+              menuItems += `
+                <div class="dropdown-option" id="addContactOption">
+                  <div class="dropdown-option-icon">
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                      <path d="M12 5v14"></path>
+                      <path d="M5 12h14"></path>
+                    </svg>
+                  </div>
+                  <div class="dropdown-option-label">Add to contacts</div>
+                </div>
+              `;
+            } 
+            // Remove from contacts option if is a contact
+            else {
+              menuItems += `
+                <div class="dropdown-option" id="removeContactOption">
+                  <div class="dropdown-option-icon">
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                      <path d="M17 7l-10 10"></path>
+                      <path d="M7 7l10 10"></path>
+                    </svg>
+                  </div>
+                  <div class="dropdown-option-label">Remove from contacts</div>
+                </div>
+              `;
+            }
+            
+            // Block option
+            menuItems += `
+              <div class="dropdown-option" id="blockUserOption">
+                <div class="dropdown-option-icon">
+                  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#e74c3c" stroke-width="2">
+                    <circle cx="12" cy="12" r="10"></circle>
+                    <line x1="4.93" y1="4.93" x2="19.07" y2="19.07"></line>
+                  </svg>
+                </div>
+                <div class="dropdown-option-label" style="color: #e74c3c;">Block User</div>
               </div>
-              <div class="dropdown-option-label">Add to contacts</div>
-            </div>`
+            `;
           }
           
-          <!-- Block/Unblock option -->
-          <div class="dropdown-option ${blockStatus.isBlocked ? 'unblock-option' : 'block-option'}" id="${blockStatus.isBlocked ? 'unblockUserOption' : 'blockUserOption'}">
-            <div class="dropdown-option-icon">
-              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="${blockStatus.isBlocked ? 'currentColor' : '#e74c3c'}" stroke-width="2">
-                <circle cx="12" cy="12" r="10"></circle>
-                <line x1="4.93" y1="4.93" x2="19.07" y2="19.07"></line>
-              </svg>
-            </div>
-            <div class="dropdown-option-label" style="color: ${blockStatus.isBlocked ? 'inherit' : '#e74c3c'}">
-              ${blockStatus.isBlocked ? 'Unblock user' : 'Block user'}
-            </div>
-          </div>
-        </div>
-      `;
-      
-      // Position the menu
-      contactMenu.style.display = 'block';
-      contactMenu.style.position = 'fixed';
-      contactMenu.style.left = `${buttonRect.left - contactMenu.offsetWidth + buttonRect.width}px`;
-      contactMenu.style.top = `${buttonRect.bottom + 5}px`;
-      contactMenu.style.zIndex = '10000';
-      
-      // Add event listeners
-      if (isContact) {
-        document.getElementById('removeContactOption').addEventListener('click', function() {
-          removeContactHandler(user.id);
-          contactMenu.style.display = 'none';
+          contactMenu.innerHTML = `<div class="dropdown-menu-options">${menuItems}</div>`;
+          
+          // Position the menu
+          contactMenu.style.display = 'block';
+          contactMenu.style.position = 'absolute';
+          contactMenu.style.left = `${buttonRect.left - 180}px`;
+          contactMenu.style.top = `${buttonRect.bottom + 5}px`;
+          
+          // Add event listeners to options
+          if (blockData.isBlockedByYou) {
+            document.getElementById('unblockUserOption').addEventListener('click', function() {
+              unblockUserHandler(userId, userName);
+              contactMenu.style.display = 'none';
+            });
+          } else {
+            if (!isContact) {
+              document.getElementById('addContactOption').addEventListener('click', function() {
+                addContactHandler(userId, userName);
+                contactMenu.style.display = 'none';
+              });
+            } else {
+              document.getElementById('removeContactOption').addEventListener('click', function() {
+                removeContactHandler(userId);
+                contactMenu.style.display = 'none';
+              });
+            }
+            
+            document.getElementById('blockUserOption').addEventListener('click', function() {
+              blockUserHandler(userId, userName);
+              contactMenu.style.display = 'none';
+            });
+          }
+          
+          // Close menu when clicking anywhere else
+          document.addEventListener('click', function closeMenu(e) {
+            if (!contactMenu.contains(e.target) && !menuButton.contains(e.target)) {
+              contactMenu.style.display = 'none';
+              document.removeEventListener('click', closeMenu);
+            }
+          });
         });
-      } else {
-        document.getElementById('addContactOption').addEventListener('click', function() {
-          addContactHandler(user.id, user.name);
-          contactMenu.style.display = 'none';
-        });
-      }
-      
-      // Add block/unblock event listener
-      if (blockStatus.isBlocked) {
-        document.getElementById('unblockUserOption').addEventListener('click', function() {
-          unblockUserHandler(user.id, user.name);
-          contactMenu.style.display = 'none';
-        });
-      } else {
-        document.getElementById('blockUserOption').addEventListener('click', function() {
-          showBlockConfirmation(user.id, user.name);
-          contactMenu.style.display = 'none';
-        });
-      }
     })
     .catch(error => {
-      console.error('Error checking contact/block status:', error);
-      contactMenu.style.display = 'none';
+      console.error('Error showing contact menu:', error);
     });
 }
 
 /**
- * Show block confirmation modal
+ * Show file upload menu
  */
-function showBlockConfirmation(userId, userName) {
-  // Create the modal if it doesn't exist
-  let blockModal = document.getElementById('blockUserModal');
-  if (!blockModal) {
-    blockModal = document.createElement('div');
-    blockModal.id = 'blockUserModal';
-    blockModal.className = 'modal';
-    blockModal.innerHTML = `
-      <div class="modal-content">
-        <h3>Block User</h3>
-        <p>Do you want to block <strong id="blockUserName"></strong>?</p>
-        <p class="modal-description">Blocked users won't be able to send you messages.</p>
-        <div class="modal-buttons">
-          <button id="cancelBlock" class="btn-secondary">Cancel</button>
-          <button id="confirmBlock" class="btn-primary" style="background-color: #e74c3c;">Block</button>
-        </div>
-      </div>
-    `;
-    document.body.appendChild(blockModal);
-    
-    // Cancel button handler
-    document.getElementById('cancelBlock').addEventListener('click', function() {
-      blockModal.classList.remove('active');
-      document.getElementById('overlay').classList.remove('active');
-    });
-  }
-  
-  // Update user name in the modal
-  document.getElementById('blockUserName').textContent = userName;
-  
-  // Add confirm handler
-  const confirmBtn = document.getElementById('confirmBlock');
-  // Remove existing event listeners to prevent duplicates
-  const newConfirmBtn = confirmBtn.cloneNode(true);
-  confirmBtn.parentNode.replaceChild(newConfirmBtn, confirmBtn);
-  
-  newConfirmBtn.addEventListener('click', function() {
-    blockUserHandler(userId, userName);
-    blockModal.classList.remove('active');
-    document.getElementById('overlay').classList.remove('active');
-  });
-  
-  // Show the modal
-  blockModal.classList.add('active');
-  document.getElementById('overlay').classList.add('active');
-}
-
-/**
- * Show file menu when paperclip button is clicked
- */
-function showFileMenu(fileInput, user) {
-  // Create or get the file input
-  if (!fileInput) {
-    fileInput = document.getElementById('chatFileInput');
-    if (!fileInput) {
-      fileInput = document.createElement('input');
-      fileInput.type = 'file';
-      fileInput.multiple = true;
-      fileInput.accept = 'image/*,video/*,.pdf,.doc,.docx,.xls,.xlsx,.zip,.rar';
-      fileInput.style.display = 'none';
-      fileInput.id = 'chatFileInput';
-      document.body.appendChild(fileInput);
-    }
-  }
-  
+function showFileUploadMenu(button, user) {
   // Create menu if it doesn't exist
   let fileMenu = document.getElementById('fileUploadMenu');
   if (!fileMenu) {
     fileMenu = document.createElement('div');
     fileMenu.id = 'fileUploadMenu';
     fileMenu.className = 'file-upload-menu';
-    fileMenu.innerHTML = `
-      <div class="file-menu-options">
-        <div class="file-option" id="photoOption">
-          <div class="file-option-icon">
-            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-              <rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect>
-              <circle cx="8.5" cy="8.5" r="1.5"></circle>
-              <polyline points="21 15 16 10 5 21"></polyline>
-            </svg>
-          </div>
-          <div class="file-option-label">Photo</div>
-        </div>
-        <div class="file-option" id="documentOption">
-          <div class="file-option-icon">
-            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-              <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
-              <polyline points="14 2 14 8 20 8"></polyline>
-              <line x1="16" y1="13" x2="8" y2="13"></line>
-              <line x1="16" y1="17" x2="8" y2="17"></line>
-              <polyline points="10 9 9 9 8 9"></polyline>
-            </svg>
-          </div>
-          <div class="file-option-label">Document</div>
-        </div>
-      </div>
-    `;
     document.body.appendChild(fileMenu);
-    
-    // Add event listeners to menu options
-    document.getElementById('photoOption').addEventListener('click', function() {
-      fileInput.accept = 'image/*';
-      fileInput.click();
-      fileMenu.style.display = 'none';
-    });
-    
-    document.getElementById('documentOption').addEventListener('click', function() {
-      fileInput.accept = '.pdf,.doc,.docx,.xls,.xlsx,.zip,.rar';
-      fileInput.click();
-      fileMenu.style.display = 'none';
-    });
-    
-    // Close menu when clicking outside
-    document.addEventListener('click', function(e) {
-      if (fileMenu && !fileMenu.contains(e.target) && 
-          !e.target.classList.contains('paperclip-button') && 
-          !e.target.closest('.paperclip-button')) {
-        fileMenu.style.display = 'none';
-      }
-    });
   }
   
-  // Get the paperclip button position
-  const paperclipButton = document.querySelector('.paperclip-button');
-  if (!paperclipButton) return;
+  // Clear any existing content
+  fileMenu.innerHTML = '';
   
-  const buttonRect = paperclipButton.getBoundingClientRect();
+  // Get the button position
+  const buttonRect = button.getBoundingClientRect();
   
-  // Position the menu above the input area
+  // Create file input to be used by the menu options
+  const fileInput = document.createElement('input');
+  fileInput.type = 'file';
+  fileInput.id = 'fileInput';
+  fileInput.style.display = 'none';
+  fileInput.multiple = false;
+  document.body.appendChild(fileInput);
+  
+  // Create photo/video input 
+  const mediaInput = document.createElement('input');
+  mediaInput.type = 'file';
+  mediaInput.id = 'mediaInput';
+  mediaInput.style.display = 'none';
+  mediaInput.accept = 'image/*,video/*';
+  mediaInput.multiple = false;
+  document.body.appendChild(mediaInput);
+  
+  // Add menu options
+  fileMenu.innerHTML = `
+    <div class="file-menu-options">
+      <div class="file-option" id="photoVideoOption">
+        <div class="file-option-icon">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect>
+            <circle cx="8.5" cy="8.5" r="1.5"></circle>
+            <polyline points="21 15 16 10 5 21"></polyline>
+          </svg>
+        </div>
+        <div class="file-option-label">Photo or Video</div>
+      </div>
+      
+      <div class="file-option" id="documentOption">
+        <div class="file-option-icon">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
+            <polyline points="14 2 14 8 20 8"></polyline>
+            <line x1="16" y1="13" x2="8" y2="13"></line>
+            <line x1="16" y1="17" x2="8" y2="17"></line>
+            <polyline points="10 9 9 9 8 9"></polyline>
+          </svg>
+        </div>
+        <div class="file-option-label">Document</div>
+      </div>
+    </div>
+  `;
+  
+  // Position the menu
   fileMenu.style.display = 'block';
-  fileMenu.style.position = 'fixed';
+  fileMenu.style.position = 'absolute';
   fileMenu.style.left = `${buttonRect.left}px`;
   fileMenu.style.top = `${buttonRect.top - fileMenu.offsetHeight - 10}px`;
-  fileMenu.style.zIndex = '10000';
   
-  // If menu would go off the top of the screen, position it below instead
-  if (parseFloat(fileMenu.style.top) < 0) {
-    fileMenu.style.top = `${buttonRect.bottom + 10}px`;
-  }
-  
-  // Set up file selection handler if not already done
-  if (!fileInput.hasEventListener) {
-    fileInput.addEventListener('change', function() {
-      if (this.files && this.files.length > 0) {
+  // Add event listeners to options
+  document.getElementById('photoVideoOption').addEventListener('click', function() {
+    mediaInput.onchange = function() {
+      if (this.files.length > 0) {
         handleFileSelection(this.files, user);
-        this.value = ''; // Reset for next selection
       }
-    });
-    fileInput.hasEventListener = true;
-  }
+      // Remove the input element after use
+      document.body.removeChild(mediaInput);
+    };
+    mediaInput.click();
+    fileMenu.style.display = 'none';
+  });
+  
+  document.getElementById('documentOption').addEventListener('click', function() {
+    fileInput.onchange = function() {
+      if (this.files.length > 0) {
+        handleFileSelection(this.files, user);
+      }
+      // Remove the input element after use
+      document.body.removeChild(fileInput);
+    };
+    fileInput.click();
+    fileMenu.style.display = 'none';
+  });
+  
+  // Close menu when clicking anywhere else
+  document.addEventListener('click', function closeMenu(e) {
+    if (!fileMenu.contains(e.target) && !button.contains(e.target)) {
+      fileMenu.style.display = 'none';
+      document.removeEventListener('click', closeMenu);
+      // Clean up input elements if menu is closed without selecting
+      if (document.body.contains(fileInput)) document.body.removeChild(fileInput);
+      if (document.body.contains(mediaInput)) document.body.removeChild(mediaInput);
+    }
+  });
+}
+
+/**
+ * Create interface for when you've blocked a user
+ */
+function createBlockedByYouInterface(userId, userName) {
+  const mainContent = document.querySelector('.main-content');
+  if (!mainContent) return;
+  
+  // Clear existing content
+  mainContent.innerHTML = '';
+  
+  // Create header
+  const chatHeader = document.createElement('div');
+  chatHeader.className = 'chat-header';
+  
+  // User info section
+  const userInfo = document.createElement('div');
+  userInfo.className = 'chat-user-info';
+  
+  // User avatar
+  const userAvatar = document.createElement('div');
+  userAvatar.className = 'chat-user-avatar';
+  userAvatar.innerHTML = `<div class="avatar-initials">${userName.charAt(0)}</div>`;
+  
+  // User name
+  const userNameEl = document.createElement('div');
+  userNameEl.className = 'chat-user-name';
+  userNameEl.textContent = userName;
+  
+  // Menu button
+  const menuButton = document.createElement('button');
+  menuButton.className = 'chat-menu-btn';
+  menuButton.innerHTML = `
+    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+      <circle cx="12" cy="5" r="1"></circle>
+      <circle cx="12" cy="12" r="1"></circle>
+      <circle cx="12" cy="19" r="1"></circle>
+    </svg>
+  `;
+  
+  // Menu button click handler
+  menuButton.addEventListener('click', function(e) {
+    e.stopPropagation();
+    showContactMenu(menuButton, userId, userName);
+  });
+  
+  // Block message area
+  const blockMessageArea = document.createElement('div');
+  blockMessageArea.className = 'block-message';
+  
+  // Block icon
+  const blockIcon = document.createElement('div');
+  blockIcon.className = 'block-icon';
+  blockIcon.innerHTML = `
+    <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="#777" stroke-width="1">
+      <circle cx="12" cy="12" r="10"></circle>
+      <line x1="4.93" y1="4.93" x2="19.07" y2="19.07"></line>
+    </svg>
+  `;
+  
+  // Block message
+  const blockText = document.createElement('div');
+  blockText.textContent = `You've blocked ${userName}`;
+  
+  // Unblock button
+  const unblockButton = document.createElement('button');
+  unblockButton.className = 'unblock-button';
+  unblockButton.textContent = 'Unblock';
+  unblockButton.addEventListener('click', function() {
+    unblockUserHandler(userId, userName);
+  });
+  
+  // Assemble everything
+  userInfo.appendChild(userAvatar);
+  userInfo.appendChild(userNameEl);
+  
+  chatHeader.appendChild(userInfo);
+  chatHeader.appendChild(menuButton);
+  
+  blockMessageArea.appendChild(blockIcon);
+  blockMessageArea.appendChild(blockText);
+  blockMessageArea.appendChild(unblockButton);
+  
+  mainContent.appendChild(chatHeader);
+  mainContent.appendChild(blockMessageArea);
+  
+  // Show content
+  mainContent.style.display = 'flex';
+}
+
+/**
+ * Create interface for when you've been blocked by a user
+ */
+function createBlockedByThemInterface(userId, userName) {
+  const mainContent = document.querySelector('.main-content');
+  if (!mainContent) return;
+  
+  // Clear existing content
+  mainContent.innerHTML = '';
+  
+  // Create header
+  const chatHeader = document.createElement('div');
+  chatHeader.className = 'chat-header';
+  
+  // User info section
+  const userInfo = document.createElement('div');
+  userInfo.className = 'chat-user-info';
+  
+  // User avatar
+  const userAvatar = document.createElement('div');
+  userAvatar.className = 'chat-user-avatar';
+  userAvatar.innerHTML = `<div class="avatar-initials">${userName.charAt(0)}</div>`;
+  
+  // User name
+  const userNameEl = document.createElement('div');
+  userNameEl.className = 'chat-user-name';
+  userNameEl.textContent = userName;
+  
+  // Menu button
+  const menuButton = document.createElement('button');
+  menuButton.className = 'chat-menu-btn';
+  menuButton.innerHTML = `
+    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+      <circle cx="12" cy="5" r="1"></circle>
+      <circle cx="12" cy="12" r="1"></circle>
+      <circle cx="12" cy="19" r="1"></circle>
+    </svg>
+  `;
+  
+  // Menu button click handler
+  menuButton.addEventListener('click', function(e) {
+    e.stopPropagation();
+    showContactMenu(menuButton, userId, userName);
+  });
+  
+  // Block message area
+  const blockMessageArea = document.createElement('div');
+  blockMessageArea.className = 'block-message';
+  
+  // Block icon
+  const blockIcon = document.createElement('div');
+  blockIcon.className = 'block-icon';
+  blockIcon.innerHTML = `
+    <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="#777" stroke-width="1">
+      <circle cx="12" cy="12" r="10"></circle>
+      <line x1="4.93" y1="4.93" x2="19.07" y2="19.07"></line>
+    </svg>
+  `;
+  
+  // Block message
+  const blockText = document.createElement('div');
+  blockText.textContent = `${userName} has blocked you`;
+  
+  // Assemble everything
+  userInfo.appendChild(userAvatar);
+  userInfo.appendChild(userNameEl);
+  
+  chatHeader.appendChild(userInfo);
+  chatHeader.appendChild(menuButton);
+  
+  blockMessageArea.appendChild(blockIcon);
+  blockMessageArea.appendChild(blockText);
+  
+  mainContent.appendChild(chatHeader);
+  mainContent.appendChild(blockMessageArea);
+  
+  // Show content
+  mainContent.style.display = 'flex';
 }

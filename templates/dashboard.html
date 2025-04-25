@@ -12,6 +12,7 @@
   <script src="{{ url_for('static', filename='js/api.js') }}" defer></script>
   <script src="{{ url_for('static', filename='js/ui.js') }}" defer></script>
   <script src="{{ url_for('static', filename='js/chat.js') }}" defer></script>
+  <script src="{{ url_for('static', filename='js/group_chat.js') }}" defer></script>
   <script src="{{ url_for('static', filename='js/messages.js') }}" defer></script>
   <script src="{{ url_for('static', filename='js/contacts.js') }}" defer></script>
   <script src="{{ url_for('static', filename='js/search.js') }}" defer></script>
@@ -154,6 +155,43 @@
         <button id="cancelLogout" class="btn-secondary">Отмена</button>
         <button onclick="window.location.href='{{ url_for('logout') }}';" class="btn-primary">Выйти</button>
       </div>
+    </div>
+  </div>
+  
+  <!-- Модальное окно создания группы -->
+  <div class="modal" id="createGroupModal">
+    <div class="modal-content group-modal-content">
+      <h3>Создать новую группу</h3>
+      <form id="createGroupForm">
+        <div class="form-group">
+          <label for="groupName">Название группы</label>
+          <input type="text" id="groupName" name="name" placeholder="Введите название группы" required>
+        </div>
+        
+        <div class="form-group">
+          <label for="groupDescription">Описание (опционально)</label>
+          <textarea id="groupDescription" name="description" placeholder="Опишите вашу группу"></textarea>
+        </div>
+        
+        <div class="members-section">
+          <div class="members-header">
+            <div class="members-title">Добавить участников</div>
+            <div class="members-count" id="membersCount">0 выбрано</div>
+          </div>
+          
+          <input type="text" id="searchMembers" class="search-input" placeholder="Поиск контактов">
+          
+          <div class="members-list" id="membersList">
+            <!-- Члены группы будут добавлены динамически -->
+            <div class="no-contacts">Загрузка контактов...</div>
+          </div>
+        </div>
+        
+        <div class="modal-buttons">
+          <button type="button" id="cancelGroupCreate" class="btn-secondary">Отмена</button>
+          <button type="submit" class="btn-primary">Создать группу</button>
+        </div>
+      </form>
     </div>
   </div>
 </body>

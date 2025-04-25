@@ -14,15 +14,12 @@ function fetchCurrentUser() {
     }
   })
   .then(response => {
-    if (!response.ok) throw new Error('Failed to fetch user info');
+    if (!response.ok) throw new Error('Failed to load user info');
     return response.json();
   })
   .then(data => {
+    // Store user info in app state
     ChatApp.currentUser = data;
-    console.log('Current user loaded:', ChatApp.currentUser);
-    
-    // Update UI with user information
-    updateUserInterface(data);
     return data;
   });
 }
@@ -36,7 +33,7 @@ function getUserInfo(userId) {
     headers: { 'Content-Type': 'application/json' }
   })
   .then(response => {
-    if (!response.ok) throw new Error('Failed to get user info');
+    if (!response.ok) throw new Error('Failed to load user info');
     return response.json();
   });
 }
@@ -82,13 +79,13 @@ function checkBlockStatus(userId) {
   })
   .then(data => {
     return {
-      isBlocked: data.is_blocked_by_you || false,
-      hasBlockedYou: data.has_blocked_you || false
+      isBlockedByYou: data.is_blocked_by_you,
+      hasBlockedYou: data.has_blocked_you
     };
   })
   .catch(error => {
     console.error('Error checking block status:', error);
-    return { isBlocked: false, hasBlockedYou: false };
+    return { isBlockedByYou: false, hasBlockedYou: false };
   });
 }
 
@@ -169,7 +166,7 @@ function sendMessage(recipientId, content) {
     })
   })
   .then(response => {
-    if (!response.ok) throw new Error(`Failed to send message: ${response.status}`);
+    if (!response.ok) throw new Error('Failed to send message');
     return response.json();
   });
 }
@@ -189,12 +186,7 @@ function editMessage(messageId, content) {
     })
   })
   .then(response => {
-    if (!response.ok) {
-      if (response.status === 403) {
-        throw new Error('You can only edit your own messages');
-      }
-      throw new Error('Failed to edit message');
-    }
+    if (!response.ok) throw new Error('Failed to edit message');
     return response.json();
   });
 }
@@ -222,7 +214,7 @@ function fetchChatList() {
     headers: { 'Content-Type': 'application/json' }
   })
   .then(response => {
-    if (!response.ok) throw new Error('Failed to load chat list');
+    if (!response.ok) throw new Error('Failed to load chats');
     return response.json();
   });
 }
@@ -247,8 +239,7 @@ function updateProfile(formData) {
 function uploadAvatar(file) {
   // Check file size (max 5MB)
   if (file.size > 5 * 1024 * 1024) {
-    showErrorNotification('File is too large. Maximum size is 5MB.');
-    return Promise.reject(new Error('File too large'));
+    return Promise.reject(new Error('File size exceeds 5MB limit'));
   }
   
   // Create form data
@@ -296,6 +287,105 @@ function removeFromContacts(userId) {
   })
   .then(response => {
     if (!response.ok) throw new Error('Failed to remove contact');
+    return response.json();
+  });
+}
+
+/**
+ * Get user's groups
+ */
+function fetchUserGroups() {
+  return fetch('/get_user_groups', {
+    method: 'GET',
+    headers: { 'Content-Type': 'application/json' }
+  })
+  .then(response => {
+    if (!response.ok) throw new Error('Failed to load groups');
+    return response.json();
+  });
+}
+
+/**
+ * Get messages from a group
+ */
+function fetchGroupMessages(groupId) {
+  return fetch(`/get_group_messages?group_id=${groupId}`, {
+    method: 'GET',
+    headers: { 'Content-Type': 'application/json' }
+  })
+  .then(response => {
+    if (!response.ok) throw new Error('Failed to load group messages');
+    return response.json();
+  });
+}
+
+/**
+ * Send a message to a group
+ */
+function sendGroupMessage(groupId, content) {
+  return fetch('/send_group_message', {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json'
+    },
+    body: JSON.stringify({
+      group_id: groupId,
+      content: content
+    })
+  })
+  .then(response => {
+    if (!response.ok) {
+      console.error(`Failed to send group message: ${response.status}`);
+      throw new Error(`Failed to send group message: ${response.status}`);
+    }
+    return response.json();
+  });
+}
+
+/**
+ * Get group information
+ */
+function getGroupInfo(groupId) {
+  return fetch(`/get_group_info?group_id=${groupId}`, {
+    method: 'GET',
+    headers: { 'Content-Type': 'application/json' }
+  })
+  .then(response => {
+    if (!response.ok) throw new Error('Failed to get group info');
+    return response.json();
+  });
+}
+
+/**
+ * Edit a group message
+ */
+function editGroupMessage(messageId, content) {
+  return fetch('/edit_group_message', {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json'
+    },
+    body: JSON.stringify({
+      message_id: messageId,
+      content: content
+    })
+  })
+  .then(response => {
+    if (!response.ok) throw new Error('Failed to edit message');
+    return response.json();
+  });
+}
+
+/**
+ * Fetch contacts list
+ */
+function fetchContacts() {
+  return fetch('/get_contacts', {
+    method: 'GET',
+    headers: { 'Content-Type': 'application/json' }
+  })
+  .then(response => {
+    if (!response.ok) throw new Error('Failed to load contacts');
     return response.json();
   });
 }

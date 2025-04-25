@@ -133,3 +133,28 @@
     opacity: 0.8;
     font-weight: 300;
 }
+
+/* Group chat specific styles */
+.chat-group-members {
+  font-size: 12px;
+  color: var(--text-secondary);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  margin-top: 2px;
+}
+
+.message-sender {
+  font-size: 12px;
+  font-weight: 500;
+  color: #68a4e8;
+  margin-bottom: 2px;
+}
+
+.group-avatar {
+  background-color: #5a8cc0 !important;
+}
+
+.group-item .contact-avatar {
+  background-color: #5a8cc0 !important;
+}
