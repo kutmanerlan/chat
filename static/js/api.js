@@ -214,8 +214,15 @@ function fetchChatList() {
     headers: { 'Content-Type': 'application/json' }
   })
   .then(response => {
-    if (!response.ok) throw new Error('Failed to load chats');
+    if (!response.ok) {
+      console.error(`Chat list request failed with status: ${response.status}`);
+      throw new Error('Failed to load chats');
+    }
     return response.json();
+  })
+  .catch(error => {
+    console.error('Error fetching chat list:', error);
+    throw error;
   });
 }
 
@@ -300,8 +307,15 @@ function fetchUserGroups() {
     headers: { 'Content-Type': 'application/json' }
   })
   .then(response => {
-    if (!response.ok) throw new Error('Failed to load groups');
+    if (!response.ok) {
+      console.error(`User groups request failed with status: ${response.status}`);
+      throw new Error('Failed to load groups');
+    }
     return response.json();
+  })
+  .catch(error => {
+    console.error('Error fetching user groups:', error);
+    throw error;
   });
 }
 
@@ -385,7 +399,14 @@ function fetchContacts() {
     headers: { 'Content-Type': 'application/json' }
   })
   .then(response => {
-    if (!response.ok) throw new Error('Failed to load contacts');
+    if (!response.ok) {
+      console.error(`Contacts request failed with status: ${response.status}`);
+      throw new Error('Failed to load contacts');
+    }
     return response.json();
+  })
+  .catch(error => {
+    console.error('Error fetching contacts:', error);
+    throw error;
   });
 }

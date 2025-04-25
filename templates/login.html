@@ -148,14 +148,14 @@
                         
                         <!-- Добавляем ссылку на регистрацию если email не найден -->
                         {% if category == 'error' and 'не найден' in message.lower() %}
-                            <p><a href="{{ url_for('register') }}" style="color: #3498db; text-decoration: underline;">Зарегистрироваться</a></p>
+                            <p><a href="{{ url_for('auth.register') }}" style="color: #3498db; text-decoration: underline;">Зарегистрироваться</a></p>
                         {% endif %}
                     {% endfor %}
                 </div>
             {% endif %}
         {% endwith %}
         
-        <form method="POST" action="{{ url_for('login') }}" id="loginForm">
+        <form method="POST" action="{{ url_for('auth.login') }}" id="loginForm">
             <div class="input-group">
                 <label for="email">Email адрес</label>
                 <input type="email" id="email" name="email" placeholder="Введите email" required>
@@ -189,8 +189,10 @@
             </div>
         </div>
         
+        <p class="login-form-help">Нет аккаунта? <a href="{{ url_for('auth.register') }}">Зарегистрироваться</a></p>
+        
         <div class="footer">
-            <a href="{{ url_for('register') }}">Регистрация</a><br>
+            <a href="{{ url_for('auth.register') }}">Регистрация</a><br>
             вер. 0.0.0 (демо)
         </div>
     </div>
@@ -276,7 +278,7 @@
             // Отправляем AJAX запрос
             const formData = new FormData(this);
             
-            fetch('{{ url_for("login") }}', {
+            fetch('{{ url_for("auth.login") }}', {
                 method: 'POST',
                 body: formData,
                 headers: {
@@ -315,7 +317,7 @@
                     // Если email не существует, добавляем ссылку на регистрацию
                     if (data.message.toLowerCase().includes('не найден')) {
                         const registerLink = document.createElement('p');
-                        registerLink.innerHTML = '<a href="{{ url_for("register") }}" style="color: #3498db; text-decoration: underline;">Зарегистрироваться</a>';
+                        registerLink.innerHTML = '<a href="{{ url_for("auth.register") }}" style="color: #3498db; text-decoration: underline;">Зарегистрироваться</a>';
                         flashContainer.appendChild(registerLink);
                     }
                 }
@@ -363,7 +365,7 @@
             }
             
             // Отправляем запрос на сброс пароля
-            fetch('{{ url_for("reset_password_request") }}', {
+            fetch('{{ url_for("auth.reset_password_request") }}', {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/x-www-form-urlencoded',

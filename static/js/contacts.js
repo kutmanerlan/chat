@@ -6,9 +6,15 @@
  * Load user contacts, groups and chats
  */
 function loadSidebar() {
+  console.log('Loading sidebar data');
+  
   // Load contacts, groups and chats
   Promise.all([fetchContacts(), fetchUserGroups(), fetchChatList()])
     .then(([contactsData, groupsData, chatsData]) => {
+      console.log('Contacts data:', contactsData);
+      console.log('Groups data:', groupsData);
+      console.log('Chats data:', chatsData);
+      
       // Store data in app state
       if (contactsData.contacts) {
         ChatApp.contacts = contactsData.contacts;

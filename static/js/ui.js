@@ -213,7 +213,11 @@ function setupAvatarUpload() {
           .then(data => {
             if (data.success) {
               // Refresh current user info
-              fetchCurrentUser();
+              fetchCurrentUser()
+                .then(userData => {
+                  // Directly update sidebar avatar
+                  updateSidebarAvatar(userData.avatar_path);
+                });
               showSuccessNotification('Avatar updated successfully');
             }
           })
@@ -222,5 +226,42 @@ function setupAvatarUpload() {
           });
       }
     });
+  }
+}
+
+/**
+ * Update sidebar avatar directly after upload
+ */
+function updateSidebarAvatar(avatarPath) {
+  const sidebarAvatar = document.getElementById('avatarPlaceholder');
+  if (sidebarAvatar) {
+    // Clear existing avatar content
+    sidebarAvatar.innerHTML = '';
+    
+    if (avatarPath) {
+      // Create and set the new avatar image
+      const img = document.createElement('img');
+      img.src = avatarPath;
+      img.alt = 'User Avatar';
+      img.className = 'avatar-image';
+      sidebarAvatar.appendChild(img);
+    } else {
+      // Create initials avatar if no avatar path
+      const initialsDiv = document.createElement('div');
+      initialsDiv.className = 'avatar-initials';
+      initialsDiv.textContent = ChatApp.currentUser.user_name.charAt(0);
+      sidebarAvatar.appendChild(initialsDiv);
+    }
+    
+    // Re-add the upload icon
+    const uploadIcon = document.createElement('div');
+    uploadIcon.className = 'avatar-upload-icon';
+    uploadIcon.innerHTML = `
+      <svg width="24" height="24" viewBox="0 0 24 24" fill="none">
+        <path d="M12 5V19" stroke="white" stroke-width="2" stroke-linecap="round"/>
+        <path d="M5 12H19" stroke="white" stroke-width="2" stroke-linecap="round"/>
+      </svg>
+    `;
+    sidebarAvatar.appendChild(uploadIcon);
   }
 }
