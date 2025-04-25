@@ -218,3 +218,62 @@
   font-style: italic;
   font-size: 14px;
 }
+
+/* Group avatar upload styles */
+.group-avatar-upload {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  margin-bottom: 20px;
+}
+
+.group-avatar-container {
+  display: flex;
+  justify-content: center;
+  margin-top: 10px;
+}
+
+.group-avatar-wrapper {
+  width: 80px;
+  height: 80px;
+  border-radius: 50%;
+  background-color: #5a8cc0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  position: relative;
+  overflow: hidden;
+  cursor: pointer;
+}
+
+.group-avatar-wrapper .avatar-initials {
+  font-size: 32px;
+  color: white;
+  font-weight: 500;
+}
+
+.group-avatar-wrapper .avatar-image {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.group-avatar-wrapper .avatar-upload-icon {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  width: 28px;
+  height: 28px;
+  background-color: rgba(0, 0, 0, 0.6);
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  opacity: 0;
+  transition: opacity 0.2s ease;
+}
+
+.group-avatar-wrapper:hover .avatar-upload-icon {
+  opacity: 1;
+}

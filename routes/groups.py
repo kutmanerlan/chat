@@ -1,10 +1,133 @@
-from flask import Blueprint, request, render_template, redirect, url_for, flash, session, jsonify
+from flask import Blueprint, request, render_template, redirect, url_for, flash, session, jsonify, current_app
 from models.user import db, User, GroupMember, Group, GroupMessage, Contact
 import logging
 import datetime
+import os
+from werkzeug.utils import secure_filename
+import traceback
 
-# Create blueprint for group routes - create without URL prefix
+# Create blueprint for group routes
 groups_bp = Blueprint('groups', __name__)
+
+# Helper function to check allowed file extensions
+def allowed_file(filename):
+    allowed_extensions = {'png', 'jpg', 'jpeg', 'gif'}
+    return '.' in filename and filename.rsplit('.', 1)[1].lower() in allowed_extensions
+
+@groups_bp.route('/create_group', methods=['GET', 'POST'])
+def create_group():
+    if 'user_id' not in session:
+        return redirect(url_for('auth.login'))
+    
+    if request.method == 'POST':
+        try:
+            logging.debug("Processing group creation request")
+            
+            # Check if request has form data or JSON data
+            if request.content_type and 'multipart/form-data' in request.content_type:
+                # Get group details from form data
+                name = request.form.get('name', '').strip()
+                description = request.form.get('description', '').strip()
+                members = request.form.getlist('members')
+                
+                # Handle avatar file
+                avatar_path = None
+                if 'avatar' in request.files:
+                    avatar_file = request.files['avatar']
+                    if avatar_file and avatar_file.filename and avatar_file.filename != '':
+                        if allowed_file(avatar_file.filename):
+                            # Create a unique filename
+                            filename = secure_filename(avatar_file.filename)
+                            unique_filename = f"group_{datetime.datetime.now().strftime('%Y%m%d%H%M%S')}_{filename}"
+                            
+                            # Get file path
+                            file_path = os.path.join(current_app.config['UPLOAD_FOLDER'], unique_filename)
+                            
+                            # Save the file
+                            avatar_file.save(file_path)
+                            logging.debug(f"Saved avatar to {file_path}")
+                            
+                            # Store the path relative to static folder
+                            avatar_path = f"avatars/{unique_filename}"
+                        else:
+                            logging.warning(f"Invalid file extension: {avatar_file.filename}")
+            else:
+                # Process JSON data
+                data = request.get_json()
+                name = data.get('name', '').strip()
+                description = data.get('description', '').strip()
+                members = data.get('members', [])
+                avatar_path = None
+            
+            # Validate input
+            if not name:
+                logging.warning("Group name is required")
+                if request.content_type and 'multipart/form-data' in request.content_type:
+                    flash('Group name is required', 'error')
+                    return render_template('create_group.html')
+                else:
+                    return jsonify({'success': False, 'error': 'Group name is required'}), 400
+            
+            logging.debug(f"Creating group: {name}, with {len(members)} members")
+            
+            # Create the group
+            new_group = Group(
+                name=name,
+                description=description,
+                creator_id=session['user_id'],
+                avatar_path=avatar_path
+            )
+            db.session.add(new_group)
+            db.session.flush()  # Flush to get the group ID
+            
+            # Add creator as admin
+            creator_member = GroupMember(
+                group_id=new_group.id,
+                user_id=session['user_id'],
+                role='admin',
+                invitation_status='accepted'
+            )
+            db.session.add(creator_member)
+            
+            # Add other members
+            for member_id in members:
+                try:
+                    member_id = int(member_id)
+                    if member_id != session['user_id']:  # Skip creator, already added
+                        member = GroupMember(
+                            group_id=new_group.id,
+                            user_id=member_id,
+                            role='member',
+                            invitation_status='invited'  # Set as invited initially
+                        )
+                        db.session.add(member)
+                except (ValueError, TypeError) as e:
+                    logging.warning(f"Invalid member ID: {member_id}, error: {str(e)}")
+                    continue
+            
+            db.session.commit()
+            logging.debug(f"Group created successfully with ID: {new_group.id}")
+            
+            if request.content_type and 'multipart/form-data' in request.content_type:
+                flash('Group created successfully', 'success')
+                return redirect(url_for('main'))
+            else:
+                return jsonify({'success': True, 'group_id': new_group.id})
+            
+        except Exception as e:
+            db.session.rollback()
+            error_msg = f"Error creating group: {str(e)}"
+            logging.error(error_msg)
+            logging.error(traceback.format_exc())
+            
+            if request.content_type and 'multipart/form-data' in request.content_type:
+                flash('Failed to create group', 'error')
+                return render_template('create_group.html')
+            else:
+                return jsonify({'success': False, 'error': error_msg}), 500
+    
+    # GET request - display the form
+    return render_template('create_group.html')
 
 # Ensure this route matches what frontend expects
 @groups_bp.route('/get_user_groups')
@@ -47,7 +170,8 @@ def get_user_groups():
                 'description': group.description,
                 'member_count': member_count,
                 'is_admin': is_admin,
-                'unread_count': unread_count
+                'unread_count': unread_count,
+                'avatar_path': group.avatar_path  # Make sure to include avatar_path in response
             }
             
             # Add last message info if exists
@@ -148,7 +272,8 @@ def get_group_info():
             'creator_id': group.creator_id,
             'members': members,
             'member_count': len(members),
-            'is_admin': member.role == 'admin'
+            'is_admin': member.role == 'admin',
+            'avatar_path': group.avatar_path  # Make sure to include avatar_path in response
         }
         
         return jsonify({'success': True, 'group': group_info})

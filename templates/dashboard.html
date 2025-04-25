@@ -162,7 +162,24 @@
   <div class="modal" id="createGroupModal">
     <div class="modal-content group-modal-content">
       <h3>Создать новую группу</h3>
-      <form id="createGroupForm">
+      <form id="createGroupForm" enctype="multipart/form-data">
+        <!-- Add group avatar upload section -->
+        <div class="form-group group-avatar-upload">
+          <label for="groupAvatar">Аватар группы</label>
+          <div class="group-avatar-container">
+            <div class="group-avatar-wrapper" id="groupAvatarPreview">
+              <div class="avatar-initials">G</div>
+              <div class="avatar-upload-icon">
+                <svg width="24" height="24" viewBox="0 0 24 24" fill="none">
+                  <path d="M12 5V19" stroke="white" stroke-width="2" stroke-linecap="round"/>
+                  <path d="M5 12H19" stroke="white" stroke-width="2" stroke-linecap="round"/>
+                </svg>
+              </div>
+            </div>
+            <input type="file" id="groupAvatarInput" name="avatar" accept="image/*" style="display: none;">
+          </div>
+        </div>
+        
         <div class="form-group">
           <label for="groupName">Название группы</label>
           <input type="text" id="groupName" name="name" placeholder="Введите название группы" required>

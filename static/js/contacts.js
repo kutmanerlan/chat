@@ -116,8 +116,20 @@ function createGroupElement(group) {
   const groupAvatar = document.createElement('div');
   groupAvatar.className = 'contact-avatar group-avatar';
   
-  // Use first letter of group name for avatar
-  groupAvatar.innerHTML = `<div class="avatar-initials">${group.name.charAt(0)}</div>`;
+  // Check if group has an avatar path
+  if (group.avatar_path) {
+    // Fix avatar path - ensure it starts with /static/ if needed
+    let avatarSrc = group.avatar_path;
+    if (!avatarSrc.startsWith('http') && !avatarSrc.startsWith('/static/')) {
+      avatarSrc = `/static/${avatarSrc}`;
+    }
+    groupAvatar.innerHTML = `<img src="${avatarSrc}" alt="${group.name}" class="avatar-image">`;
+  } else {
+    // For numeric group names, use 'G' as the initial instead of a number
+    const isNumericOnly = /^\d+$/.test(group.name);
+    const initial = isNumericOnly ? 'G' : group.name.charAt(0);
+    groupAvatar.innerHTML = `<div class="avatar-initials">${initial}</div>`;
+  }
   
   // Group info
   const groupInfo = document.createElement('div');

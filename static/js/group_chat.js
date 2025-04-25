@@ -94,7 +94,22 @@ function createGroupChatInterface(group) {
   // Group avatar
   const groupAvatar = document.createElement('div');
   groupAvatar.className = 'chat-user-avatar group-avatar';
-  groupAvatar.innerHTML = `<div class="avatar-initials">${group.name.charAt(0)}</div>`;
+  
+  // Use avatar path if available
+  if (group.avatar_path) {
+    // Make sure the avatar path is correctly formatted with URL prefix if needed
+    let avatarSrc = group.avatar_path;
+    // Check if the path needs a static URL prefix
+    if (!avatarSrc.startsWith('http') && !avatarSrc.startsWith('/static/')) {
+      avatarSrc = `/static/${avatarSrc}`;
+    }
+    groupAvatar.innerHTML = `<img src="${avatarSrc}" alt="${group.name}" class="avatar-image">`;
+  } else {
+    // For numeric group names, use 'G' as the initial instead of a number
+    const isNumericOnly = /^\d+$/.test(group.name);
+    const initial = isNumericOnly ? 'G' : group.name.charAt(0);
+    groupAvatar.innerHTML = `<div class="avatar-initials">${initial}</div>`;
+  }
   
   // Group name and member count
   const groupNameEl = document.createElement('div');

@@ -59,6 +59,9 @@ function showCreateGroupModal() {
   modal.classList.add('active');
   overlay.classList.add('active');
   
+  // Setup avatar upload functionality
+  setupGroupAvatarUpload();
+  
   // Load contacts for group members
   loadContactsForGroup();
   
@@ -186,22 +189,47 @@ function showGroupMembersError(message) {
 }
 
 /**
+ * Setup group avatar upload
+ */
+function setupGroupAvatarUpload() {
+  const avatarPreview = document.getElementById('groupAvatarPreview');
+  const avatarInput = document.getElementById('groupAvatarInput');
+  
+  if (avatarPreview && avatarInput) {
+    avatarPreview.addEventListener('click', () => {
+      avatarInput.click();
+    });
+    
+    avatarInput.addEventListener('change', function() {
+      if (this.files && this.files[0]) {
+        const file = this.files[0];
+        const reader = new FileReader();
+        
+        reader.onload = function(e) {
+          // Update preview with the selected image
+          avatarPreview.innerHTML = `
+            <img src="${e.target.result}" alt="Group Avatar" class="avatar-image">
+            <div class="avatar-upload-icon">
+              <svg width="24" height="24" viewBox="0 0 24 24" fill="none">
+                <path d="M12 5V19" stroke="white" stroke-width="2" stroke-linecap="round"/>
+                <path d="M5 12H19" stroke="white" stroke-width="2" stroke-linecap="round"/>
+              </svg>
+            </div>
+          `;
+        };
+        
+        reader.readAsDataURL(file);
+      }
+    });
+  }
+}
+
+/**
  * Handle group creation form submission
  */
 function createGroupHandler(form) {
-  // Get selected members
-  const selectedMembers = Array.from(form.querySelectorAll('.member-item.selected input'))
-    .map(input => input.value);
-  
-  // Create form data
-  const formData = new FormData();
-  formData.append('name', form.querySelector('#groupName').value);
-  formData.append('description', form.querySelector('#groupDescription').value);
-  
-  // Add members
-  selectedMembers.forEach(memberId => {
-    formData.append('members', memberId);
-  });
+  // Create form data with file support
+  const formData = new FormData(form);
   
   // Send request
   fetch('/create_group', {
