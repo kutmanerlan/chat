@@ -129,3 +129,100 @@ class Block(db.Model):
     
     # Index for fast lookup and uniqueness
     __table_args__ = (db.UniqueConstraint('user_id', 'blocked_user_id', name='_user_blocked_uc'),)
+
+# Group model for group chats
+class Group(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    name = db.Column(db.String(100), nullable=False)
+    description = db.Column(db.String(500), nullable=True)
+    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+    avatar_path = db.Column(db.String(255), nullable=True)
+    creator_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
+    
+    # Relationship with creator
+    creator = db.relationship('User', foreign_keys=[creator_id], backref=db.backref('created_groups', lazy='dynamic'))
+    
+    # Method for getting the group avatar or default
+    def get_avatar(self):
+        if self.avatar_path:
+            return self.avatar_path
+        return None  # Will return a default group avatar
+    
+    # Helper methods for group management
+    def add_member(self, user_id, role='member', invitation_status='accepted'):
+        """Add a user to the group"""
+        if not GroupMember.query.filter_by(group_id=self.id, user_id=user_id).first():
+            member = GroupMember(group_id=self.id, user_id=user_id, 
+                                role=role, invitation_status=invitation_status)
+            db.session.add(member)
+            return member
+        return None
+    
+    def remove_member(self, user_id):
+        """Remove a user from the group"""
+        member = GroupMember.query.filter_by(group_id=self.id, user_id=user_id).first()
+        if member:
+            db.session.delete(member)
+            return True
+        return False
+    
+    def is_member(self, user_id):
+        """Check if a user is a member of the group"""
+        return GroupMember.query.filter_by(
+            group_id=self.id, 
+            user_id=user_id,
+            invitation_status='accepted'
+        ).first() is not None
+    
+    def is_admin(self, user_id):
+        """Check if a user is an admin of the group"""
+        member = GroupMember.query.filter_by(
+            group_id=self.id, 
+            user_id=user_id,
+            invitation_status='accepted'
+        ).first()
+        return member and member.role == 'admin'
+
+# Model for group membership
+class GroupMember(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    group_id = db.Column(db.Integer, db.ForeignKey('group.id'), nullable=False)
+    user_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
+    role = db.Column(db.String(20), default='member', nullable=False)  # 'admin' or 'member'
+    joined_at = db.Column(db.DateTime, default=datetime.utcnow)
+    invitation_status = db.Column(db.String(20), default='accepted', nullable=False)  # 'invited', 'accepted', 'declined'
+    
+    # Relationships
+    group = db.relationship('Group', backref=db.backref('members', lazy='dynamic'))
+    user = db.relationship('User', backref=db.backref('group_memberships', lazy='dynamic'))
+    
+    # Ensure no duplicate memberships
+    __table_args__ = (db.UniqueConstraint('group_id', 'user_id', name='_group_user_uc'),)
+
+# Model for storing messages in group chats
+class GroupMessage(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    group_id = db.Column(db.Integer, db.ForeignKey('group.id'), nullable=False)
+    sender_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
+    content = db.Column(db.Text, nullable=False)
+    timestamp = db.Column(db.DateTime, default=datetime.utcnow, index=True)
+    is_edited = db.Column(db.Boolean, default=False)
+    edited_at = db.Column(db.DateTime, nullable=True)
+    
+    # Define relationships
+    group = db.relationship('Group', backref=db.backref('messages', lazy='dynamic'))
+    sender = db.relationship('User', backref=db.backref('group_messages_sent', lazy='dynamic'))
+    
+    def to_dict(self):
+        """Convert group message to dictionary for JSON serialization"""
+        message_dict = {
+            'id': self.id,
+            'group_id': self.group_id,
+            'sender_id': self.sender_id,
+            'sender_name': self.sender.name if self.sender else 'Unknown',
+            'content': self.content,
+            'timestamp': self.timestamp.isoformat(),
+            'is_edited': self.is_edited,
+            'edited_at': self.edited_at.isoformat() if self.edited_at else None
+        }
+        return message_dict

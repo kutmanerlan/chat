@@ -41,7 +41,7 @@ else:
     app.config['SERVER_NAME'] = 'localhost:5000'
 
 # Инициализация базы данных
-from models.user import db, User, Contact, Message, Block
+from models.user import db, User, Contact, Message, Block, Group, GroupMember, GroupMessage
 db.init_app(app)
 
 # Функция для создания таблиц базы данных
@@ -137,6 +137,27 @@ def create_tables():
             db.create_all()
             logging.info('Таблица block создана')
         
+        # Check if group table exists
+        if 'group' not in inspector.get_table_names():
+            logging.info("Таблица group не найдена. Создаем...")
+            # Create the group table
+            db.create_all()
+            logging.info('Таблица group создана')
+        
+        # Check if group_member table exists
+        if 'group_member' not in inspector.get_table_names():
+            logging.info("Таблица group_member не найдена. Создаем...")
+            # Create the group_member table
+            db.create_all()
+            logging.info('Таблица group_member создана')
+        
+        # Check if group_message table exists
+        if 'group_message' not in inspector.get_table_names():
+            logging.info("Таблица group_message не найдена. Создаем...")
+            # Create the group_message table
+            db.create_all()
+            logging.info('Таблица group_message создана')
+        
         logging.info("Схема базы данных проверена и обновлена")
         return True
     except Exception as e:
@@ -168,13 +189,11 @@ def webhook():
 def get_current_user_info():
     if 'user_id' not in session:
         return jsonify({'error': 'Unauthorized'}), 401
-    
     try:
         # Запрашиваем актуальную информацию из базы данных
         user = User.query.get(session['user_id'])
         if not user:
             return jsonify({'error': 'User not found'}), 404
-        
         # Проверяем наличие атрибута avatar_path безопасным способом
         avatar_path = None
         try:
@@ -182,7 +201,6 @@ def get_current_user_info():
                 avatar_path = user.avatar_path
         except Exception as avatar_error:
             logging.warning(f"Ошибка при получении avatar_path: {str(avatar_error)}")
-        
         # Возвращаем актуальную информацию о пользователе
         return jsonify({
             'user_id': user.id,
@@ -200,12 +218,9 @@ def get_current_user_info():
 def search_users():
     if 'user_id' not in session:
         return jsonify({'error': 'Unauthorized'}), 401
-    
     query = request.args.get('query', '').strip()
-    
     if not query or len(query) < 2:
         return jsonify({'users': []})
-    
     try:
         # Поиск пользователей по имени (частичное совпадение)
         # Исключаем текущего пользователя из результатов
@@ -222,7 +237,6 @@ def search_users():
                 'avatar_path': user.avatar_path if hasattr(user, 'avatar_path') else None,
                 'bio': user.bio if hasattr(user, 'bio') else None
             })
-        
         return jsonify({'users': results})
     except Exception as e:
         logging.error(f"Ошибка при поиске пользователей: {str(e)}")
@@ -233,16 +247,13 @@ def search_users():
 def get_user_info():
     if 'user_id' not in session:
         return jsonify({'error': 'Unauthorized'}), 401
-    
     user_id = request.args.get('user_id')
     if not user_id:
         return jsonify({'error': 'User ID is required'}), 400
-    
     try:
         user = User.query.get(user_id)
         if not user:
             return jsonify({'error': 'User not found'}), 404
-            
         return jsonify({
             'id': user.id,
             'name': user.name,
@@ -258,11 +269,9 @@ def get_user_info():
 def check_contact():
     if 'user_id' not in session:
         return jsonify({'error': 'Unauthorized'}), 401
-    
     try:
         data = request.get_json()
         contact_id = data.get('contact_id')
-        
         if not contact_id:
             return jsonify({'error': 'Contact ID is required'}), 400
         
@@ -271,24 +280,21 @@ def check_contact():
             user_id=session['user_id'],
             contact_id=contact_id
         ).first()
-        
         return jsonify({
             'is_contact': existing_contact is not None
         })
     except Exception as e:
         logging.error(f"Ошибка при проверке контакта: {str(e)}")
         return jsonify({'error': 'Server error'}), 500
-
+        
 # Маршрут для удаления пользователя из контактов
 @app.route('/remove_contact', methods=['POST'])
 def remove_contact():
     if 'user_id' not in session:
         return jsonify({'error': 'Unauthorized'}), 401
-    
     try:
         data = request.get_json()
         contact_id = data.get('contact_id')
-        
         if not contact_id:
             return jsonify({'error': 'Contact ID is required'}), 400
         
@@ -296,17 +302,14 @@ def remove_contact():
         contact_user = User.query.get(contact_id)
         if not contact_user:
             return jsonify({'error': 'User not found'}), 404
-        
         # Удаляем контакт если он существует
         contact = Contact.query.filter_by(
             user_id=session['user_id'],
             contact_id=contact_id
         ).first()
-        
         if contact:
             db.session.delete(contact)
             db.session.commit()
-        
         return jsonify({
             'success': True,
             'message': 'Contact removed successfully'
@@ -340,7 +343,6 @@ def login():
         if not user:
             logging.info(f"Пользователь с email {email} не найден")
             message = 'Пользователь с таким email не найден. Проверьте правильность ввода или зарегистрируйтесь.'
-            
             if is_ajax:
                 return jsonify({
                     'success': False,
@@ -349,10 +351,9 @@ def login():
             else:
                 flash(message, 'error')
                 return render_template('login.html')
-                
+        
         if not user.email_confirmed:
             message = 'Пожалуйста, подтвердите ваш email перед входом в систему'
-            
             if is_ajax:
                 return jsonify({
                     'success': False,
@@ -361,13 +362,12 @@ def login():
             else:
                 flash(message, 'error')
                 return redirect(url_for('login'))
-                
+        
         # Исправление: используем правильный метод проверки пароля
         if user.check_password(password):
             # Успешная авторизация
             session['user_id'] = user.id
             session['user_name'] = user.name  # Добавляем имя в сессию
-            
             if is_ajax:
                 return jsonify({
                     'success': True,
@@ -377,7 +377,6 @@ def login():
                 return redirect(url_for('main'))
         else:
             message = 'Неверный пароль'
-            
             if is_ajax:
                 return jsonify({
                     'success': False,
@@ -385,7 +384,7 @@ def login():
                 })
             else:
                 flash(message, 'error')
-                
+                return render_template('login.html')
     return render_template('login.html')
 
 @app.route('/register', methods=['GET', 'POST'])
@@ -462,12 +461,10 @@ def confirm_email(token):
 def logout():
     # Полностью очищаем всю сессию
     session.clear()
-    
     # Для надежного удаления информации также удаляем cookies
     response = redirect(url_for('login'))
     # Установка cookie с уже истекшим сроком действия для его удаления
     response.set_cookie('session', '', expires=0)
-    
     # Добавляем сообщение для пользователя
     flash('Вы успешно вышли из аккаунта', 'info')
     return response
@@ -476,7 +473,6 @@ def logout():
 def main():
     if 'user_id' not in session:
         return redirect(url_for('login'))
-        
     # Проверяем, существует ли пользователь в базе данных
     user = User.query.get(session['user_id'])
     if user is None:
@@ -484,21 +480,19 @@ def main():
         session.clear()
         flash('Ваша сессия была завершена, так как пользователь не найден в базе данных', 'info')
         return redirect(url_for('login'))
-        
     # Обновляем данные пользователя в сессии для уверенности
     session['user_name'] = user.name
-    
     # Добавляем аватар в сессию, если он существует
     if hasattr(user, 'avatar_path') and user.avatar_path:
         session['avatar_path'] = user.avatar_path
-    
+        
     # Добавляем антикэширующие заголовки
     response = make_response(render_template('dashboard.html', user=user))
     response.headers['Cache-Control'] = 'no-store, no-cache, must-revalidate, max-age=0'
     response.headers['Pragma'] = 'no-cache'
     response.headers['Expires'] = '0'
     return response
-
+    
 # Добавим маршрут для проверки работоспособности
 @app.route('/ping')
 def ping():
@@ -519,13 +513,10 @@ def profile():
 def reset_password_request():
     if 'user_id' in session:
         return redirect(url_for('main'))
-    
     # Выводим отладочную информацию при обработке запроса
     logging.info("Запрошена страница сброса пароля")
-    
     # Определяем, является ли запрос AJAX-запросом
     is_ajax = request.headers.get('X-Requested-With') == 'XMLHttpRequest'
-    
     if request.method == 'POST':
         email = request.form.get('email', '').strip()
         logging.info(f"Получен POST-запрос на сброс пароля для email: {email}")
@@ -539,7 +530,7 @@ def reset_password_request():
             else:
                 flash('Пожалуйста, введите email', 'error')
                 return render_template('reset_password_request.html')
-            
+        
         if not is_email_valid(email):
             if is_ajax:
                 return jsonify({
@@ -551,22 +542,18 @@ def reset_password_request():
                 return render_template('reset_password_request.html')
         
         user = User.query.filter_by(email=email).first()
-        
         # Генерируем токен даже если пользователь не найден (для безопасности)
         reset_token = generate_confirmation_token()
         token_expiration = datetime.datetime.now() + datetime.timedelta(hours=1)
-        
         if user:
             # Сохраняем токен в базе данных только для существующего пользователя
             user.confirmation_token = reset_token
             user.token_expiration = token_expiration
-            
             try:
                 db.session.commit()
                 # Отправляем письмо с ссылкой на сброс пароля
                 logging.info(f"Отправка письма для сброса пароля на {email}")
                 result = send_reset_password_email(email, reset_token)
-                
                 if is_ajax:
                     return jsonify({
                         'success': True,
@@ -582,7 +569,6 @@ def reset_password_request():
             except Exception as e:
                 db.session.rollback()
                 logging.error(f"Ошибка при сбросе пароля: {str(e)}")
-                
                 if is_ajax:
                     return jsonify({
                         'success': False,
@@ -599,15 +585,12 @@ def reset_password_request():
                 })
             else:
                 flash('Если указанный email зарегистрирован в системе, вы получите инструкции по сбросу пароля', 'info')
-        
         if not is_ajax:
             return redirect(url_for('login'))
-    
     # Только для GET запросов отдаем HTML-шаблон
     if request.method == 'GET':
         logging.info("Отдаем шаблон reset_password_request.html")
         return render_template('reset_password_request.html')
-    
     # Для всех других случаев отдаем JSON-ответ для AJAX
     return jsonify({
         'success': True,
@@ -619,30 +602,24 @@ def reset_password_request():
 def reset_password(token):
     if 'user_id' in session:
         return redirect(url_for('main'))
-    
     # Проверка токена
     user = User.query.filter_by(confirmation_token=token).first()
     if not user or datetime.datetime.now() > user.token_expiration:
         flash('Ссылка для сброса пароля недействительна или срок её действия истек', 'error')
         return redirect(url_for('login'))
-    
     if request.method == 'POST':
         password = request.form.get('password', '').strip()
         confirm_password = request.form.get('confirm_password', '').strip()
-        
         if not password:
             flash('Пожалуйста, введите новый пароль', 'error')
             return render_template('reset_password.html', token=token)
-        
         if password != confirm_password:
             flash('Пароли не совпадают', 'error')
             return render_template('reset_password.html', token=token)
-        
         # Обновляем пароль
         user.set_password(password)
         user.confirmation_token = None
         user.token_expiration = None
-        
         try:
             db.session.commit()
             flash('Ваш пароль успешно изменен. Теперь вы можете войти в систему.', 'success')
@@ -650,9 +627,7 @@ def reset_password(token):
             db.session.rollback()
             logging.error(f"Ошибка при обновлении пароля: {str(e)}")
             flash('Произошла ошибка при обновлении пароля.', 'error')
-        
         return redirect(url_for('login'))
-    
     return render_template('reset_password.html', token=token)
 
 # Импортируем необходимые библиотеки для работы с файлами
@@ -662,7 +637,6 @@ from werkzeug.utils import secure_filename
 UPLOAD_FOLDER = os.path.join(basedir, 'static', 'avatars')
 ALLOWED_EXTENSIONS = {'png', 'jpg', 'jpeg', 'gif'}
 app.config['UPLOAD_FOLDER'] = UPLOAD_FOLDER
-
 # Создаем папку для загрузок, если её нет
 os.makedirs(app.config['UPLOAD_FOLDER'], exist_ok=True)
 
@@ -676,7 +650,6 @@ def allowed_file(filename):
 def upload_avatar():
     if 'user_id' not in session:
         return jsonify({'success': False, 'error': 'Unauthorized'}), 401
-    
     try:
         # Проверяем, есть ли файл в запросе
         if 'avatar' not in request.files:
@@ -706,7 +679,6 @@ def upload_avatar():
             
             # Путь для сохранения
             filepath = os.path.join(app.config['UPLOAD_FOLDER'], filename)
-            
             # Сохраняем файл
             try:
                 file.save(filepath)
@@ -727,11 +699,10 @@ def upload_avatar():
                     # Относительный путь для URL
                     relative_path = os.path.join('static', 'avatars', filename).replace('\\', '/')
                     user.avatar_path = relative_path
-                    
                     db.session.commit()
                     logging.info(f"Обновлен avatar_path для пользователя {user.id}: {relative_path}")
                     return jsonify({
-                        'success': True, 
+                        'success': True,
                         'avatar_path': relative_path,
                         'message': 'Avatar uploaded successfully'
                     })
@@ -739,20 +710,17 @@ def upload_avatar():
                     db.session.rollback()
                     logging.error(f"Ошибка при обновлении в БД: {str(db_error)}")
                     return jsonify({'success': False, 'error': 'Database error'})
-            
             return jsonify({'success': False, 'error': 'User not found'})
-        
         return jsonify({'success': False, 'error': 'File type not allowed'})
     except Exception as e:
         logging.error(f"Неожиданная ошибка в upload_avatar: {str(e)}")
         return jsonify({'success': False, 'error': 'Server error'})
-
+            
 # Добавляем маршрут для обновления информации о пользователе
 @app.route('/update_profile', methods=['POST'])
 def update_profile():
     if 'user_id' not in session:
         return jsonify({'success': False, 'error': 'Unauthorized'}), 401
-    
     try:
         # Получаем данные из формы
         name = request.form.get('name', '').strip()
@@ -774,7 +742,6 @@ def update_profile():
         # Сохраняем в БД
         try:
             db.session.commit()
-            
             # Обновляем данные в сессии
             session['user_name'] = user.name
             
@@ -788,7 +755,6 @@ def update_profile():
             db.session.rollback()
             logging.error(f"Ошибка при обновлении профиля в БД: {str(db_error)}")
             return jsonify({'success': False, 'error': 'Ошибка базы данных'}), 500
-            
     except Exception as e:
         logging.error(f"Неожиданная ошибка в update_profile: {str(e)}")
         return jsonify({'success': False, 'error': 'Ошибка сервера'}), 500
@@ -798,11 +764,9 @@ def update_profile():
 def get_contacts():
     if 'user_id' not in session:
         return jsonify({'success': False, 'error': 'Unauthorized'}), 401
-    
     try:
         # Получаем все контакты текущего пользователя
         contacts_query = Contact.query.filter_by(user_id=session['user_id']).all()
-        
         contacts = []
         for contact in contacts_query:
             contact_user = contact.contact_user
@@ -813,7 +777,6 @@ def get_contacts():
                 'avatar_path': contact_user.avatar_path if hasattr(contact_user, 'avatar_path') else None
             }
             contacts.append(contact_data)
-        
         return jsonify({
             'success': True,
             'contacts': contacts
@@ -827,7 +790,6 @@ def get_contacts():
 def get_chat_list():
     if 'user_id' not in session:
         return jsonify({'success': False, 'error': 'Unauthorized'}), 401
-    
     try:
         # Получаем уникальных пользователей, с которыми есть переписка
         # Подзапрос для получения id пользователей, с которыми общались
@@ -909,11 +871,9 @@ def get_chat_list():
 def add_contact():
     if 'user_id' not in session:
         return jsonify({'error': 'Unauthorized'}), 401
-    
     try:
         data = request.get_json()
         contact_id = data.get('contact_id')
-        
         if not contact_id:
             return jsonify({'error': 'Contact ID is required'}), 400
         
@@ -931,7 +891,6 @@ def add_contact():
             user_id=session['user_id'],
             contact_id=contact_id
         ).first()
-        
         if existing_contact:
             # Контакт уже добавлен, возвращаем успех (идемпотентность)
             return jsonify({
@@ -950,7 +909,6 @@ def add_contact():
             user_id=session['user_id'],
             contact_id=contact_id
         )
-        
         db.session.add(new_contact)
         db.session.commit()
         
@@ -974,12 +932,10 @@ def add_contact():
 def send_message():
     if 'user_id' not in session:
         return jsonify({'success': False, 'error': 'Not logged in'}), 401
-    
     try:
         data = request.get_json()
         recipient_id = data.get('recipient_id')
         content = data.get('content')
-        
         if not recipient_id or not content:
             return jsonify({'success': False, 'error': 'Missing required fields'}), 400
         
@@ -993,15 +949,13 @@ def send_message():
             user_id=session['user_id'],
             blocked_user_id=recipient_id
         ).first()
+        if blocked_by_sender:
+            return jsonify({'success': False, 'error': 'You cannot send messages to this user because you have blocked them'}), 403
         
         blocked_by_recipient = Block.query.filter_by(
             user_id=recipient_id,
             blocked_user_id=session['user_id']
         ).first()
-        
-        if blocked_by_sender:
-            return jsonify({'success': False, 'error': 'You cannot send messages to this user because you have blocked them'}), 403
-        
         if blocked_by_recipient:
             return jsonify({'success': False, 'error': 'You cannot send messages to this user because they have blocked you'}), 403
         
@@ -1012,7 +966,6 @@ def send_message():
             content=content,
             is_read=False
         )
-        
         db.session.add(new_message)
         db.session.commit()
         
@@ -1031,21 +984,16 @@ def send_message():
 def get_messages():
     if 'user_id' not in session:
         return jsonify({'success': False, 'error': 'Not authenticated'}), 401
-    
     try:
         user_id = request.args.get('user_id')
-        
         if not user_id:
             return jsonify({'success': False, 'error': 'Missing user_id'}), 400
-        
         # Get messages between users
         messages_query = Message.query.filter(
             ((Message.sender_id == session['user_id']) & (Message.recipient_id == user_id)) |
             ((Message.sender_id == user_id) & (Message.recipient_id == session['user_id']))
         ).order_by(Message.timestamp.asc())
-        
         messages = [message.to_dict() for message in messages_query.all()]
-        
         # Mark messages as read
         unread_messages = Message.query.filter_by(
             sender_id=user_id,
@@ -1055,7 +1003,6 @@ def get_messages():
         
         for message in unread_messages:
             message.is_read = True
-        
         db.session.commit()
         
         return jsonify({
@@ -1071,10 +1018,8 @@ def get_messages():
 def get_recent_conversations():
     if 'user_id' not in session:
         return jsonify({'success': False, 'error': 'Not authenticated'}), 401
-    
     try:
         user_id = session['user_id']
-        
         # Get users this user has exchanged messages with
         # This query finds all users where there are messages between them and the current user
         query = """
@@ -1087,7 +1032,7 @@ def get_recent_conversations():
                     CASE 
                         WHEN sender_id = :user_id THEN recipient_id 
                         ELSE sender_id 
-                    END as user_id,
+                    END as user_id, 
                     MAX(timestamp) as max_time
                 FROM message
                 WHERE sender_id = :user_id OR recipient_id = :user_id
@@ -1098,9 +1043,7 @@ def get_recent_conversations():
                          AND m.timestamp = latest.max_time
             ORDER BY m.timestamp DESC
         """
-        
         result = db.session.execute(text(query), {'user_id': user_id})
-        
         conversations = []
         for row in result:
             # Format the data for the frontend
@@ -1113,7 +1056,6 @@ def get_recent_conversations():
                 'timestamp': row.timestamp.isoformat() if row.timestamp else None,
                 'unread_count': row.unread_count
             })
-        
         return jsonify({
             'success': True,
             'conversations': conversations
@@ -1127,28 +1069,24 @@ def get_recent_conversations():
 def edit_message():
     if 'user_id' not in session:
         return jsonify({'error': 'Unauthorized'}), 401
-    
     try:
         data = request.get_json()
         message_id = data.get('message_id')
         new_content = data.get('content')
-        
         if not message_id or not new_content:
             return jsonify({'error': 'Message ID and content are required'}), 400
         
         # Get the message
         message = Message.query.get(message_id)
-        
         if not message:
             return jsonify({'error': 'Message not found'}), 404
-            
         # Check if user is the sender
         if message.sender_id != session['user_id']:
             return jsonify({'error': 'You can only edit your own messages'}), 403
         
         # Update the message
         message.content = new_content
-        
+            
         # Check if the new columns exist before trying to use them
         if hasattr(message, 'is_edited'):
             message.is_edited = True
@@ -1157,12 +1095,10 @@ def edit_message():
             message.edited_at = datetime.datetime.now()
         
         db.session.commit()
-        
         return jsonify({
             'success': True,
             'message': message.to_dict()
         })
-        
     except Exception as e:
         db.session.rollback()
         logging.error(f"Error editing message: {str(e)}")
@@ -1173,11 +1109,9 @@ def edit_message():
 def check_block_status():
     if 'user_id' not in session:
         return jsonify({'success': False, 'error': 'Not logged in'}), 401
-    
     try:
         data = request.get_json()
         user_id = data.get('user_id')
-        
         if not user_id:
             return jsonify({'success': False, 'error': 'User ID required'}), 400
         
@@ -1207,11 +1141,9 @@ def check_block_status():
 def block_user():
     if 'user_id' not in session:
         return jsonify({'success': False, 'error': 'Not logged in'}), 401
-    
     try:
         data = request.get_json()
         user_id = data.get('user_id')
-        
         if not user_id:
             return jsonify({'success': False, 'error': 'User ID required'}), 400
         
@@ -1225,7 +1157,6 @@ def block_user():
             user_id=session['user_id'],
             blocked_user_id=user_id
         ).first()
-        
         if existing_block:
             return jsonify({'success': True, 'message': 'User already blocked'})
         
@@ -1238,21 +1169,17 @@ def block_user():
             user_id=session['user_id'],
             contact_id=user_id
         ).first()
-        
         if contact1:
             db.session.delete(contact1)
-        
         # current user is the contact of user_id
         contact2 = Contact.query.filter_by(
             user_id=user_id,
             contact_id=session['user_id']
         ).first()
-        
         if contact2:
             db.session.delete(contact2)
         
         db.session.commit()
-        
         return jsonify({'success': True, 'message': 'User blocked successfully'})
     except Exception as e:
         db.session.rollback()
@@ -1264,11 +1191,9 @@ def block_user():
 def unblock_user():
     if 'user_id' not in session:
         return jsonify({'success': False, 'error': 'Not logged in'}), 401
-    
     try:
         data = request.get_json()
         user_id = data.get('user_id')
-        
         if not user_id:
             return jsonify({'success': False, 'error': 'User ID required'}), 400
         
@@ -1277,7 +1202,6 @@ def unblock_user():
             user_id=session['user_id'],
             blocked_user_id=user_id
         ).first()
-        
         if block:
             db.session.delete(block)
             db.session.commit()
@@ -1288,6 +1212,91 @@ def unblock_user():
         db.session.rollback()
         logging.error(f"Error unblocking user: {str(e)}")
         return jsonify({'success': False, 'error': 'Failed to unblock user'}), 500
+
+# Route to create a new group
+@app.route('/create_group', methods=['GET', 'POST'])
+def create_group():
+    if 'user_id' not in session:
+        return redirect(url_for('login'))
+    
+    if request.method == 'POST':
+        try:
+            # Get group details from form
+            name = request.form.get('name', '').strip()
+            description = request.form.get('description', '').strip()
+            members = request.form.getlist('members')
+            
+            # Validate input
+            if not name:
+                flash('Group name is required', 'error')
+                return render_template('create_group.html')
+            
+            # Create the group
+            new_group = Group(
+                name=name,
+                description=description,
+                creator_id=session['user_id']
+            )
+            db.session.add(new_group)
+            db.session.flush()  # Flush to get the group ID
+            
+            # Add creator as admin
+            creator_member = GroupMember(
+                group_id=new_group.id,
+                user_id=session['user_id'],
+                role='admin',
+                invitation_status='accepted'
+            )
+            db.session.add(creator_member)
+            
+            # Add other members
+            for member_id in members:
+                if int(member_id) != session['user_id']:  # Skip creator, already added
+                    member = GroupMember(
+                        group_id=new_group.id,
+                        user_id=int(member_id),
+                        role='member',
+                        invitation_status='invited'  # Set as invited initially
+                    )
+                    db.session.add(member)
+            
+            db.session.commit()
+            flash('Group created successfully', 'success')
+            return redirect(url_for('main'))
+            
+        except Exception as e:
+            db.session.rollback()
+            logging.error(f"Error creating group: {str(e)}")
+            flash('Failed to create group', 'error')
+            return render_template('create_group.html')
+    
+    # GET request - display the form
+    return render_template('create_group.html')
+
+# Route to get available users for adding to a group
+@app.route('/get_users_for_group')
+def get_users_for_group():
+    if 'user_id' not in session:
+        return jsonify({'error': 'Unauthorized'}), 401
+    
+    try:
+        # Get users from contacts
+        contacts = Contact.query.filter_by(user_id=session['user_id']).all()
+        users = []
+        
+        for contact in contacts:
+            user = User.query.get(contact.contact_id)
+            if user:
+                users.append({
+                    'id': user.id,
+                    'name': user.name,
+                    'avatar_path': user.avatar_path if hasattr(user, 'avatar_path') else None
+                })
+        
+        return jsonify({'success': True, 'users': users})
+    except Exception as e:
+        logging.error(f"Error getting users for group: {str(e)}")
+        return jsonify({'error': 'Server error'}), 500
 
 if __name__ == '__main__':
     # Инициализация базы данных в контексте приложения
@@ -1304,7 +1313,7 @@ else:
             logging.basicConfig(
                 filename='/tmp/flask_app_error.log', 
                 level=logging.DEBUG,
-                format='%(asctime)s - %(уровень)s - %(message)s'
+                format='%(asctime)s - %(level)s - %(message)s'
             )
             logging.info("Запускаем приложение через WSGI")
             try:

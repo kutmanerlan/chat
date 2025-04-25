@@ -89,7 +89,7 @@
 }
 
 .close-menu-btn:hover {
-    background-color: #333;
+    /* Removed background-color: #333; */
     color: white;
 }
 
@@ -219,4 +219,29 @@
     font-size: 11px;
     color: #555;
     margin-bottom: 5px;
+}
+
+/* Create group link in side menu */
+.create-group-link {
+  margin: 15; /* Removed all margins to position it flush left */
+  padding: 10px 10px; /* Adjusted padding, reduced left/right padding */
+  display: flex;
+  align-items: center;
+  border-radius: 8px;
+  color: #aaaaaa;
+  text-decoration: none;
+  transition: background-color 0.2s;
+}
+
+.create-group-link:hover {
+  background-color: #333;
+  color: white;
+}
+
+.create-group-link .menu-icon {
+  width: 24px;
+  margin-right: 12px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
 }

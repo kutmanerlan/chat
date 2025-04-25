@@ -6,6 +6,9 @@
 document.addEventListener('DOMContentLoaded', () => {
   // Initialize the application
   initializeChat();
+  
+  // Setup create group button (now in the side menu)
+  setupCreateGroupButton();
 });
 
 /**
@@ -27,6 +30,20 @@ function initializeChat() {
       console.error('Failed to initialize chat:', error);
       showErrorNotification('Failed to initialize chat. Please refresh the page.');
     });
+}
+
+/**
+ * Setup create group button functionality
+ */
+function setupCreateGroupButton() {
+  const createGroupBtn = document.getElementById('createGroupBtn');
+  if (createGroupBtn) {
+    createGroupBtn.addEventListener('click', (e) => {
+      e.preventDefault();
+      // Open the create group page/modal
+      window.location.href = '/create_group';
+    });
+  }
 }
 
 // ...existing code...
