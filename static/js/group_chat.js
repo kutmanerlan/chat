@@ -92,35 +92,51 @@ function openGroupChat(groupId, groupName) {
     // Group info section
     const groupInfo = document.createElement('div');
     groupInfo.className = 'chat-user-info';
+    groupInfo.style.display = 'flex';
+    groupInfo.style.alignItems = 'center';
     
     // Group avatar
     const groupAvatar = document.createElement('div');
     groupAvatar.className = 'chat-user-avatar group-avatar';
-    
-    // Use avatar path if available
     if (group.avatar_path) {
-      // Make sure the avatar path is correctly formatted with URL prefix if needed
       let avatarSrc = group.avatar_path;
-      // Check if the path needs a static URL prefix
       if (!avatarSrc.startsWith('http') && !avatarSrc.startsWith('/static/')) {
         avatarSrc = `/static/${avatarSrc}`;
       }
       groupAvatar.innerHTML = `<img src="${avatarSrc}" alt="${group.name}" class="avatar-image">`;
     } else {
-      // For numeric group names, use 'G' as the initial instead of a number
       const isNumericOnly = /^\d+$/.test(group.name);
       const initial = isNumericOnly ? 'G' : group.name.charAt(0);
       groupAvatar.innerHTML = `<div class="avatar-initials">${initial}</div>`;
     }
+    groupAvatar.style.cursor = 'pointer';
+    groupAvatar.onclick = function() { showGroupMembers(group); };
     
     // Group name and member count
     const groupNameEl = document.createElement('div');
     groupNameEl.className = 'chat-user-name';
     groupNameEl.textContent = group.name;
-    
+    groupNameEl.style.cursor = 'pointer';
+    groupNameEl.style.fontSize = '16px';
+    groupNameEl.style.fontWeight = '500';
+    groupNameEl.onclick = function() { showGroupMembers(group); };
+
+    // Количество участников
     const memberCount = document.createElement('div');
     memberCount.className = 'chat-group-members';
     memberCount.textContent = `${group.member_count || 0} members`;
+    
+    // Group name и member count в одной колонке, слева от аватарки
+    const groupNameBlock = document.createElement('div');
+    groupNameBlock.style.display = 'flex';
+    groupNameBlock.style.flexDirection = 'column';
+    groupNameBlock.style.justifyContent = 'center';
+    groupNameBlock.style.alignItems = 'flex-start';
+    groupNameBlock.appendChild(memberCount);
+    groupNameBlock.appendChild(groupNameEl);
+
+    groupInfo.appendChild(groupAvatar);
+    groupInfo.appendChild(groupNameBlock);
     
     // Menu button
     const menuButton = document.createElement('button');
@@ -210,10 +226,6 @@ function openGroupChat(groupId, groupName) {
     });
     
     // Assemble everything
-    groupInfo.appendChild(groupAvatar);
-    groupInfo.appendChild(groupNameEl);
-    groupInfo.appendChild(memberCount);
-    
     chatHeader.appendChild(groupInfo);
     chatHeader.appendChild(menuButton);
     
@@ -367,23 +379,545 @@ function openGroupChat(groupId, groupName) {
    * These will be implemented in future steps
    */
   function showGroupMembers(group) {
-    console.log('View members for group:', group.id);
-    showNotImplementedNotification('View members');
+    // Удаляем старую модалку, если есть
+    const oldModal = document.getElementById('viewMembersModal');
+    if (oldModal) oldModal.remove();
+
+    // Сортируем: сначала админы, потом остальные
+    const members = (group.members || []).slice().sort((a, b) => {
+      if (a.role === 'admin' && b.role !== 'admin') return -1;
+      if (a.role !== 'admin' && b.role === 'admin') return 1;
+      return a.name.localeCompare(b.name);
+    });
+
+    // Модалка
+    const modal = document.createElement('div');
+    modal.id = 'viewMembersModal';
+    modal.className = 'modal-overlay';
+    modal.innerHTML = `
+      <div class="modal-dialog" style="max-width: 400px;">
+        <div class="modal-title" style="margin-bottom: 12px;">Group Members</div>
+        <div class="members-list" id="viewMembersList" style="margin-bottom: 18px; max-height: 260px; overflow-y: auto;"></div>
+        <div class="modal-actions">
+          <button class="btn btn-secondary" id="closeViewMembersBtn">Close</button>
+        </div>
+      </div>
+    `;
+    document.body.appendChild(modal);
+
+    // Рендерим список
+    const list = document.getElementById('viewMembersList');
+    if (!members.length) {
+      list.innerHTML = '<div class="no-contacts">No members</div>';
+    } else {
+      members.forEach(user => {
+        const memberItem = document.createElement('div');
+        memberItem.className = 'member-item';
+        let avatarContent;
+        if (user.avatar_path) {
+          avatarContent = `<img src="${user.avatar_path}" alt="${user.name}" style="width: 100%; height: 100%; object-fit: cover;">`;
+        } else {
+          avatarContent = user.name.charAt(0);
+        }
+        let adminBadge = '';
+        if (user.role === 'admin') {
+          adminBadge = `<span style="border:1.5px solid #2a5885; color:#2a5885; border-radius:6px; font-size:12px; padding:1px 7px; margin-left:8px; vertical-align:middle; background:#181818;">admin</span>`;
+        }
+        memberItem.innerHTML = `
+          <div class="member-avatar">${avatarContent}</div>
+          <div class="member-name">${user.name} ${adminBadge}</div>
+        `;
+        list.appendChild(memberItem);
+      });
+    }
+
+    // Кнопка закрытия
+    document.getElementById('closeViewMembersBtn').onclick = function() {
+      modal.remove();
+    };
   }
   
   function showAddMembers(group) {
-    console.log('Add members to group:', group.id);
-    showNotImplementedNotification('Add members');
+    // Удаляем старую модалку, если есть
+    const oldModal = document.getElementById('addMembersModal');
+    if (oldModal) oldModal.remove();
+
+    // Создаем модалку
+    const modal = document.createElement('div');
+    modal.id = 'addMembersModal';
+    modal.className = 'modal-overlay';
+    modal.innerHTML = `
+      <div class="modal-dialog" style="max-width: 400px;">
+        <div class="modal-title" style="margin-bottom: 12px;">Add members to group</div>
+        <input type="text" id="searchAddMembers" class="search-input" placeholder="Search contacts" style="margin-bottom: 10px;">
+        <div class="members-list" id="addMembersList" style="margin-bottom: 18px; max-height: 220px; overflow-y: auto;"></div>
+        <div class="modal-actions">
+          <button class="btn btn-secondary" id="cancelAddMembersBtn">Cancel</button>
+          <button class="btn btn-secondary" id="confirmAddMembersBtn">Add</button>
+        </div>
+      </div>
+    `;
+    document.body.appendChild(modal);
+
+    // Загрузка контактов
+    fetch('/get_users_for_group')
+      .then(r => r.json())
+      .then(data => {
+        if (data.success && data.users) {
+          renderAddMembersList(data.users, group);
+        } else {
+          document.getElementById('addMembersList').innerHTML = '<div class="no-contacts">Failed to load contacts</div>';
+        }
+      })
+      .catch(() => {
+        document.getElementById('addMembersList').innerHTML = '<div class="no-contacts">Failed to load contacts</div>';
+      });
+
+    // Поиск
+    document.getElementById('searchAddMembers').addEventListener('input', function() {
+      const searchValue = this.value.toLowerCase();
+      const memberItems = document.querySelectorAll('#addMembersList .member-item');
+      memberItems.forEach(item => {
+        const memberName = item.querySelector('.member-name').textContent.toLowerCase();
+        if (memberName.includes(searchValue)) {
+          item.style.display = 'flex';
+        } else {
+          item.style.display = 'none';
+        }
+      });
+    });
+
+    // Cancel
+    document.getElementById('cancelAddMembersBtn').onclick = function() {
+      modal.remove();
+    };
+    // Confirm
+    document.getElementById('confirmAddMembersBtn').onclick = function() {
+      // Собираем выбранных пользователей
+      const selected = Array.from(document.querySelectorAll('#addMembersList .member-item.selected'))
+        .map(item => Number(item.dataset.userId));
+      if (selected.length === 0) {
+        showErrorNotification('Select at least one contact');
+        return;
+      }
+      // Отправляем на backend
+      addGroupMembers(group.id, selected)
+        .then(res => {
+          if (res.success) {
+            showSuccessNotification('Members added');
+            modal.remove();
+            // Обновить group info и UI
+            getGroupInfo(group.id).then(response => {
+              if (response.success) {
+                createGroupChatInterface(response.group);
+              }
+            });
+            if (typeof loadSidebar === 'function') loadSidebar();
+          } else {
+            showErrorNotification(res.error || 'Failed to add members');
+            console.error('Add members error:', res);
+          }
+        })
+        .catch(err => {
+          showErrorNotification('Failed to add members');
+          console.error('Add members fetch error:', err);
+        });
+    };
+  }
+  
+  function renderAddMembersList(users, group) {
+    const list = document.getElementById('addMembersList');
+    if (!list) return;
+    if (!users.length) {
+      list.innerHTML = '<div class="no-contacts">No contacts found</div>';
+      return;
+    }
+    // Получить id уже добавленных участников
+    const currentMemberIds = (group.members || []).map(m => m.id);
+    list.innerHTML = '';
+    users.forEach(user => {
+      const isAlreadyMember = currentMemberIds.includes(user.id);
+      const memberItem = document.createElement('div');
+      memberItem.className = 'member-item';
+      memberItem.dataset.userId = user.id;
+      if (isAlreadyMember) {
+        memberItem.classList.add('disabled');
+        memberItem.style.opacity = '0.5';
+      }
+      let avatarContent;
+      if (user.avatar_path) {
+        avatarContent = `<img src="${user.avatar_path}" alt="${user.name}" style="width: 100%; height: 100%; object-fit: cover;">`;
+      } else {
+        avatarContent = user.name.charAt(0);
+      }
+      memberItem.innerHTML = `
+        <div class="member-avatar">${avatarContent}</div>
+        <div class="member-name">${user.name}${isAlreadyMember ? " <span style='color:#aaa;font-size:12px;'>(already in group)</span>" : ''}</div>
+      `;
+      if (!isAlreadyMember) {
+        memberItem.addEventListener('click', function() {
+          this.classList.toggle('selected');
+        });
+      }
+      list.appendChild(memberItem);
+    });
+  }
+  
+  function addGroupMembers(groupId, userIds) {
+    return fetch('/add_group_members', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ group_id: groupId, user_ids: userIds })
+    }).then(r => r.json());
   }
   
   function showEditGroup(group) {
-    console.log('Edit group:', group.id);
-    showNotImplementedNotification('Edit group');
+    // Удаляем старую модалку, если есть
+    const oldModal = document.getElementById('editGroupModal');
+    if (oldModal) oldModal.remove();
+
+    // Сортируем участников: сначала админы
+    const members = (group.members || []).slice().sort((a, b) => {
+      if (a.role === 'admin' && b.role !== 'admin') return -1;
+      if (a.role !== 'admin' && b.role === 'admin') return 1;
+      return a.name.localeCompare(b.name);
+    });
+
+    // Модалка
+    const modal = document.createElement('div');
+    modal.id = 'editGroupModal';
+    modal.className = 'modal-overlay';
+    modal.innerHTML = `
+      <div class="modal-dialog" style="max-width: 440px;">
+        <div class="modal-title" style="margin-bottom: 12px;">Edit Group</div>
+        <form id="editGroupForm" autocomplete="off">
+          <div style="display:flex;align-items:center;gap:16px;margin-bottom:16px;">
+            <label style="cursor:pointer;">
+              <input type="file" id="editGroupAvatarInput" accept="image/*" style="display:none;">
+              <div id="editGroupAvatarPreview" style="width:56px;height:56px;border-radius:50%;background:#333;display:flex;align-items:center;justify-content:center;overflow:hidden;">
+                ${group.avatar_path ? `<img src="${group.avatar_path}" style="width:100%;height:100%;object-fit:cover;">` : `<span style='color:#fff;font-size:28px;'>${group.name.charAt(0)}</span>`}
+              </div>
+            </label>
+            <div style="flex:1;display:flex;flex-direction:column;gap:8px;">
+              <input type="text" id="editGroupName" value="${group.name}" placeholder="Group name" style="width:100%;padding:7px 10px;border-radius:5px;border:1px solid #444;background:#222;color:#fff;box-sizing:border-box;">
+              <textarea id="editGroupDesc" placeholder="Description" style="width:100%;height:48px;padding:7px 10px;border-radius:5px;border:1px solid #444;background:#222;color:#fff;box-sizing:border-box;">${group.description || ''}</textarea>
+            </div>
+          </div>
+          <div style="margin-bottom:10px;font-weight:500;color:#fff;">Members</div>
+          <div class="members-list" id="editGroupMembersList" style="margin-bottom:18px;max-height:180px;overflow-y:auto;"></div>
+          <div style="margin-top:18px;text-align:center;">
+            <button type="button" class="btn btn-delete-group" id="deleteGroupBtn" style="width:80%;background:#2c2c2c;color:#e74c3c;font-weight:500;">Delete group</button>
+          </div>
+          <div class="modal-actions" style="margin-top:18px;gap:10px;justify-content:center;">
+            <button type="button" class="btn btn-secondary" id="cancelEditGroupBtn">Cancel</button>
+            <button type="submit" class="btn btn-secondary">Save</button>
+          </div>
+        </form>
+      </div>
+    `;
+    document.body.appendChild(modal);
+
+    // Рендерим участников
+    const list = document.getElementById('editGroupMembersList');
+    members.forEach(user => {
+      const memberItem = document.createElement('div');
+      memberItem.className = 'member-item';
+      memberItem.style.display = 'flex';
+      memberItem.style.alignItems = 'center';
+      memberItem.style.justifyContent = 'space-between';
+      memberItem.style.gap = '10px';
+      let avatarContent;
+      if (user.avatar_path) {
+        avatarContent = `<img src="${user.avatar_path}" alt="${user.name}" style="width:36px;height:36px;border-radius:50%;object-fit:cover;">`;
+      } else {
+        avatarContent = `<span style='color:#fff;font-size:18px;'>${user.name.charAt(0)}</span>`;
+      }
+      let adminBadge = '';
+      if (user.role === 'admin') {
+        adminBadge = `<span style="border:1.5px solid #2a5885; color:#2a5885; border-radius:6px; font-size:12px; padding:1px 7px; margin-left:8px; vertical-align:middle; background:#181818;">admin</span>`;
+      }
+      let controls = '';
+      if (user.id === group.creator_id) {
+        controls += `<span style="color:#aaa;font-size:12px;">creator</span>`;
+      }
+      memberItem.innerHTML = `
+        <div style="display:flex;align-items:center;gap:10px;">
+          <div class="member-avatar" style="width:36px;height:36px;">${avatarContent}</div>
+          <div class="member-name">${user.name} ${adminBadge}</div>
+        </div>
+        <div>${controls}</div>
+      `;
+      // Контекстное меню по ПКМ
+      if (user.id !== group.creator_id) {
+        memberItem.addEventListener('contextmenu', function(e) {
+          e.preventDefault();
+          showMemberContextMenu(e, user, group);
+        });
+      }
+      list.appendChild(memberItem);
+    });
+
+    // Cancel
+    document.getElementById('cancelEditGroupBtn').onclick = function() {
+      modal.remove();
+    };
+    // Save (реальный вызов)
+    document.getElementById('editGroupForm').onsubmit = function(e) {
+      e.preventDefault();
+      const name = document.getElementById('editGroupName').value.trim();
+      const description = document.getElementById('editGroupDesc').value.trim();
+      const avatarInput = document.getElementById('editGroupAvatarInput');
+      const formData = new FormData();
+      formData.append('group_id', group.id);
+      formData.append('name', name);
+      formData.append('description', description);
+      if (avatarInput.files && avatarInput.files[0]) {
+        formData.append('avatar', avatarInput.files[0]);
+      }
+      fetch('/edit_group', {
+        method: 'POST',
+        body: formData
+      })
+        .then(r => r.json())
+        .then(res => {
+          if (res.success) {
+            showSuccessNotification('Group updated');
+            modal.remove();
+            getGroupInfo(group.id).then(response => {
+              if (response.success) {
+                createGroupChatInterface(response.group);
+              }
+            });
+            if (typeof loadSidebar === 'function') loadSidebar();
+          } else {
+            showErrorNotification(res.error || 'Failed to update group');
+          }
+        })
+        .catch(() => {
+          showErrorNotification('Failed to update group');
+        });
+    };
+    // Delete group (кастомное подтверждение)
+    document.getElementById('deleteGroupBtn').onclick = function() {
+      showDeleteGroupConfirmation(group);
+    };
+    // Аватар: превью при выборе файла
+    document.getElementById('editGroupAvatarInput').onchange = function(e) {
+      const file = e.target.files && e.target.files[0];
+      if (file) {
+        const reader = new FileReader();
+        reader.onload = function(ev) {
+          document.getElementById('editGroupAvatarPreview').innerHTML = `<img src="${ev.target.result}" style="width:100%;height:100%;object-fit:cover;">`;
+        };
+        reader.readAsDataURL(file);
+      }
+    };
+  }
+  
+  function showDeleteGroupConfirmation(group) {
+    // Удаляем старую модалку, если есть
+    const oldModal = document.getElementById('deleteGroupModal');
+    if (oldModal) oldModal.remove();
+    const modal = document.createElement('div');
+    modal.id = 'deleteGroupModal';
+    modal.className = 'modal-overlay';
+    modal.innerHTML = `
+      <div class="modal-dialog" style="max-width:340px;">
+        <div class="modal-title" style="margin-bottom:18px;">Are you sure you want to delete this group?</div>
+        <div style="color:#e57373;margin-bottom:18px;">This action cannot be undone.</div>
+        <div class="modal-actions" style="flex-direction:row;gap:12px;justify-content:center;">
+          <button class="btn btn-secondary" id="cancelDeleteGroupBtn">Cancel</button>
+          <button class="btn btn-danger" id="confirmDeleteGroupBtn">Delete</button>
+        </div>
+      </div>
+    `;
+    document.body.appendChild(modal);
+    document.getElementById('cancelDeleteGroupBtn').onclick = function() {
+      modal.remove();
+    };
+    document.getElementById('confirmDeleteGroupBtn').onclick = function() {
+      fetch('/delete_group', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ group_id: group.id })
+      })
+        .then(r => r.json())
+        .then(res => {
+          if (res.success) {
+            showSuccessNotification('Group deleted');
+            modal.remove();
+            // Закрыть меню редактирования группы, если оно открыто
+            const editModal = document.getElementById('editGroupModal');
+            if (editModal) editModal.remove();
+            if (typeof loadSidebar === 'function') loadSidebar();
+            const mainContent = document.querySelector('.main-content');
+            if (mainContent) mainContent.innerHTML = '<div class="empty-chat">Select a chat to start messaging</div>';
+          } else {
+            showErrorNotification(res.error || 'Failed to delete group');
+          }
+        })
+        .catch(() => {
+          showErrorNotification('Failed to delete group');
+        });
+    };
+  }
+  
+  function showMemberContextMenu(e, user, group) {
+    // Удалить старое меню
+    const oldMenu = document.getElementById('memberContextMenu');
+    if (oldMenu) oldMenu.remove();
+    // Создать меню
+    const menu = document.createElement('div');
+    menu.id = 'memberContextMenu';
+    menu.className = 'message-context-menu';
+    menu.style.position = 'fixed';
+    menu.style.left = `${e.clientX}px`;
+    menu.style.top = `${e.clientY}px`;
+    menu.style.zIndex = 10001;
+    menu.innerHTML = `
+      <div class="menu-option make-admin-option" style="color:#2a5885;font-weight:500;">Make admin</div>
+      <div class="menu-option remove-admin-option" style="color:#e67e22;font-weight:500;">Remove admin</div>
+      <div class="menu-option kick-option" style="color:#e74c3c;font-weight:500;">Kick from group</div>
+    `;
+    document.body.appendChild(menu);
+    // Показать/скрыть опции в зависимости от роли
+    if (user.role === 'admin') {
+      menu.querySelector('.make-admin-option').style.display = 'none';
+      menu.querySelector('.remove-admin-option').style.display = '';
+    } else {
+      menu.querySelector('.make-admin-option').style.display = '';
+      menu.querySelector('.remove-admin-option').style.display = 'none';
+    }
+    // Обработчики
+    menu.querySelector('.make-admin-option').onclick = function() {
+      fetch('/set_group_admin', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ group_id: group.id, user_id: user.id })
+      })
+        .then(r => r.json())
+        .then(res => {
+          if (res.success) {
+            showSuccessNotification('User is now admin');
+            getGroupInfo(group.id).then(response => {
+              if (response.success) {
+                createGroupChatInterface(response.group);
+                showEditGroup(response.group);
+              }
+            });
+          } else {
+            showErrorNotification(res.error || 'Failed to make admin');
+          }
+        })
+        .catch(() => {
+          showErrorNotification('Failed to make admin');
+        });
+      menu.remove();
+    };
+    menu.querySelector('.remove-admin-option').onclick = function() {
+      fetch('/remove_group_admin', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ group_id: group.id, user_id: user.id })
+      })
+        .then(r => r.json())
+        .then(res => {
+          if (res.success) {
+            showSuccessNotification('Admin rights removed');
+            getGroupInfo(group.id).then(response => {
+              if (response.success) {
+                createGroupChatInterface(response.group);
+                showEditGroup(response.group);
+              }
+            });
+          } else {
+            showErrorNotification(res.error || 'Failed to remove admin');
+          }
+        })
+        .catch(() => {
+          showErrorNotification('Failed to remove admin');
+        });
+      menu.remove();
+    };
+    menu.querySelector('.kick-option').onclick = function() {
+      fetch('/kick_group_member', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ group_id: group.id, user_id: user.id })
+      })
+        .then(r => r.json())
+        .then(res => {
+          if (res.success) {
+            showSuccessNotification('User kicked');
+            getGroupInfo(group.id).then(response => {
+              if (response.success) {
+                createGroupChatInterface(response.group);
+                showEditGroup(response.group);
+              }
+            });
+          } else {
+            showErrorNotification(res.error || 'Failed to kick user');
+          }
+        })
+        .catch(() => {
+          showErrorNotification('Failed to kick user');
+        });
+      menu.remove();
+    };
+    // Закрытие по клику вне меню
+    setTimeout(() => {
+      document.addEventListener('click', function closeMenu(ev) {
+        if (!menu.contains(ev.target)) {
+          menu.remove();
+          document.removeEventListener('click', closeMenu);
+        }
+      });
+    }, 10);
   }
   
   function showLeaveGroupConfirmation(group) {
-    console.log('Leave group:', group.id);
-    showNotImplementedNotification('Leave group');
+    // Удаляем старую модалку, если есть
+    const oldModal = document.getElementById('leaveGroupModal');
+    if (oldModal) oldModal.remove();
+
+    // Создаем модалку
+    const modal = document.createElement('div');
+    modal.id = 'leaveGroupModal';
+    modal.className = 'modal-overlay';
+    modal.innerHTML = `
+      <div class="modal-dialog">
+        <div class="modal-title">Are you sure you want to leave this group?</div>
+        <div class="modal-actions">
+          <button class="btn btn-secondary" id="cancelLeaveGroupBtn">No</button>
+          <button class="btn btn-secondary" id="confirmLeaveGroupBtn">Yes</button>
+        </div>
+      </div>
+    `;
+    document.body.appendChild(modal);
+
+    // Кнопка "No"
+    document.getElementById('cancelLeaveGroupBtn').onclick = function() {
+      modal.remove();
+    };
+    // Кнопка "Yes"
+    document.getElementById('confirmLeaveGroupBtn').onclick = function() {
+      leaveGroup(group.id)
+        .then(res => {
+          if (res.success) {
+            showSuccessNotification('You have left the group');
+            modal.remove();
+            // UI: закрыть чат, обновить сайдбар
+            if (typeof loadSidebar === 'function') loadSidebar();
+            const mainContent = document.querySelector('.main-content');
+            if (mainContent) mainContent.innerHTML = '<div class="empty-chat">Select a chat to start messaging</div>';
+          } else {
+            showErrorNotification(res.error || 'Failed to leave group');
+          }
+        })
+        .catch(() => {
+          showErrorNotification('Failed to leave group');
+        });
+    };
   }
   
   /**
@@ -539,6 +1073,15 @@ function openGroupChat(groupId, groupName) {
           </div>
           <div class="menu-option-text">Edit Message</div>
         </div>
+        <div class="menu-option delete-option" style="color:#e74c3c;">
+          <div class="menu-option-icon">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <polyline points="3 6 5 6 21 6"></polyline>
+              <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h2a2 2 0 0 1 2 2v2"></path>
+            </svg>
+          </div>
+          <div class="menu-option-text">Delete Message</div>
+        </div>
       `;
     }
     
@@ -598,6 +1141,28 @@ function openGroupChat(groupId, groupName) {
           });
         contextMenu.remove();
       });
+    }
+    
+    // Добавить обработчик для удаления сообщения
+    if (isSent) {
+      const deleteOption = contextMenu.querySelector('.delete-option');
+      if (deleteOption) {
+        deleteOption.addEventListener('click', () => {
+          deleteGroupMessage(message.id)
+            .then(res => {
+              if (res.success) {
+                showSuccessNotification('Message deleted');
+                messageEl.remove();
+              } else {
+                showErrorNotification(res.error || 'Failed to delete message');
+              }
+            })
+            .catch(() => {
+              showErrorNotification('Failed to delete message');
+            });
+          contextMenu.remove();
+        });
+      }
     }
     
     // Close menu when clicking elsewhere
@@ -696,6 +1261,16 @@ function openGroupChat(groupId, groupName) {
    * Create a group message element
    */
   function createGroupMessageElement(message, memberMap) {
+    // Примитивная проверка на system-сообщение по тексту
+    const isSystem = /added|removed|admin|changed|set group|left the group|joined the group|назначен|снят|добавил|удалил|покинул|сменил|изменил|аватар|описание|название/i.test(message.content);
+
+    if (isSystem) {
+      const el = document.createElement('div');
+      el.className = 'system-divider';
+      el.innerHTML = `<span>${escapeHtml(message.content)}</span>`;
+      return el;
+    }
+
     const messageEl = document.createElement('div');
     
     // Determine if this is a sent or received message
@@ -736,5 +1311,82 @@ function openGroupChat(groupId, groupName) {
     });
     
     return messageEl;
+  }
+  
+  // API: выход из группы
+  function leaveGroup(groupId) {
+    return fetch('/leave_group', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify({ group_id: groupId })
+    })
+      .then(r => r.json());
+  }
+  
+  // Добавим стили для модального окна, если их нет
+  (function addLeaveGroupModalStyles() {
+    if (!document.getElementById('leave-group-modal-style')) {
+      const style = document.createElement('style');
+      style.id = 'leave-group-modal-style';
+      style.innerHTML = `
+        .modal-overlay {
+          position: fixed;
+          top: 0; left: 0; right: 0; bottom: 0;
+          background: rgba(0,0,0,0.6);
+          z-index: 9999;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+        }
+        .modal-dialog {
+          background: #181818;
+          border-radius: 10px;
+          box-shadow: 0 2px 16px rgba(0,0,0,0.5);
+          padding: 32px 32px 24px 32px;
+          min-width: 320px;
+          max-width: 90vw;
+          text-align: center;
+        }
+        .modal-title {
+          color: #fff;
+          font-size: 20px;
+          margin-bottom: 24px;
+        }
+        .modal-actions {
+          display: flex;
+          flex-direction: row;
+          justify-content: center;
+          gap: 12px;
+          margin-top: 16px;
+        }
+        .modal-actions .btn {
+          padding: 6px 24px;
+          border-radius: 6px;
+          font-size: 15px;
+          border: none;
+          cursor: pointer;
+          background: #555;
+          color: #fff;
+          transition: background 0.2s;
+          min-width: 80px;
+          max-width: 120px;
+          width: auto;
+        }
+        .modal-actions .btn:hover {
+          background: #666;
+        }
+      `;
+      document.head.appendChild(style);
+    }
+  })();
+  
+  function deleteGroupMessage(messageId) {
+    return fetch('/delete_group_message', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ message_id: messageId })
+    }).then(r => r.json());
   }
   

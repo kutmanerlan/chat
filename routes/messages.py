@@ -262,3 +262,44 @@ def edit_message():
         db.session.rollback()
         logging.error(f"Error editing message: {str(e)}")
         return jsonify({'success': False, 'error': 'Server error'}), 500
+
+@messages_bp.route('/delete_message', methods=['POST'])
+def delete_message():
+    if 'user_id' not in session:
+        return jsonify({'success': False, 'error': 'Not logged in'}), 401
+    try:
+        data = request.get_json()
+        message_id = data.get('message_id')
+        if not message_id:
+            return jsonify({'success': False, 'error': 'Message ID required'}), 400
+        message = Message.query.get(message_id)
+        if not message:
+            return jsonify({'success': False, 'error': 'Message not found'}), 404
+        if message.sender_id != session['user_id']:
+            return jsonify({'success': False, 'error': 'You can only delete your own messages'}), 403
+        db.session.delete(message)
+        db.session.commit()
+        return jsonify({'success': True})
+    except Exception as e:
+        db.session.rollback()
+        return jsonify({'success': False, 'error': str(e)}), 500
+
+@messages_bp.route('/delete_chat', methods=['POST'])
+def delete_chat():
+    if 'user_id' not in session:
+        return jsonify({'success': False, 'error': 'Not logged in'}), 401
+    try:
+        data = request.get_json()
+        other_user_id = data.get('user_id')
+        if not other_user_id:
+            return jsonify({'success': False, 'error': 'User ID required'}), 400
+        # Удаляем все сообщения между текущим пользователем и выбранным пользователем
+        num_deleted = Message.query.filter(
+            ((Message.sender_id == session['user_id']) & (Message.recipient_id == other_user_id)) |
+            ((Message.sender_id == other_user_id) & (Message.recipient_id == session['user_id']))
+        ).delete(synchronize_session=False)
+        db.session.commit()
+        return jsonify({'success': True, 'deleted': num_deleted})
+    except Exception as e:
+        db.session.rollback()
+        return jsonify({'success': False, 'error': str(e)}), 500

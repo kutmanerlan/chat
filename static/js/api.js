@@ -432,3 +432,14 @@ function fetchContacts() {
     throw error;
   });
 }
+
+/**
+ * Delete all messages in a chat between current user and another user
+ */
+function deleteChat(userId) {
+  return fetch('/delete_chat', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ user_id: userId })
+  }).then(r => r.json());
+}

@@ -134,47 +134,71 @@ function createGroupElement(group) {
   // Group info
   const groupInfo = document.createElement('div');
   groupInfo.className = 'contact-info';
+  groupInfo.style.display = 'flex';
+  groupInfo.style.flexDirection = 'column';
+  groupInfo.style.justifyContent = 'center';
   
-  // Add timestamp for last message (if exists)
-  let lastMessageTime = '';
-  if (group.last_message && group.last_message.timestamp) {
-    lastMessageTime = formatMessageTime(group.last_message.timestamp);
-  }
-  
+  // Название и индикатор G в одной строке
+  const groupNameRow = document.createElement('div');
+  groupNameRow.style.display = 'flex';
+  groupNameRow.style.alignItems = 'center';
+  groupNameRow.style.width = '100%';
+
   const groupName = document.createElement('div');
   groupName.className = 'contact-name';
   groupName.innerHTML = `<span class="name-text">${group.name}</span>`;
-  
-  // Show members count or last message if available
-  const groupDetails = document.createElement('div');
-  groupDetails.className = 'last-message';
-  
-  if (group.last_message) {
-    let messagePreview = group.last_message.content;
-    if (messagePreview.length > 25) {
-      messagePreview = messagePreview.substring(0, 25) + '...';
-    }
-    
-    // Show sender name + message and time
-    const senderName = group.last_message.sender_name || 'Someone';
-    groupDetails.innerHTML = `
-      <span class="message-preview">${senderName}: ${messagePreview}</span>
-      ${lastMessageTime ? `<span class="last-time">${lastMessageTime}</span>` : ''}
-    `;
-  } else {
-    // If no messages, show members count
-    groupDetails.textContent = `${group.member_count || 0} members`;
-  }
-  
-  // Add group indicator
+  groupNameRow.appendChild(groupName);
+
   const groupIndicator = document.createElement('span');
   groupIndicator.className = 'group-indicator';
   groupIndicator.textContent = 'G';
-  groupIndicator.setAttribute('data-tooltip', 'It\'s a group chat');
-  
-  groupIndicator.addEventListener('mouseenter', showTooltip);
-  groupIndicator.addEventListener('mouseleave', hideTooltip);
-  
+  groupIndicator.style.marginLeft = '8px';
+  groupNameRow.appendChild(groupIndicator);
+
+  // Последнее сообщение и время
+  const groupDetailsRow = document.createElement('div');
+  groupDetailsRow.className = 'chat-details-row';
+  groupDetailsRow.style.display = 'flex';
+  groupDetailsRow.style.alignItems = 'center';
+  groupDetailsRow.style.width = '100%';
+  groupDetailsRow.style.minHeight = '20px';
+
+  const lastMessagePreview = document.createElement('span');
+  lastMessagePreview.className = 'last-message'; // Используем тот же класс для стилей
+  lastMessagePreview.style.flex = '1 1 auto';
+  lastMessagePreview.style.overflow = 'hidden';
+  lastMessagePreview.style.textOverflow = 'ellipsis';
+  lastMessagePreview.style.whiteSpace = 'nowrap';
+  lastMessagePreview.style.display = 'inline-block';
+  lastMessagePreview.style.verticalAlign = 'middle';
+
+  const lastTime = document.createElement('span');
+  lastTime.className = 'last-time';
+  lastTime.style.display = 'inline-block';
+  lastTime.style.verticalAlign = 'middle';
+
+  if (group.last_message) {
+    let messagePreviewText = group.last_message.content;
+    if (messagePreviewText.length > 25) {
+      messagePreviewText = messagePreviewText.substring(0, 25) + '...';
+    }
+    const senderName = group.last_message.sender_name || 'Someone';
+    lastMessagePreview.textContent = `${senderName}: ${messagePreviewText}`;
+    lastTime.textContent = formatMessageTime(group.last_message.timestamp);
+  } else {
+    lastMessagePreview.textContent = `${group.member_count || 0} members`; // Если нет сообщений, показываем кол-во участников
+    lastTime.textContent = '';
+  }
+
+  groupDetailsRow.appendChild(lastMessagePreview);
+  groupDetailsRow.appendChild(lastTime);
+
+  groupInfo.appendChild(groupNameRow);
+  groupInfo.appendChild(groupDetailsRow);
+
+  groupItem.appendChild(groupAvatar);
+  groupItem.appendChild(groupInfo);
+
   // Unread badge
   if (group.unread_count && group.unread_count > 0) {
     const unreadBadge = document.createElement('div');
@@ -182,16 +206,7 @@ function createGroupElement(group) {
     unreadBadge.textContent = group.unread_count;
     groupItem.appendChild(unreadBadge);
   }
-  
-  // Assemble elements
-  groupInfo.appendChild(groupName);
-  groupInfo.appendChild(groupDetails);
-  
-  groupItem.appendChild(groupAvatar);
-  groupItem.appendChild(groupInfo);
-  groupItem.appendChild(groupIndicator);
-  
-  // Add click handler
+
   groupItem.addEventListener('click', () => {
     openGroupChat(group.id, group.name);
   });
@@ -245,141 +260,107 @@ function createContactElement(contact) {
  * Create a chat element
  */
 function createChatElement(chat) {
-  // Debug the entire chat object to console
-  console.log("Raw chat object:", JSON.stringify(chat));
-  
   const chatItem = document.createElement('div');
-  chatItem.className = 'contact-item chat-item';
+  chatItem.className = 'contact-item';
   chatItem.dataset.userId = chat.user_id;
-  
-  // Avatar
-  const userAvatar = document.createElement('div');
-  userAvatar.className = 'contact-avatar';
-  
+
+  // Аватар
+  const chatAvatar = document.createElement('div');
+  chatAvatar.className = 'contact-avatar';
   if (chat.avatar_path) {
-    userAvatar.innerHTML = `<img src="${chat.avatar_path}" alt="${chat.name}">`;
+    chatAvatar.innerHTML = `<img src="${chat.avatar_path}" alt="${chat.name}">`;
   } else {
-    userAvatar.innerHTML = `<div class="avatar-initials">${chat.name.charAt(0)}</div>`;
+    chatAvatar.innerHTML = `<div class="avatar-initials">${chat.name.charAt(0)}</div>`;
   }
-  
-  // User info
-  const userInfo = document.createElement('div');
-  userInfo.className = 'contact-info';
-  
-  // Format the last message timestamp if available - FIXED FIELD NAME
-  let timestampValue = null;
-  if (chat.last_message_timestamp) {
-    timestampValue = chat.last_message_timestamp;
-  } else if (chat.last_timestamp) { // THIS IS THE KEY FIX - server sends 'last_timestamp'
-    timestampValue = chat.last_timestamp;
-  } else if (chat.last_message && chat.last_message.timestamp) {
-    timestampValue = chat.last_message.timestamp;
-  } else if (chat.timestamp) {
-    timestampValue = chat.timestamp;
-  }
-  
-  // Debug the extracted timestamp
-  console.log(`Chat: ${chat.name}, Timestamp: ${timestampValue}`);
-  
-  let lastMessageTime = timestampValue ? formatMessageTime(timestampValue) : '';
-  
-  const userName = document.createElement('div');
-  userName.className = 'contact-name';
-  userName.innerHTML = `<span class="name-text">${chat.name}</span>`;
-  
-  // Create separate elements for message row
-  const lastMessageRow = document.createElement('div');
-  lastMessageRow.className = 'last-message';
-  lastMessageRow.style.display = 'flex';
-  lastMessageRow.style.justifyContent = 'space-between';
-  lastMessageRow.style.width = '100%';
-  
-  // Determine message content
-  let messageContent = '';
-  if (typeof chat.last_message === 'string') {
-    messageContent = chat.last_message;
-  } else if (chat.last_message && chat.last_message.content) {
-    messageContent = chat.last_message.content;
-  }
-  
-  if (messageContent && messageContent.length > 25) {
-    messageContent = messageContent.substring(0, 25) + '...';
-  }
-  
-  // Message preview with simplified HTML structure
-  const messagePreview = document.createElement('div');
-  messagePreview.className = 'message-preview';
-  messagePreview.textContent = messageContent || '';
-  messagePreview.style.maxWidth = '65%';
-  messagePreview.style.overflow = 'hidden';
-  messagePreview.style.textOverflow = 'ellipsis';
-  messagePreview.style.whiteSpace = 'nowrap';
-  
-  // Time element with direct styles
-  if (lastMessageTime) {
-    // Use extremely visible styles for testing - makes timestamp RED
-    const timeEl = document.createElement('div');
-    timeEl.className = 'last-time';
-    timeEl.textContent = lastMessageTime;
-    timeEl.style.color = '#ff3333'; // Bright red for visibility during testing
-    timeEl.style.fontWeight = 'bold';
-    timeEl.style.marginLeft = 'auto';
-    timeEl.style.fontSize = '12px';
-    timeEl.style.paddingLeft = '8px';
-    
-    // Add elements to the row
-    lastMessageRow.appendChild(messagePreview);
-    lastMessageRow.appendChild(timeEl);
-  } else {
-    // If no timestamp, just add the message preview
-    lastMessageRow.appendChild(messagePreview);
-  }
-  
-  // Assemble the elements
-  userInfo.appendChild(userName);
-  userInfo.appendChild(lastMessageRow);
-  
-  chatItem.appendChild(userAvatar);
-  chatItem.appendChild(userInfo);
-  
-  // Add contact/block indicators as before
+
+  // Контейнер для имени и последнего сообщения
+  const chatInfo = document.createElement('div');
+  chatInfo.className = 'contact-info';
+  chatInfo.style.display = 'flex';
+  chatInfo.style.flexDirection = 'column';
+  chatInfo.style.justifyContent = 'center';
+
+  // Имя и индикатор в одной строке, выровнены по вертикали
+  const chatNameRow = document.createElement('div');
+  chatNameRow.style.display = 'flex';
+  chatNameRow.style.alignItems = 'center';
+  chatNameRow.style.width = '100%';
+
+  const chatName = document.createElement('div');
+  chatName.className = 'contact-name';
+  chatName.innerHTML = chat.name;
+  chatNameRow.appendChild(chatName);
+
+  // Индикатор контакта/блокировки
+  let indicator = null;
   if (chat.is_blocked_by_you) {
-    const blockIndicator = document.createElement('span');
-    blockIndicator.className = 'block-indicator blocked-by-you';
-    blockIndicator.textContent = 'B';
-    blockIndicator.setAttribute('data-tooltip', 'You have blocked this user');
-    
-    blockIndicator.addEventListener('mouseenter', showTooltip);
-    blockIndicator.addEventListener('mouseleave', hideTooltip);
-    
-    chatItem.appendChild(blockIndicator);
+    indicator = document.createElement('span');
+    indicator.className = 'block-indicator blocked-by-you';
+    indicator.textContent = 'B';
+    indicator.setAttribute('data-tooltip', 'You have blocked this user');
+    indicator.addEventListener('mouseenter', showTooltip);
+    indicator.addEventListener('mouseleave', hideTooltip);
   } else if (chat.has_blocked_you) {
-    const blockIndicator = document.createElement('span');
-    blockIndicator.className = 'block-indicator blocked-you';
-    blockIndicator.textContent = 'B';
-    blockIndicator.setAttribute('data-tooltip', 'This user has blocked you');
-    
-    blockIndicator.addEventListener('mouseenter', showTooltip);
-    blockIndicator.addEventListener('mouseleave', hideTooltip);
-    
-    chatItem.appendChild(blockIndicator);
+    indicator = document.createElement('span');
+    indicator.className = 'block-indicator blocked-you';
+    indicator.textContent = 'B';
+    indicator.setAttribute('data-tooltip', 'This user has blocked you');
+    indicator.addEventListener('mouseenter', showTooltip);
+    indicator.addEventListener('mouseleave', hideTooltip);
   } else if (chat.is_contact) {
-    const contactIndicator = document.createElement('span');
-    contactIndicator.className = 'contact-indicator';
-    contactIndicator.textContent = 'C';
-    contactIndicator.setAttribute('data-tooltip', 'This user is in your contacts');
-    
-    contactIndicator.addEventListener('mouseenter', showTooltip);
-    contactIndicator.addEventListener('mouseleave', hideTooltip);
-    
-    chatItem.appendChild(contactIndicator);
+    indicator = document.createElement('span');
+    indicator.className = 'contact-indicator';
+    indicator.textContent = 'C';
+    indicator.setAttribute('data-tooltip', 'This user is in your contacts');
+    indicator.addEventListener('mouseenter', showTooltip);
+    indicator.addEventListener('mouseleave', hideTooltip);
   }
-  
-  // Add click handler
+  if (indicator) {
+    indicator.style.marginLeft = 'auto'; // Смещаем вправо
+    indicator.style.paddingLeft = '8px';
+    chatNameRow.appendChild(indicator);
+  }
+
+  // Последнее сообщение и время в одной строке (flex), выровнены по вертикали
+  const chatDetailsRow = document.createElement('div');
+  chatDetailsRow.className = 'chat-details-row';
+  chatDetailsRow.style.display = 'flex';
+  chatDetailsRow.style.alignItems = 'center';
+  chatDetailsRow.style.width = '100%';
+  chatDetailsRow.style.minHeight = '20px';
+
+  const lastMessage = document.createElement('span');
+  lastMessage.className = 'last-message';
+  lastMessage.textContent = chat.last_message || '';
+  lastMessage.style.flex = '1 1 auto';
+  lastMessage.style.overflow = 'hidden';
+  lastMessage.style.textOverflow = 'ellipsis';
+  lastMessage.style.whiteSpace = 'nowrap';
+  lastMessage.style.display = 'inline-block';
+  lastMessage.style.verticalAlign = 'middle';
+
+  const lastTime = document.createElement('span');
+  lastTime.className = 'last-time';
+  lastTime.textContent = chat.last_timestamp ? formatMessageTime(chat.last_timestamp) : '';
+  lastTime.style.display = 'inline-block';
+  lastTime.style.verticalAlign = 'middle';
+  lastTime.style.marginLeft = 'auto'; // Время всегда справа
+  lastTime.style.paddingLeft = '8px';
+
+  chatDetailsRow.appendChild(lastMessage);
+  chatDetailsRow.appendChild(lastTime);
+
+  chatInfo.appendChild(chatNameRow);
+  chatInfo.appendChild(chatDetailsRow);
+
+  chatItem.appendChild(chatAvatar);
+  chatItem.appendChild(chatInfo);
+
+  // Клик по чату
   chatItem.addEventListener('click', () => {
     openChatWithUser(chat.user_id, chat.name);
   });
-  
+
   return chatItem;
 }
 

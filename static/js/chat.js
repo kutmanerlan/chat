@@ -288,6 +288,16 @@ function showContactMenu(menuButton, userId, userName) {
                 </div>
                 <div class="dropdown-option-label" style="color: #e74c3c;">Block User</div>
               </div>
+              <div class="dropdown-option" id="deleteChatOption">
+                <div class="dropdown-option-icon">
+                  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#e74c3c" stroke-width="2">
+                    <rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect>
+                    <line x1="9" y1="9" x2="15" y2="15"></line>
+                    <line x1="15" y1="9" x2="9" y2="15"></line>
+                  </svg>
+                </div>
+                <div class="dropdown-option-label" style="color: #e74c3c;">Delete Chat</div>
+              </div>
             `;
           }
           
@@ -320,6 +330,11 @@ function showContactMenu(menuButton, userId, userName) {
             
             document.getElementById('blockUserOption').addEventListener('click', function() {
               blockUserHandler(userId, userName);
+              contactMenu.style.display = 'none';
+            });
+            // Delete chat option
+            document.getElementById('deleteChatOption').addEventListener('click', function() {
+              showDeleteChatConfirmation(userId, userName);
               contactMenu.style.display = 'none';
             });
           }
@@ -613,4 +628,46 @@ function createBlockedByThemInterface(userId, userName) {
   
   // Show content
   mainContent.style.display = 'flex';
+}
+
+// Добавляю функцию показа модального окна подтверждения удаления чата
+function showDeleteChatConfirmation(userId, userName) {
+  // Удаляем старую модалку, если есть
+  const oldModal = document.getElementById('deleteChatModal');
+  if (oldModal) oldModal.remove();
+  const modal = document.createElement('div');
+  modal.id = 'deleteChatModal';
+  modal.className = 'modal-overlay';
+  modal.innerHTML = `
+    <div class="modal-dialog" style="max-width:340px;">
+      <div class="modal-title" style="margin-bottom:18px;">Are you sure you want to delete this chat with <b>${escapeHtml(userName)}</b>?</div>
+      <div style="color:#e57373;margin-bottom:18px;">This will remove all messages for both users. This action cannot be undone.</div>
+      <div class="modal-actions" style="flex-direction:row;gap:12px;justify-content:center;">
+        <button class="btn btn-secondary" id="cancelDeleteChatBtn">Cancel</button>
+        <button class="btn btn-danger" id="confirmDeleteChatBtn">Delete</button>
+      </div>
+    </div>
+  `;
+  document.body.appendChild(modal);
+  document.getElementById('cancelDeleteChatBtn').onclick = function() {
+    modal.remove();
+  };
+  document.getElementById('confirmDeleteChatBtn').onclick = function() {
+    deleteChat(userId)
+      .then(res => {
+        if (res.success) {
+          showSuccessNotification('Chat deleted');
+          modal.remove();
+          // UI: закрыть чат, обновить сайдбар
+          if (typeof loadSidebar === 'function') loadSidebar();
+          const mainContent = document.querySelector('.main-content');
+          if (mainContent) mainContent.innerHTML = '<div class="empty-chat">Select a chat to start messaging</div>';
+        } else {
+          showErrorNotification(res.error || 'Failed to delete chat');
+        }
+      })
+      .catch(() => {
+        showErrorNotification('Failed to delete chat');
+      });
+  };
 }

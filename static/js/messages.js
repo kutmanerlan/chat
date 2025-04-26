@@ -177,6 +177,15 @@ function showMessageContextMenu(event, message, messageEl) {
         </div>
         <div class="menu-option-text">Edit Message</div>
       </div>
+      <div class="menu-option delete-option" style="color:#e74c3c;">
+        <div class="menu-option-icon">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <polyline points="3 6 5 6 21 6"></polyline>
+            <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h2a2 2 0 0 1 2 2v2"></path>
+          </svg>
+        </div>
+        <div class="menu-option-text">Delete Message</div>
+      </div>
     `;
   }
   
@@ -219,6 +228,25 @@ function showMessageContextMenu(event, message, messageEl) {
     if (editOption) {
       editOption.addEventListener('click', () => {
         enterEditMode(messageEl, message.content);
+        contextMenu.remove();
+      });
+    }
+    // Delete message
+    const deleteOption = contextMenu.querySelector('.delete-option');
+    if (deleteOption) {
+      deleteOption.addEventListener('click', () => {
+        deleteMessage(message.id)
+          .then(res => {
+            if (res.success) {
+              showSuccessNotification('Message deleted');
+              messageEl.remove();
+            } else {
+              showErrorNotification(res.error || 'Failed to delete message');
+            }
+          })
+          .catch(() => {
+            showErrorNotification('Failed to delete message');
+          });
         contextMenu.remove();
       });
     }
@@ -554,4 +582,12 @@ function handleFileSelection(files, user) {
     // TODO: Send file to server (implement server-side handling)
     // This would involve using FormData and fetch to upload the file
   });
+}
+
+function deleteMessage(messageId) {
+  return fetch('/delete_message', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ message_id: messageId })
+  }).then(r => r.json());
 }

@@ -98,9 +98,10 @@ def create_group():
                             group_id=new_group.id,
                             user_id=member_id,
                             role='member',
-                            invitation_status='invited'  # Set as invited initially
+                            invitation_status='accepted'
                         )
                         db.session.add(member)
+                        logging.info(f'Added user {member_id} to group {new_group.id}')
                 except (ValueError, TypeError) as e:
                     logging.warning(f"Invalid member ID: {member_id}, error: {str(e)}")
                     continue
@@ -412,3 +413,244 @@ def edit_group_message():
         db.session.rollback()
         logging.error(f"Error editing group message: {str(e)}")
         return jsonify({'success': False, 'error': 'Server error'}), 500
+
+@groups_bp.route('/leave_group', methods=['POST'])
+def leave_group():
+    if 'user_id' not in session:
+        return jsonify({'success': False, 'error': 'Not logged in'}), 401
+    try:
+        data = request.get_json()
+        group_id = data.get('group_id')
+        if not group_id:
+            return jsonify({'success': False, 'error': 'Group ID is required'}), 400
+
+        # Найти участника
+        member = GroupMember.query.filter_by(
+            group_id=group_id,
+            user_id=session['user_id'],
+            invitation_status='accepted'
+        ).first()
+        if not member:
+            return jsonify({'success': False, 'error': 'You are not a member of this group'}), 403
+
+        # Проверить, был ли пользователь админом
+        was_admin = member.role == 'admin'
+
+        # Удаляем участника
+        db.session.delete(member)
+        db.session.flush()  # flush, чтобы не было конфликтов при проверке админов
+
+        # Если это был админ, проверить, остались ли еще админы
+        if was_admin:
+            admins_left = GroupMember.query.filter_by(
+                group_id=group_id,
+                role='admin',
+                invitation_status='accepted'
+            ).count()
+            if admins_left == 0:
+                # Нет админов, назначить самого раннего участника
+                earliest_member = GroupMember.query.filter_by(
+                    group_id=group_id,
+                    invitation_status='accepted'
+                ).order_by(GroupMember.joined_at.asc()).first()
+                if earliest_member:
+                    earliest_member.role = 'admin'
+
+        db.session.commit()
+        return jsonify({'success': True})
+    except Exception as e:
+        db.session.rollback()
+        logging.error(f"Error leaving group: {str(e)}")
+        logging.error(traceback.format_exc())
+        return jsonify({'success': False, 'error': 'Server error'}), 500
+
+@groups_bp.route('/add_group_members', methods=['POST'])
+def add_group_members():
+    if 'user_id' not in session:
+        return jsonify({'success': False, 'error': 'Not logged in'}), 401
+    try:
+        data = request.get_json()
+        group_id = data.get('group_id')
+        user_ids = data.get('user_ids', [])
+        if not group_id or not user_ids:
+            return jsonify({'success': False, 'error': 'Group ID and user_ids are required'}), 400
+        # Проверить, что вызывающий — админ
+        member = GroupMember.query.filter_by(
+            group_id=group_id,
+            user_id=session['user_id'],
+            invitation_status='accepted'
+        ).first()
+        if not member or member.role != 'admin':
+            return jsonify({'success': False, 'error': 'Only group admin can add members'}), 403
+        # Добавить новых участников
+        user_ids = [int(uid) for uid in user_ids]
+        added = 0
+        for uid in user_ids:
+            try:
+                exists = GroupMember.query.filter_by(group_id=group_id, user_id=uid).first()
+                if not exists:
+                    new_member = GroupMember(
+                        group_id=group_id,
+                        user_id=uid,
+                        role='member',
+                        invitation_status='accepted'
+                    )
+                    db.session.add(new_member)
+                    added += 1
+                    logging.info(f'Added user {uid} to group {group_id}')
+            except Exception as e:
+                logging.error(f'Failed to add user {uid} to group {group_id}: {e}')
+                continue
+        db.session.commit()
+        return jsonify({'success': True, 'added': added})
+    except Exception as e:
+        db.session.rollback()
+        logging.error(f"Error adding group members: {str(e)}")
+        logging.error(traceback.format_exc())
+        return jsonify({'success': False, 'error': 'Server error'}), 500
+
+@groups_bp.route('/edit_group', methods=['POST'])
+def edit_group():
+    if 'user_id' not in session:
+        return jsonify({'success': False, 'error': 'Not logged in'}), 401
+    try:
+        data = request.form if request.form else request.get_json()
+        group_id = data.get('group_id')
+        name = data.get('name', '').strip()
+        description = data.get('description', '').strip()
+        # Проверить права
+        member = GroupMember.query.filter_by(group_id=group_id, user_id=session['user_id'], invitation_status='accepted').first()
+        if not member or member.role != 'admin':
+            return jsonify({'success': False, 'error': 'Only admin can edit group'}), 403
+        group = Group.query.get(group_id)
+        if not group:
+            return jsonify({'success': False, 'error': 'Group not found'}), 404
+        if name:
+            group.name = name
+        group.description = description
+        # Аватар (опционально)
+        if 'avatar' in request.files:
+            avatar_file = request.files['avatar']
+            if avatar_file and avatar_file.filename:
+                from werkzeug.utils import secure_filename
+                import datetime, os
+                filename = secure_filename(avatar_file.filename)
+                unique_filename = f"group_{datetime.datetime.now().strftime('%Y%m%d%H%M%S')}_{filename}"
+                file_path = os.path.join(current_app.config['UPLOAD_FOLDER'], unique_filename)
+                avatar_file.save(file_path)
+                group.avatar_path = f"avatars/{unique_filename}"
+        db.session.commit()
+        return jsonify({'success': True})
+    except Exception as e:
+        db.session.rollback()
+        return jsonify({'success': False, 'error': str(e)}), 500
+
+@groups_bp.route('/set_group_admin', methods=['POST'])
+def set_group_admin():
+    if 'user_id' not in session:
+        return jsonify({'success': False, 'error': 'Not logged in'}), 401
+    try:
+        data = request.get_json()
+        group_id = data.get('group_id')
+        user_id = data.get('user_id')
+        # Проверить права
+        member = GroupMember.query.filter_by(group_id=group_id, user_id=session['user_id'], invitation_status='accepted').first()
+        if not member or member.role != 'admin':
+            return jsonify({'success': False, 'error': 'Only admin can set admin'}), 403
+        target = GroupMember.query.filter_by(group_id=group_id, user_id=user_id, invitation_status='accepted').first()
+        if not target:
+            return jsonify({'success': False, 'error': 'User not in group'}), 404
+        target.role = 'admin'
+        db.session.commit()
+        return jsonify({'success': True})
+    except Exception as e:
+        db.session.rollback()
+        return jsonify({'success': False, 'error': str(e)}), 500
+
+@groups_bp.route('/remove_group_admin', methods=['POST'])
+def remove_group_admin():
+    if 'user_id' not in session:
+        return jsonify({'success': False, 'error': 'Not logged in'}), 401
+    try:
+        data = request.get_json()
+        group_id = data.get('group_id')
+        user_id = data.get('user_id')
+        # Проверить права
+        member = GroupMember.query.filter_by(group_id=group_id, user_id=session['user_id'], invitation_status='accepted').first()
+        if not member or member.role != 'admin':
+            return jsonify({'success': False, 'error': 'Only admin can remove admin'}), 403
+        target = GroupMember.query.filter_by(group_id=group_id, user_id=user_id, invitation_status='accepted').first()
+        if not target:
+            return jsonify({'success': False, 'error': 'User not in group'}), 404
+        target.role = 'member'
+        db.session.commit()
+        return jsonify({'success': True})
+    except Exception as e:
+        db.session.rollback()
+        return jsonify({'success': False, 'error': str(e)}), 500
+
+@groups_bp.route('/kick_group_member', methods=['POST'])
+def kick_group_member():
+    if 'user_id' not in session:
+        return jsonify({'success': False, 'error': 'Not logged in'}), 401
+    try:
+        data = request.get_json()
+        group_id = data.get('group_id')
+        user_id = data.get('user_id')
+        # Проверить права
+        member = GroupMember.query.filter_by(group_id=group_id, user_id=session['user_id'], invitation_status='accepted').first()
+        if not member or member.role != 'admin':
+            return jsonify({'success': False, 'error': 'Only admin can kick'}), 403
+        target = GroupMember.query.filter_by(group_id=group_id, user_id=user_id, invitation_status='accepted').first()
+        if not target:
+            return jsonify({'success': False, 'error': 'User not in group'}), 404
+        db.session.delete(target)
+        db.session.commit()
+        return jsonify({'success': True})
+    except Exception as e:
+        db.session.rollback()
+        return jsonify({'success': False, 'error': str(e)}), 500
+
+@groups_bp.route('/delete_group', methods=['POST'])
+def delete_group():
+    if 'user_id' not in session:
+        return jsonify({'success': False, 'error': 'Not logged in'}), 401
+    try:
+        data = request.get_json()
+        group_id = data.get('group_id')
+        group = Group.query.get(group_id)
+        if not group:
+            return jsonify({'success': False, 'error': 'Group not found'}), 404
+        if group.creator_id != session['user_id']:
+            return jsonify({'success': False, 'error': 'Only creator can delete group'}), 403
+        # Удалить всех участников и сообщения
+        GroupMember.query.filter_by(group_id=group_id).delete()
+        GroupMessage.query.filter_by(group_id=group_id).delete()
+        db.session.delete(group)
+        db.session.commit()
+        return jsonify({'success': True})
+    except Exception as e:
+        db.session.rollback()
+        return jsonify({'success': False, 'error': str(e)}), 500
+
+@groups_bp.route('/delete_group_message', methods=['POST'])
+def delete_group_message():
+    if 'user_id' not in session:
+        return jsonify({'success': False, 'error': 'Not logged in'}), 401
+    try:
+        data = request.get_json()
+        message_id = data.get('message_id')
+        if not message_id:
+            return jsonify({'success': False, 'error': 'Message ID required'}), 400
+        from models.user import GroupMessage
+        message = GroupMessage.query.get(message_id)
+        if not message:
+            return jsonify({'success': False, 'error': 'Message not found'}), 404
+        if message.sender_id != session['user_id']:
+            return jsonify({'success': False, 'error': 'You can only delete your own messages'}), 403
+        db.session.delete(message)
+        db.session.commit()
+        return jsonify({'success': True})
+    except Exception as e:
+        db.session.rollback()
+        return jsonify({'success': False, 'error': str(e)}), 500
