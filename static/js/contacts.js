@@ -143,10 +143,7 @@ function createGroupElement(group) {
   
   const groupName = document.createElement('div');
   groupName.className = 'contact-name';
-  groupName.innerHTML = `
-    <span class="name-text">${group.name}</span>
-    ${lastMessageTime ? `<span class="last-time">${lastMessageTime}</span>` : ''}
-  `;
+  groupName.innerHTML = `<span class="name-text">${group.name}</span>`;
   
   // Show members count or last message if available
   const groupDetails = document.createElement('div');
@@ -158,9 +155,12 @@ function createGroupElement(group) {
       messagePreview = messagePreview.substring(0, 25) + '...';
     }
     
-    // Show sender name + message
+    // Show sender name + message and time
     const senderName = group.last_message.sender_name || 'Someone';
-    groupDetails.textContent = `${senderName}: ${messagePreview}`;
+    groupDetails.innerHTML = `
+      <span class="message-preview">${senderName}: ${messagePreview}</span>
+      ${lastMessageTime ? `<span class="last-time">${lastMessageTime}</span>` : ''}
+    `;
   } else {
     // If no messages, show members count
     groupDetails.textContent = `${group.member_count || 0} members`;
@@ -235,6 +235,9 @@ function createContactElement(contact) {
  * Create a chat element
  */
 function createChatElement(chat) {
+  // Debug the entire chat object to console
+  console.log("Raw chat object:", JSON.stringify(chat));
+  
   const chatItem = document.createElement('div');
   chatItem.className = 'contact-item chat-item';
   chatItem.dataset.userId = chat.user_id;
@@ -253,46 +256,89 @@ function createChatElement(chat) {
   const userInfo = document.createElement('div');
   userInfo.className = 'contact-info';
   
-  // Format the last message timestamp if available
-  let lastMessageTime = '';
+  // Format the last message timestamp if available - FIXED FIELD NAME
+  let timestampValue = null;
   if (chat.last_message_timestamp) {
-    lastMessageTime = formatMessageTime(chat.last_message_timestamp);
+    timestampValue = chat.last_message_timestamp;
+  } else if (chat.last_timestamp) { // THIS IS THE KEY FIX - server sends 'last_timestamp'
+    timestampValue = chat.last_timestamp;
+  } else if (chat.last_message && chat.last_message.timestamp) {
+    timestampValue = chat.last_message.timestamp;
+  } else if (chat.timestamp) {
+    timestampValue = chat.timestamp;
   }
+  
+  // Debug the extracted timestamp
+  console.log(`Chat: ${chat.name}, Timestamp: ${timestampValue}`);
+  
+  let lastMessageTime = timestampValue ? formatMessageTime(timestampValue) : '';
   
   const userName = document.createElement('div');
   userName.className = 'contact-name';
-  userName.innerHTML = `
-    <span class="name-text">${chat.name}</span>
-    ${lastMessageTime ? `<span class="last-time">${lastMessageTime}</span>` : ''}
-  `;
+  userName.innerHTML = `<span class="name-text">${chat.name}</span>`;
   
-  // Last message preview
-  const lastMessage = document.createElement('div');
-  lastMessage.className = 'last-message';
+  // Create separate elements for message row
+  const lastMessageRow = document.createElement('div');
+  lastMessageRow.className = 'last-message';
+  lastMessageRow.style.display = 'flex';
+  lastMessageRow.style.justifyContent = 'space-between';
+  lastMessageRow.style.width = '100%';
   
-  // Truncate message if needed
-  let messagePreview = chat.last_message;
-  if (messagePreview.length > 25) {
-    messagePreview = messagePreview.substring(0, 25) + '...';
-  }
-  lastMessage.textContent = messagePreview;
-  
-  // Unread badge
-  if (chat.unread_count > 0) {
-    const unreadBadge = document.createElement('div');
-    unreadBadge.className = 'unread-badge';
-    unreadBadge.textContent = chat.unread_count;
-    chatItem.appendChild(unreadBadge);
+  // Determine message content
+  let messageContent = '';
+  if (typeof chat.last_message === 'string') {
+    messageContent = chat.last_message;
+  } else if (chat.last_message && chat.last_message.content) {
+    messageContent = chat.last_message.content;
   }
   
-  // Priority: Show block indicator first, then contact indicator if not blocked
+  if (messageContent && messageContent.length > 25) {
+    messageContent = messageContent.substring(0, 25) + '...';
+  }
+  
+  // Message preview with simplified HTML structure
+  const messagePreview = document.createElement('div');
+  messagePreview.className = 'message-preview';
+  messagePreview.textContent = messageContent || '';
+  messagePreview.style.maxWidth = '65%';
+  messagePreview.style.overflow = 'hidden';
+  messagePreview.style.textOverflow = 'ellipsis';
+  messagePreview.style.whiteSpace = 'nowrap';
+  
+  // Time element with direct styles
+  if (lastMessageTime) {
+    // Use extremely visible styles for testing - makes timestamp RED
+    const timeEl = document.createElement('div');
+    timeEl.className = 'last-time';
+    timeEl.textContent = lastMessageTime;
+    timeEl.style.color = '#ff3333'; // Bright red for visibility during testing
+    timeEl.style.fontWeight = 'bold';
+    timeEl.style.marginLeft = 'auto';
+    timeEl.style.fontSize = '12px';
+    timeEl.style.paddingLeft = '8px';
+    
+    // Add elements to the row
+    lastMessageRow.appendChild(messagePreview);
+    lastMessageRow.appendChild(timeEl);
+  } else {
+    // If no timestamp, just add the message preview
+    lastMessageRow.appendChild(messagePreview);
+  }
+  
+  // Assemble the elements
+  userInfo.appendChild(userName);
+  userInfo.appendChild(lastMessageRow);
+  
+  chatItem.appendChild(userAvatar);
+  chatItem.appendChild(userInfo);
+  
+  // Add contact/block indicators as before
   if (chat.is_blocked_by_you) {
     const blockIndicator = document.createElement('span');
     blockIndicator.className = 'block-indicator blocked-by-you';
     blockIndicator.textContent = 'B';
     blockIndicator.setAttribute('data-tooltip', 'You have blocked this user');
     
-    // Add event listeners for showing/hiding tooltip
     blockIndicator.addEventListener('mouseenter', showTooltip);
     blockIndicator.addEventListener('mouseleave', hideTooltip);
     
@@ -303,31 +349,21 @@ function createChatElement(chat) {
     blockIndicator.textContent = 'B';
     blockIndicator.setAttribute('data-tooltip', 'This user has blocked you');
     
-    // Add event listeners for showing/hiding tooltip
     blockIndicator.addEventListener('mouseenter', showTooltip);
     blockIndicator.addEventListener('mouseleave', hideTooltip);
     
     chatItem.appendChild(blockIndicator);
   } else if (chat.is_contact) {
-    // Only show contact indicator if not blocked
     const contactIndicator = document.createElement('span');
     contactIndicator.className = 'contact-indicator';
     contactIndicator.textContent = 'C';
     contactIndicator.setAttribute('data-tooltip', 'This user is in your contacts');
     
-    // Add event listeners for showing/hiding tooltip
     contactIndicator.addEventListener('mouseenter', showTooltip);
     contactIndicator.addEventListener('mouseleave', hideTooltip);
     
     chatItem.appendChild(contactIndicator);
   }
-  
-  // Assemble elements
-  userInfo.appendChild(userName);
-  userInfo.appendChild(lastMessage);
-  
-  chatItem.appendChild(userAvatar);
-  chatItem.appendChild(userInfo);
   
   // Add click handler
   chatItem.addEventListener('click', () => {

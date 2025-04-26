@@ -95,139 +95,155 @@
     top: -2px;
     width: 100%;
     padding-right: 10px;
-    display: flex;
-    justify-content: space-between; /* Align name and time on opposite sides */
 }
 
 .contact-name .name-text {
     white-space: nowrap;
     overflow: hidden;
     text-overflow: ellipsis;
-    max-width: 70%; /* Prevent name from pushing out the timestamp */
+    max-width: 100%; /* Allow name to use full width */
 }
 
-.contact-name .last-time {
+/* Last message container - ensure content wraps correctly with indicators */
+.last-message {
+    font-size: 13px;
+    color: var(--text-dimmed);
+    margin-top: 3px;
+    padding-right: 30px; /* Increased from 10px to accommodate the indicators */
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    width: 100%;
+    position: relative; /* Add positioning context */
+    z-index: 2; /* Ensure it's above other elements */
+}
+
+/* Message preview text - ensure it doesn't push timestamp off screen */
+.message-preview {
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    max-width: 60%; /* Keep reduced width for timestamp */
+    display: inline-block;
+}
+
+/* Make timestamp in last message always visible */
+.last-time {
     font-size: 12px;
-    color: #999;
+    color: #999 !important;
     font-weight: normal;
     white-space: nowrap;
-    margin-left: 5px;
-    flex-shrink: 0;
-}
-
-.contact-bio {
-    display: none;
-}
-
-.no-contacts-message {
-    padding: 20px;
-    text-align: center;
-    color: #777;
-    font-size: 14px;
-    font-style: italic;
-    margin-top: 20px;
-    display: none;
+    display: inline-block !important;
+    visibility: visible !important;
+    opacity: 1 !important;
+    min-width: 35px;
+    position: absolute; /* Position absolutely within last-message */
+    right: 1px; /* Adjust this value to move timestamp horizontally */
+    /* Smaller right value (like 10px) moves timestamp right (closer to edge) */
+    /* Larger right value (like 40px) moves timestamp left (further from edge) */
+    top: 0; /* Align with top of container */
+    z-index: 5; /* Higher z-index to ensure visibility */
 }
 
 /* Contact indicator */
 .contact-indicator {
-  position: absolute;
-  right: 12px; /* Position at the right edge of the contact item */
-  top: 40%; /* Changed from 50% to 40% to move higher */
-  transform: translateY(-50%);
-  color: #888;
-  font-size: 12px;
-  font-weight: normal;
-  padding: 2px 4px;
-  background-color: rgba(100, 100, 100, 0.2);
-  border-radius: 4px;
-  z-index: 10;
-  cursor: help;
+    position: absolute;
+    right: 8px; /* Moved from 12px to 8px */
+    top: 40%;
+    transform: translateY(-50%);
+    color: #888;
+    font-size: 12px;
+    font-weight: normal;
+    padding: 2px 4px;
+    background-color: rgba(100, 100, 100, 0.2);
+    border-radius: 4px;
+    z-index: 3; /* Lower than timestamp z-index */
+    cursor: help;
 }
 
 /* Block indicator */
 .block-indicator {
-  position: absolute;
-  right: 12px; /* Same position as contact indicator */
-  top: 40%; /* Changed from 50% to 40% to move higher */
-  transform: translateY(-50%);
-  font-size: 12px;
-  font-weight: normal;
-  padding: 2px 4px;
-  border-radius: 4px;
-  z-index: 10;
-  cursor: help;
+    position: absolute;
+    right: 8px; /* Moved from 12px to 8px */
+    top: 40%;
+    transform: translateY(-50%);
+    font-size: 12px;
+    font-weight: normal;
+    padding: 2px 4px;
+    border-radius: 4px;
+    z-index: 3; /* Lower than timestamp z-index */
+    cursor: help;
 }
 
 /* Blocked by you indicator (red) */
 .block-indicator.blocked-by-you {
-  background-color: rgba(231, 76, 60, 0.2);
-  color: #e74c3c;
+    background-color: rgba(231, 76, 60, 0.2);
+    color: #e74c3c;
 }
 
 /* User has blocked you indicator (gray) */
 .block-indicator.blocked-you {
-  background-color: rgba(150, 150, 150, 0.2);
-  color: #999;
+    background-color: rgba(150, 150, 150, 0.2);
+    color: #999;
 }
 
 /* Block message in main area */
 .block-message {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  height: 100%;
-  color: #999;
-  text-align: center;
-  padding: 20px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    height: 100%;
+    color: #999;
+    text-align: center;
+    padding: 20px;
 }
 
 .block-icon {
-  margin-bottom: 20px;
+    margin-bottom: 20px;
 }
 
 .unblock-button {
-  margin-top: 15px;
-  padding: 8px 16px;
-  background-color: #3a3a3a;
-  color: white;
-  border: none;
-  border-radius: 4px;
-  cursor: pointer;
-  transition: background-color 0.2s;
+    margin-top: 15px;
+    padding: 8px 16px;
+    background-color: #3a3a3a;
+    color: white;
+    border: none;
+    border-radius: 4px;
+    cursor: pointer;
+    transition: background-color 0.2s;
 }
 
 .unblock-button:hover {
-  background-color: #4c4c4c;
+    background-color: #4c4c4c;
 }
 
 /* Remove tooltip pseudo-elements and replace with classes for actual DOM elements */
 .dynamic-tooltip {
-  position: fixed;
-  background-color: #333;
-  color: white;
-  padding: 5px 10px;
-  border-radius: 4px;
-  font-size: 12px;
-  white-space: nowrap;
-  z-index: 99999;
-  box-shadow: 0 2px 5px rgba(0, 0, 0, 0.2);
-  pointer-events: none;
-  transform: translateX(-50%);
-  transition: opacity 0.2s;
+    position: fixed;
+    background-color: #333;
+    color: white;
+    padding: 5px 10px;
+    border-radius: 4px;
+    font-size: 12px;
+    white-space: nowrap;
+    z-index: 99999;
+    box-shadow: 0 2px 5px rgba(0, 0, 0, 0.2);
+    pointer-events: none;
+    transform: translateX(-50%);
+    transition: opacity 0.2s;
 }
 
 .dynamic-tooltip::after {
-  content: '';
-  position: absolute;
-  left: 50%;
-  transform: translateX(-50%);
-  bottom: -10px;
-  border-width: 5px;
-  border-style: solid;
-  border-color: #333 transparent transparent transparent;
-  pointer-events: none;
+    content: '';
+    position: absolute;
+    left: 50%;
+    transform: translateX(-50%);
+    bottom: -10px;
+    border-width: 5px;
+    border-style: solid;
+    border-color: #333 transparent transparent transparent;
+    pointer-events: none;
 }
 
 /* Conversations and recents */
@@ -285,10 +301,6 @@
 .last-message {
     font-size: 13px;
     color: var(--text-dimmed);
-    white-space: nowrap;
-    overflow: hidden;
-    text-overflow: ellipsis;
-    max-width: 100%;
     margin-top: 3px;
     padding-right: 10px; /* Additional right padding */
 }

@@ -209,16 +209,38 @@ function fetchRecentConversations() {
  * Get chat list
  */
 function fetchChatList() {
+  console.log('REQUESTING: GET /get_chat_list');
+  
   return fetch('/get_chat_list', {
     method: 'GET',
     headers: { 'Content-Type': 'application/json' }
   })
   .then(response => {
+    console.log(`Response status: ${response.status}`);
     if (!response.ok) {
       console.error(`Chat list request failed with status: ${response.status}`);
       throw new Error('Failed to load chats');
     }
     return response.json();
+  })
+  .then(data => {
+    // Log the entire response data
+    console.log('RECEIVED CHATS DATA:', JSON.stringify(data, null, 2));
+    
+    // Inspect each chat to see if timestamps exist
+    if (data.chats && Array.isArray(data.chats)) {
+      data.chats.forEach((chat, index) => {
+        console.log(`Chat ${index + 1} - ${chat.name}:`);
+        console.log(`  has last_message_timestamp: ${!!chat.last_message_timestamp}`);
+        console.log(`  has last_message object: ${typeof chat.last_message === 'object' && chat.last_message !== null}`);
+        if (chat.last_message && typeof chat.last_message === 'object') {
+          console.log(`  has last_message.timestamp: ${!!chat.last_message.timestamp}`);
+        }
+        console.log(`  has timestamp: ${!!chat.timestamp}`);
+      });
+    }
+    
+    return data;
   })
   .catch(error => {
     console.error('Error fetching chat list:', error);
