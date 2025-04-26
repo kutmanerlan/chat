@@ -166,6 +166,15 @@ function createGroupElement(group) {
     groupDetails.textContent = `${group.member_count || 0} members`;
   }
   
+  // Add group indicator
+  const groupIndicator = document.createElement('span');
+  groupIndicator.className = 'group-indicator';
+  groupIndicator.textContent = 'G';
+  groupIndicator.setAttribute('data-tooltip', 'It\'s a group chat');
+  
+  groupIndicator.addEventListener('mouseenter', showTooltip);
+  groupIndicator.addEventListener('mouseleave', hideTooltip);
+  
   // Unread badge
   if (group.unread_count && group.unread_count > 0) {
     const unreadBadge = document.createElement('div');
@@ -180,6 +189,7 @@ function createGroupElement(group) {
   
   groupItem.appendChild(groupAvatar);
   groupItem.appendChild(groupInfo);
+  groupItem.appendChild(groupIndicator);
   
   // Add click handler
   groupItem.addEventListener('click', () => {
