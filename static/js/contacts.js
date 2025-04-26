@@ -135,9 +135,18 @@ function createGroupElement(group) {
   const groupInfo = document.createElement('div');
   groupInfo.className = 'contact-info';
   
+  // Add timestamp for last message (if exists)
+  let lastMessageTime = '';
+  if (group.last_message && group.last_message.timestamp) {
+    lastMessageTime = formatMessageTime(group.last_message.timestamp);
+  }
+  
   const groupName = document.createElement('div');
   groupName.className = 'contact-name';
-  groupName.textContent = group.name;
+  groupName.innerHTML = `
+    <span class="name-text">${group.name}</span>
+    ${lastMessageTime ? `<span class="last-time">${lastMessageTime}</span>` : ''}
+  `;
   
   // Show members count or last message if available
   const groupDetails = document.createElement('div');
@@ -244,9 +253,18 @@ function createChatElement(chat) {
   const userInfo = document.createElement('div');
   userInfo.className = 'contact-info';
   
+  // Format the last message timestamp if available
+  let lastMessageTime = '';
+  if (chat.last_message_timestamp) {
+    lastMessageTime = formatMessageTime(chat.last_message_timestamp);
+  }
+  
   const userName = document.createElement('div');
   userName.className = 'contact-name';
-  userName.textContent = chat.name;  // Just set the name text, without the indicator
+  userName.innerHTML = `
+    <span class="name-text">${chat.name}</span>
+    ${lastMessageTime ? `<span class="last-time">${lastMessageTime}</span>` : ''}
+  `;
   
   // Last message preview
   const lastMessage = document.createElement('div');
@@ -317,6 +335,48 @@ function createChatElement(chat) {
   });
   
   return chatItem;
+}
+
+/**
+ * Format message timestamp for the sidebar, similar to Telegram
+ * - Shows time (HH:MM) for today
+ * - Shows day of week for this week
+ * - Shows date (MM/DD) for older messages
+ */
+function formatMessageTime(timestamp) {
+  const date = new Date(timestamp);
+  const now = new Date();
+  const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+  const yesterday = new Date(today);
+  yesterday.setDate(today.getDate() - 1);
+  
+  // Format time as HH:MM
+  const hours = String(date.getHours()).padStart(2, '0');
+  const minutes = String(date.getMinutes()).padStart(2, '0');
+  const timeString = `${hours}:${minutes}`;
+  
+  // If it's today, return just the time
+  if (date >= today) {
+    return timeString;
+  }
+  
+  // If it's yesterday, return "Yesterday"
+  if (date >= yesterday) {
+    return 'Yesterday';
+  }
+  
+  // If it's within the last week, return day of week
+  const weekAgo = new Date(today);
+  weekAgo.setDate(today.getDate() - 6);
+  if (date >= weekAgo) {
+    const days = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
+    return days[date.getDay()];
+  }
+  
+  // For older messages, return MM/DD
+  const month = String(date.getMonth() + 1).padStart(2, '0');
+  const day = String(date.getDate()).padStart(2, '0');
+  return `${month}/${day}`;
 }
 
 /**

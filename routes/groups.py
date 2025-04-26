@@ -157,40 +157,29 @@ def get_user_groups():
                 group_id=group.id
             ).order_by(GroupMessage.timestamp.desc()).first()
             
-            # Calculate unread messages
-            # This needs a way to track last read timestamp per user-group
-            unread_count = 0
+            # Include last message info
+            last_message_data = None
+            if last_message:
+                sender = User.query.get(last_message.sender_id)
+                sender_name = sender.name if sender else "Unknown"
+                last_message_data = {
+                    'content': last_message.content,
+                    'sender_name': sender_name,
+                    'sender_id': last_message.sender_id,
+                    'timestamp': last_message.timestamp.isoformat()  # Include timestamp
+                }
             
-            # Check if user is admin
-            is_admin = member.role == 'admin'
-            
-            group_info = {
+            # Add group to list
+            groups.append({
                 'id': group.id,
                 'name': group.name,
                 'description': group.description,
                 'member_count': member_count,
-                'is_admin': is_admin,
-                'unread_count': unread_count,
-                'avatar_path': group.avatar_path  # Make sure to include avatar_path in response
-            }
-            
-            # Add last message info if exists
-            if last_message:
-                sender = User.query.get(last_message.sender_id)
-                group_info['last_message'] = {
-                    'content': last_message.content,
-                    'timestamp': last_message.timestamp.isoformat(),
-                    'sender_id': last_message.sender_id,
-                    'sender_name': sender.name if sender else 'Unknown'
-                }
-            
-            groups.append(group_info)
-        
-        # Sort by last message time, newest first
-        groups.sort(
-            key=lambda g: g.get('last_message', {}).get('timestamp', ''),
-            reverse=True
-        )
+                'is_admin': member.role == 'admin',
+                'unread_count': 0,  # TODO: Implement unread messages count
+                'avatar_path': group.avatar_path,
+                'last_message': last_message_data
+            })
         
         return jsonify({'success': True, 'groups': groups})
     except Exception as e:

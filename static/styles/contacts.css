@@ -92,9 +92,27 @@
     text-overflow: ellipsis;
     line-height: normal;
     position: relative;
-    top: -2px; /* Changed from -10px to -2px to lower the name text */
-    width: 100%; /* Full width of parent */
-    padding-right: 10px; /* Additional right padding */
+    top: -2px;
+    width: 100%;
+    padding-right: 10px;
+    display: flex;
+    justify-content: space-between; /* Align name and time on opposite sides */
+}
+
+.contact-name .name-text {
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    max-width: 70%; /* Prevent name from pushing out the timestamp */
+}
+
+.contact-name .last-time {
+    font-size: 12px;
+    color: #999;
+    font-weight: normal;
+    white-space: nowrap;
+    margin-left: 5px;
+    flex-shrink: 0;
 }
 
 .contact-bio {
@@ -115,7 +133,7 @@
 .contact-indicator {
   position: absolute;
   right: 12px; /* Position at the right edge of the contact item */
-  top: 50%;
+  top: 40%; /* Changed from 50% to 40% to move higher */
   transform: translateY(-50%);
   color: #888;
   font-size: 12px;
@@ -123,15 +141,15 @@
   padding: 2px 4px;
   background-color: rgba(100, 100, 100, 0.2);
   border-radius: 4px;
-  z-index: 10; /* Maintain original z-index */
-  cursor: help; /* Change cursor to indicate there's additional information */
+  z-index: 10;
+  cursor: help;
 }
 
 /* Block indicator */
 .block-indicator {
   position: absolute;
   right: 12px; /* Same position as contact indicator */
-  top: 50%;
+  top: 40%; /* Changed from 50% to 40% to move higher */
   transform: translateY(-50%);
   font-size: 12px;
   font-weight: normal;

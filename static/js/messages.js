@@ -64,14 +64,49 @@ function renderMessages(messages, chatMessages) {
   messagesContainer.className = 'messages-container';
   chatMessages.appendChild(messagesContainer);
   
+  // Keep track of date to show date separators
+  let currentDate = '';
+  
   // Add each message
   messages.forEach(message => {
+    // Check if date changed (for date separators)
+    const messageDate = new Date(message.timestamp);
+    const dateString = messageDate.toLocaleDateString();
+    
+    if (dateString !== currentDate) {
+      currentDate = dateString;
+      
+      // Add date separator
+      const dateSeparator = document.createElement('div');
+      dateSeparator.className = 'date-separator';
+      dateSeparator.textContent = formatDate(messageDate);
+      messagesContainer.appendChild(dateSeparator);
+    }
+    
     const messageEl = createMessageElement(message);
     messagesContainer.appendChild(messageEl);
   });
   
   // Scroll to bottom
   chatMessages.scrollTop = chatMessages.scrollHeight;
+}
+
+/**
+ * Format date for date separators
+ */
+function formatDate(date) {
+  const now = new Date();
+  const yesterday = new Date(now);
+  yesterday.setDate(now.getDate() - 1);
+  
+  if (date.toDateString() === now.toDateString()) {
+    return 'Today';
+  } else if (date.toDateString() === yesterday.toDateString()) {
+    return 'Yesterday';
+  } else {
+    // Format as MMM DD, YYYY (Jan 01, 2023)
+    return date.toLocaleDateString(undefined, { year: 'numeric', month: 'short', day: 'numeric' });
+  }
 }
 
 /**
@@ -86,22 +121,22 @@ function createMessageElement(message) {
   messageEl.dataset.messageId = message.id;
   messageEl.dataset.senderId = message.sender_id;
   
-  // Format timestamp
+  // Format timestamp with hours and minutes
   const timestamp = new Date(message.timestamp);
   const hours = String(timestamp.getHours()).padStart(2, '0');
   const minutes = String(timestamp.getMinutes()).padStart(2, '0');
+  const timeFormatted = `${hours}:${minutes}`;
   
   // Check if is_edited exists, default to false if not
   const isEdited = message.is_edited === true;
   
-  // Add message content
-  const contentHTML = `<div class="message-content">${escapeHtml(message.content)}</div>`;
-  const timeHTML = `<div class="message-time">
-    ${hours}:${minutes}
-    ${isEdited ? '<span class="edited-indicator">· Edited</span>' : ''}
-  </div>`;
-  
-  messageEl.innerHTML = contentHTML + timeHTML;
+  // Move time to be on same level as content
+  messageEl.innerHTML = `
+    <div class="message-content-wrapper">
+      <div class="message-content">${escapeHtml(message.content)}</div>
+      <div class="message-time">${timeFormatted}${isEdited ? ' <span class="edited-indicator">· Edited</span>' : ''}</div>
+    </div>
+  `;
   
   // Add context menu event listener
   messageEl.addEventListener('contextmenu', function(e) {

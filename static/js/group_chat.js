@@ -15,6 +15,7 @@ function openGroupChat(groupId, groupName) {
   getGroupInfo(groupId)
     .then(response => {
       if (!response.success) {
+        console.error('Failed to get group info:', response);
         throw new Error(response.error || 'Failed to get group info');
       }
       
@@ -29,6 +30,7 @@ function openGroupChat(groupId, groupName) {
     })
     .then(response => {
       if (response && !response.success) {
+        console.error('Failed to load group messages:', response);
         throw new Error(response.error || 'Failed to load group messages');
       }
       
@@ -450,70 +452,62 @@ function loadGroupMessages(groupId) {
  * Render messages in the group chat
  */
 function renderGroupMessages(messages, members, chatMessages) {
+  // Create messages container
+  const messagesContainer = document.createElement('div');
+  messagesContainer.className = 'messages-container';
+  chatMessages.appendChild(messagesContainer);
+  
   // Create a map of user IDs to names for quick lookup
   const memberMap = {};
   members.forEach(member => {
     memberMap[member.id] = member.name;
   });
   
-  // Create messages container
-  const messagesContainer = document.createElement('div');
-  messagesContainer.className = 'messages-container';
-  chatMessages.appendChild(messagesContainer);
+  // Keep track of date to show date separators
+  let currentDate = '';
   
   // Add each message
-  messages.forEach(message => {
-    const messageEl = createGroupMessageElement(message, memberMap);
-    messagesContainer.appendChild(messageEl);
-  });
+  if (messages && messages.length > 0) {
+    messages.forEach(message => {
+      // Check if date changed (for date separators)
+      const messageDate = new Date(message.timestamp);
+      const dateString = messageDate.toLocaleDateString();
+      
+      if (dateString !== currentDate) {
+        currentDate = dateString;
+        
+        // Add date separator
+        const dateSeparator = document.createElement('div');
+        dateSeparator.className = 'date-separator';
+        dateSeparator.textContent = formatDate(messageDate);
+        messagesContainer.appendChild(dateSeparator);
+      }
+      
+      const messageEl = createGroupMessageElement(message, memberMap);
+      messagesContainer.appendChild(messageEl);
+    });
+  }
   
   // Scroll to bottom
   chatMessages.scrollTop = chatMessages.scrollHeight;
 }
 
 /**
- * Create a group message element
+ * Format date for date separators
  */
-function createGroupMessageElement(message, memberMap) {
-  const messageEl = document.createElement('div');
+function formatDate(date) {
+  const now = new Date();
+  const yesterday = new Date(now);
+  yesterday.setDate(now.getDate() - 1);
   
-  // Determine if this is a sent or received message
-  const isSent = parseInt(message.sender_id) === parseInt(ChatApp.currentUser.user_id);
-  messageEl.className = `message ${isSent ? 'message-sent' : 'message-received'}`;
-  messageEl.dataset.messageId = message.id;
-  messageEl.dataset.senderId = message.sender_id;
-  
-  // Format timestamp
-  const timestamp = new Date(message.timestamp);
-  const hours = String(timestamp.getHours()).padStart(2, '0');
-  const minutes = String(timestamp.getMinutes()).padStart(2, '0');
-  
-  // Add sender name for received messages
-  let senderNameHTML = '';
-  if (!isSent) {
-    const senderName = memberMap[message.sender_id] || message.sender_name || 'Unknown';
-    senderNameHTML = `<div class="message-sender">${senderName}</div>`;
+  if (date.toDateString() === now.toDateString()) {
+    return 'Today';
+  } else if (date.toDateString() === yesterday.toDateString()) {
+    return 'Yesterday';
+  } else {
+    // Format as MMM DD, YYYY (Jan 01, 2023)
+    return date.toLocaleDateString(undefined, { year: 'numeric', month: 'short', day: 'numeric' });
   }
-  
-  // Check if is_edited exists, default to false if not
-  const isEdited = message.is_edited === true;
-  
-  // Add message content
-  const contentHTML = `<div class="message-content">${escapeHtml(message.content)}</div>`;
-  const timeHTML = `<div class="message-time">
-    ${hours}:${minutes}
-    ${isEdited ? '<span class="edited-indicator">· Edited</span>' : ''}
-  </div>`;
-  
-  messageEl.innerHTML = senderNameHTML + contentHTML + timeHTML;
-  
-  // Add context menu event listener
-  messageEl.addEventListener('contextmenu', function(e) {
-    e.preventDefault();
-    showGroupMessageContextMenu(e, message, messageEl, isSent);
-  });
-  
-  return messageEl;
 }
 
 /**
@@ -696,4 +690,50 @@ function addMessageToGroupChat(message, chatMessages) {
   
   // Scroll to the new message
   chatMessages.scrollTop = chatMessages.scrollHeight;
+}
+
+/**
+ * Create a group message element
+ */
+function createGroupMessageElement(message, memberMap) {
+  const messageEl = document.createElement('div');
+  
+  // Determine if this is a sent or received message
+  const isSent = parseInt(message.sender_id) === parseInt(ChatApp.currentUser.user_id);
+  messageEl.className = `message ${isSent ? 'message-sent' : 'message-received'}`;
+  messageEl.dataset.messageId = message.id;
+  messageEl.dataset.senderId = message.sender_id;
+  
+  // Format timestamp with hours and minutes
+  const timestamp = new Date(message.timestamp);
+  const hours = String(timestamp.getHours()).padStart(2, '0');
+  const minutes = String(timestamp.getMinutes()).padStart(2, '0');
+  const timeFormatted = `${hours}:${minutes}`;
+  
+  // Check if is_edited exists, default to false if not
+  const isEdited = message.is_edited === true;
+  
+  // Add sender name for received messages
+  let senderNameHTML = '';
+  if (!isSent) {
+    const senderName = memberMap[message.sender_id] || message.sender_name || 'Unknown';
+    senderNameHTML = `<div class="message-sender">${escapeHtml(senderName)}</div>`;
+  }
+  
+  // Using a completely direct approach to ensure time displays
+  messageEl.innerHTML = `
+    ${senderNameHTML}
+    <div class="message-content">${escapeHtml(message.content)}</div>
+    <div class="message-footer">
+      <div class="message-time">${timeFormatted}${isEdited ? ' <span class="edited-indicator">· Edited</span>' : ''}</div>
+    </div>
+  `;
+  
+  // Add context menu event listener
+  messageEl.addEventListener('contextmenu', function(e) {
+    e.preventDefault();
+    showGroupMessageContextMenu(e, message, messageEl, isSent);
+  });
+  
+  return messageEl;
 }
