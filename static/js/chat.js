@@ -248,6 +248,20 @@ function showContactMenu(menuButton, userId, userName) {
               </div>
             `;
           } else {
+            // Add "User Information" option at the top of the menu
+            menuItems += `
+              <div class="dropdown-option" id="userInfoOption">
+                <div class="dropdown-option-icon">
+                  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <circle cx="12" cy="12" r="10"></circle>
+                    <line x1="12" y1="8" x2="12" y2="12"></line>
+                    <line x1="12" y1="16" x2="12.01" y2="16"></line>
+                  </svg>
+                </div>
+                <div class="dropdown-option-label">User Information</div>
+              </div>
+            `;
+            
             // Add to contacts option if not a contact
             if (!isContact) {
               menuItems += `
@@ -316,6 +330,12 @@ function showContactMenu(menuButton, userId, userName) {
               contactMenu.style.display = 'none';
             });
           } else {
+            // Add event listener for User Information option
+            document.getElementById('userInfoOption').addEventListener('click', function() {
+              showUserInformation(userId, userName);
+              contactMenu.style.display = 'none';
+            });
+            
             if (!isContact) {
               document.getElementById('addContactOption').addEventListener('click', function() {
                 addContactHandler(userId, userName);
@@ -350,6 +370,79 @@ function showContactMenu(menuButton, userId, userName) {
     })
     .catch(error => {
       console.error('Error showing contact menu:', error);
+    });
+}
+
+// New function to show user information modal
+function showUserInformation(userId, userName) {
+  // Remove any existing user info modal
+  const existingModal = document.getElementById('userInfoModal');
+  if (existingModal) {
+    existingModal.remove();
+  }
+  
+  // Create loading modal first
+  const modal = document.createElement('div');
+  modal.id = 'userInfoModal';
+  modal.className = 'user-info-modal';
+  modal.innerHTML = `
+    <div class="user-info-content">
+      <div class="user-info-header">
+        <h3>User Information</h3>
+        <button class="close-btn">×</button>
+      </div>
+      <div class="user-info-body">
+        <div class="loading-spinner">
+          <div class="spinner"></div>
+          <p>Loading user information...</p>
+        </div>
+      </div>
+    </div>
+  `;
+  document.body.appendChild(modal);
+  
+  // Add close button functionality
+  modal.querySelector('.close-btn').addEventListener('click', () => {
+    modal.remove();
+  });
+  
+  // Close when clicking outside the modal
+  modal.addEventListener('click', (e) => {
+    if (e.target === modal) {
+      modal.remove();
+    }
+  });
+  
+  // Fetch user information
+  getUserInfo(userId)
+    .then(userData => {
+      // Update modal with user data
+      const userInfoBody = modal.querySelector('.user-info-body');
+      userInfoBody.innerHTML = `
+        <div class="user-info-avatar">
+          ${userData.avatar_path 
+            ? `<img src="${userData.avatar_path}" alt="${userData.name}">`
+            : `<div class="avatar-initials">${userData.name.charAt(0)}</div>`
+          }
+        </div>
+        <div class="user-info-details">
+          <h2 class="user-info-name">${userData.name}</h2>
+          <div class="user-info-bio">
+            <h4>About</h4>
+            <p>${userData.bio || 'No information provided'}</p>
+          </div>
+        </div>
+      `;
+    })
+    .catch(error => {
+      console.error('Error fetching user information:', error);
+      // Show error in modal
+      const userInfoBody = modal.querySelector('.user-info-body');
+      userInfoBody.innerHTML = `
+        <div class="error-message">
+          <p>Failed to load user information. Please try again.</p>
+        </div>
+      `;
     });
 }
 
