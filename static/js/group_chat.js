@@ -417,11 +417,13 @@ function showGroupMembers(group) {
   const oldModal = document.getElementById('viewMembersModal');
   if (oldModal) oldModal.remove();
 
-  // Сортируем: сначала админы, потом остальные
+  // Сортируем: сначала создатель, потом админы, потом остальные
   const members = (group.members || []).slice().sort((a, b) => {
-    if (a.role === 'admin' && b.role !== 'admin') return -1;
+    if (a.id === group.creator_id) return -1; // Creator first
+    if (b.id === group.creator_id) return 1;
+    if (a.role === 'admin' && b.role !== 'admin') return -1; // Admins next
     if (a.role !== 'admin' && b.role === 'admin') return 1;
-    return a.name.localeCompare(b.name);
+    return a.name.localeCompare(b.name); // Sort others by name
   });
 
   // Модалка
@@ -457,9 +459,13 @@ function showGroupMembers(group) {
       if (user.role === 'admin') {
         adminBadge = `<span style="border:1.5px solid #2a5885; color:#2a5885; border-radius:6px; font-size:12px; padding:1px 7px; margin-left:8px; vertical-align:middle; background:#181818;">admin</span>`;
       }
+      let creatorBadge = '';
+      if (user.id === group.creator_id) {
+        creatorBadge = `<span style="color:#aaa;font-size:12px;margin-left:8px;vertical-align:middle;">creator</span>`;
+      }
       memberItem.innerHTML = `
         <div class="member-avatar">${avatarContent}</div>
-        <div class="member-name">${user.name} ${adminBadge}</div>
+        <div class="member-name">${user.name} ${adminBadge}${creatorBadge}</div>
       `;
       list.appendChild(memberItem);
     });
@@ -610,11 +616,13 @@ function showEditGroup(group) {
   const oldModal = document.getElementById('editGroupModal');
   if (oldModal) oldModal.remove();
 
-  // Сортируем участников: сначала админы
+  // Сортируем участников: сначала создатель, потом админы, потом остальные
   const members = (group.members || []).slice().sort((a, b) => {
-    if (a.role === 'admin' && b.role !== 'admin') return -1;
+    if (a.id === group.creator_id) return -1; // Creator first
+    if (b.id === group.creator_id) return 1;
+    if (a.role === 'admin' && b.role !== 'admin') return -1; // Admins next
     if (a.role !== 'admin' && b.role === 'admin') return 1;
-    return a.name.localeCompare(b.name);
+    return a.name.localeCompare(b.name); // Sort others by name
   });
 
   // Модалка
