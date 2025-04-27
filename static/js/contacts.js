@@ -44,64 +44,72 @@ function loadSidebar() {
  */
 function renderSidebar(contacts, groups, chats) {
   const contactsList = document.getElementById('contactsList');
-  const noContactsMessage = document.querySelector('.no-contacts-message');
+  const noContactsMessage = document.querySelector('.no-contacts-message'); // Keep this reference
   
   if (!contactsList) return;
   
   // Clear existing items
   contactsList.innerHTML = '';
   
-  // Create groups section
+  // Combine groups and chats into a single list for rendering under one section
+  const allChatItems = [];
+  
+  // Add groups to the list
   if (groups && groups.length > 0) {
-    const groupSection = document.createElement('div');
-    groupSection.className = 'sidebar-section groups-section';
-    
-    const groupTitle = document.createElement('div');
-    groupTitle.className = 'section-title';
-    groupTitle.textContent = 'Groups';
-    groupSection.appendChild(groupTitle);
-    
-    // Add groups
     groups.forEach(group => {
-      const groupItem = createGroupElement(group);
-      groupSection.appendChild(groupItem);
+      allChatItems.push({ type: 'group', data: group });
     });
-    
-    contactsList.appendChild(groupSection);
-    
-    // Add separator
-    const separator1 = document.createElement('div');
-    separator1.className = 'sidebar-separator';
-    contactsList.appendChild(separator1);
   }
   
-  // Create chats section
+  // Add chats to the list
+  if (chats && chats.length > 0) {
+    chats.forEach(chat => {
+      allChatItems.push({ type: 'chat', data: chat });
+    });
+  }
+  
+  // Sort combined list (optional, e.g., by last activity)
+  // For now, groups will appear first, then chats
+  
+  // Create a single "Chats" section
   const chatSection = document.createElement('div');
-  chatSection.className = 'sidebar-section chats-section';
+  chatSection.className = 'sidebar-section chats-section'; // Keep class for potential styling
   
   const chatTitle = document.createElement('div');
   chatTitle.className = 'section-title';
-  chatTitle.textContent = 'Chats';
+  chatTitle.textContent = 'Chats'; // Use a single title
   chatSection.appendChild(chatTitle);
   
-  // Add chats
-  if (chats && chats.length > 0) {
-    chats.forEach(chat => {
-      const chatItem = createChatElement(chat);
-      chatSection.appendChild(chatItem);
+  // Add all items (groups and chats) to this section
+  if (allChatItems.length > 0) {
+    allChatItems.forEach(item => {
+      let element;
+      if (item.type === 'group') {
+        element = createGroupElement(item.data);
+      } else { // type === 'chat'
+        element = createChatElement(item.data);
+      }
+      chatSection.appendChild(element);
     });
-    contactsList.appendChild(chatSection);
     
-    // Hide "no contacts" message
+    // Hide the main "no contacts" message if it exists outside the list
     if (noContactsMessage) noContactsMessage.style.display = 'none';
+    
   } else {
-    // If no chats, show a message in the section
-    const noChatsMsg = document.createElement('div');
-    noChatsMsg.className = 'no-items-message';
-    noChatsMsg.textContent = 'No chats yet';
-    chatSection.appendChild(noChatsMsg);
-    contactsList.appendChild(chatSection);
+    // If no groups or chats, show a message within the section
+    const noItemsMsg = document.createElement('div');
+    noItemsMsg.className = 'no-items-message'; // Use the existing class
+    noItemsMsg.textContent = 'No chats or groups yet';
+    chatSection.appendChild(noItemsMsg);
+    
+    // Show the main "no contacts" message if it exists outside the list
+    if (noContactsMessage) noContactsMessage.style.display = 'block';
   }
+  
+  // Append the single section to the list
+  contactsList.appendChild(chatSection);
+  
+  // Remove the logic for the separator as there's only one section now
 }
 
 /**

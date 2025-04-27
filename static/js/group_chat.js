@@ -144,18 +144,18 @@ function createGroupChatInterface(group) {
   groupNameEl.style.cursor = 'pointer';
   groupNameEl.style.fontSize = '16px';
   groupNameEl.style.fontWeight = '500';
-  groupNameEl.style.marginBottom = '6px'; // Added spacing below name
-  groupNameEl.style.position = 'relative'; // Change positioning
-  groupNameEl.style.top = '0'; // Reset top position (was -10px in CSS)
+  groupNameEl.style.marginBottom = '6px'; // Keep spacing below name
+  groupNameEl.style.position = 'relative'; 
+  groupNameEl.style.top = '10px'; // Keep this adjustment
   groupNameEl.onclick = function() { showGroupMembers(group); };
 
   // Количество участников (member count)
   const memberCount = document.createElement('div');
   memberCount.className = 'chat-group-members';
   memberCount.textContent = `${group.member_count || 0} members`;
-  memberCount.style.marginTop = '0'; // Reset default margin
+  memberCount.style.marginTop = '0'; 
   memberCount.style.position = 'relative';
-  memberCount.style.top = '-2px'; // Slight adjustment upward
+  memberCount.style.top = '-9px'; // Changed from -2px to -4px to move it higher
 
   // Group name и member count в одной колонке, справа от аватарки
   const groupNameBlock = document.createElement('div');

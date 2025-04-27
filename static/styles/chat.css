@@ -21,9 +21,10 @@
     display: flex;
     align-items: center;
     flex-grow: 1;
-    max-width: 80%;
+    max-width: 90%; /* Increased from 80% to allow more space */
     height: 100%;
     position: relative;
+    overflow: hidden; /* Added to contain children */
 }
 
 .chat-user-avatar {
@@ -52,10 +53,13 @@
     white-space: nowrap;
     overflow: hidden;
     text-overflow: ellipsis;
-    max-width: calc(100% - 20px);
+    /* Removed max-width calc, let flexbox handle it within the parent's bounds */
+    /* max-width: calc(100% - 20px); */
+    flex: 1; /* Allow name to take available space */
+    min-width: 0; /* Important for flex item truncation */
     position: relative;
     left: 0;
-    top: -10px;
+    top: -10px; /* Restored previous value */
     transform: none;
     margin: 0;
 }
