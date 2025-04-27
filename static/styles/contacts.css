@@ -134,11 +134,17 @@
 .contact-indicator {
   font-size: 12px;
   font-weight: normal;
-  padding: 2px 4px;
-  border-radius: 4px;
+  padding: 3px;  /* Equal padding on all sides */
+  border-radius: 4px;  /* Slightly rounded corners */
   cursor: help;
   flex-shrink: 0;
-  min-width: 16px;
+  min-width: 12px;
+  min-height: 12px;  /* Added min-height for square shape */
+  width: 12px;       /* Fixed width */
+  height: 12px;      /* Fixed height to match width */
+  display: flex;     /* Using flex to center the content */
+  align-items: center;
+  justify-content: center;
   text-align: center;
 }
 
