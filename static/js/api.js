@@ -342,23 +342,43 @@ function fetchUserGroups() {
 }
 
 /**
- * Get messages from a group
+ * Get group information
+ */
+function getGroupInfo(groupId) {
+  return fetch(`/get_group_info?group_id=${groupId}`)
+    .then(response => {
+      if (!response.ok) {
+        throw new Error(`HTTP error! Status: ${response.status}`);
+      }
+      return response.json();
+    })
+    .catch(error => {
+      console.error('Error fetching group info:', error);
+      return { success: false, error: 'Failed to get group information' };
+    });
+}
+
+/**
+ * Fetch messages for a group
  */
 function fetchGroupMessages(groupId) {
-  return fetch(`/get_group_messages?group_id=${groupId}`, {
-    method: 'GET',
-    headers: { 'Content-Type': 'application/json' }
-  })
-  .then(response => {
-    if (!response.ok) throw new Error('Failed to load group messages');
-    return response.json();
-  });
+  return fetch(`/get_group_messages?group_id=${groupId}`)
+    .then(response => {
+      if (!response.ok) {
+        throw new Error(`HTTP error! Status: ${response.status}`);
+      }
+      return response.json();
+    })
+    .catch(error => {
+      console.error('Error fetching group messages:', error);
+      return { success: false, error: 'Failed to load group messages' };
+    });
 }
 
 /**
  * Send a message to a group
  */
-function sendGroupMessage(groupId, content) {
+function sendGroupMessage(groupId, text) {
   return fetch('/send_group_message', {
     method: 'POST',
     headers: {
@@ -366,29 +386,18 @@ function sendGroupMessage(groupId, content) {
     },
     body: JSON.stringify({
       group_id: groupId,
-      content: content
+      content: text
     })
   })
   .then(response => {
     if (!response.ok) {
-      console.error(`Failed to send group message: ${response.status}`);
-      throw new Error(`Failed to send group message: ${response.status}`);
+      throw new Error(`HTTP error! Status: ${response.status}`);
     }
     return response.json();
-  });
-}
-
-/**
- * Get group information
- */
-function getGroupInfo(groupId) {
-  return fetch(`/get_group_info?group_id=${groupId}`, {
-    method: 'GET',
-    headers: { 'Content-Type': 'application/json' }
   })
-  .then(response => {
-    if (!response.ok) throw new Error('Failed to get group info');
-    return response.json();
+  .catch(error => {
+    console.error('Error sending group message:', error);
+    return { success: false, error: 'Failed to send message' };
   });
 }
 
