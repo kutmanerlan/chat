@@ -130,11 +130,17 @@ function createMessageElement(message) {
   // Check if is_edited exists, default to false if not
   const isEdited = message.is_edited === true;
   
-  // Construct the message with content and time on same level
-  messageEl.innerHTML = `
-    <div class="message-content">${escapeHtml(message.content)}</div>
-    <div class="message-time">${timeFormatted}${isEdited ? ' <span class="edited-indicator">· Edited</span>' : ''}</div>
-  `;
+  // Create message structure with time in a footer div
+  const contentDiv = document.createElement('div');
+  contentDiv.className = 'message-content';
+  contentDiv.textContent = message.content;
+  
+  const timeDiv = document.createElement('div');
+  timeDiv.className = 'message-time';
+  timeDiv.innerHTML = `${timeFormatted}${isEdited ? ' <span class="edited-indicator">· Edited</span>' : ''}`;
+  
+  messageEl.appendChild(contentDiv);
+  messageEl.appendChild(timeDiv);
   
   // Add context menu event listener
   messageEl.addEventListener('contextmenu', function(e) {
