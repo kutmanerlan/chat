@@ -144,21 +144,30 @@ function createGroupChatInterface(group) {
   groupNameEl.style.cursor = 'pointer';
   groupNameEl.style.fontSize = '16px';
   groupNameEl.style.fontWeight = '500';
+  groupNameEl.style.marginBottom = '6px'; // Added spacing below name
+  groupNameEl.style.position = 'relative'; // Change positioning
+  groupNameEl.style.top = '0'; // Reset top position (was -10px in CSS)
   groupNameEl.onclick = function() { showGroupMembers(group); };
 
-  // Количество участников
+  // Количество участников (member count)
   const memberCount = document.createElement('div');
   memberCount.className = 'chat-group-members';
   memberCount.textContent = `${group.member_count || 0} members`;
-  
-  // Group name и member count в одной колонке, слева от аватарки
+  memberCount.style.marginTop = '0'; // Reset default margin
+  memberCount.style.position = 'relative';
+  memberCount.style.top = '-2px'; // Slight adjustment upward
+
+  // Group name и member count в одной колонке, справа от аватарки
   const groupNameBlock = document.createElement('div');
   groupNameBlock.style.display = 'flex';
   groupNameBlock.style.flexDirection = 'column';
   groupNameBlock.style.justifyContent = 'center';
   groupNameBlock.style.alignItems = 'flex-start';
+  groupNameBlock.style.height = '100%';
+  groupNameBlock.style.padding = '8px 0';
+  // IMPORTANT: Changed order - group name first, then member count
+  groupNameBlock.appendChild(groupNameEl); 
   groupNameBlock.appendChild(memberCount);
-  groupNameBlock.appendChild(groupNameEl);
 
   groupInfo.appendChild(groupAvatar);
   groupInfo.appendChild(groupNameBlock);
@@ -1190,7 +1199,7 @@ function showGroupMessageContextMenu(event, message, messageEl, isSent) {
     }
   }
   
-  // Close menu when clicking elsewhere
+  // Закрытие по клику вне меню
   document.addEventListener('click', function closeMenu(e) {
     if (!contextMenu.contains(e.target)) {
       contextMenu.remove();
@@ -1198,7 +1207,7 @@ function showGroupMessageContextMenu(event, message, messageEl, isSent) {
     }
   });
   
-  // Close on Escape key
+  // Закрытие по Esc
   document.addEventListener('keydown', function escHandler(e) {
     if (e.key === 'Escape') {
       contextMenu.remove();
