@@ -130,17 +130,25 @@ function createMessageElement(message) {
   // Check if is_edited exists, default to false if not
   const isEdited = message.is_edited === true;
   
-  // Create message structure with time in a footer div
+  // Create message content
   const contentDiv = document.createElement('div');
   contentDiv.className = 'message-content';
   contentDiv.textContent = message.content;
+  
+  // Create a message footer for the timestamp
+  const footerDiv = document.createElement('div');
+  footerDiv.className = 'message-footer';
   
   const timeDiv = document.createElement('div');
   timeDiv.className = 'message-time';
   timeDiv.innerHTML = `${timeFormatted}${isEdited ? ' <span class="edited-indicator">· Edited</span>' : ''}`;
   
+  // Append time to footer
+  footerDiv.appendChild(timeDiv);
+  
+  // Append content and footer to message
   messageEl.appendChild(contentDiv);
-  messageEl.appendChild(timeDiv);
+  messageEl.appendChild(footerDiv);
   
   // Add context menu event listener
   messageEl.addEventListener('contextmenu', function(e) {
@@ -435,11 +443,9 @@ function updateMessageDisplay(messageEl, message) {
     const timestamp = new Date(message.timestamp);
     const hours = String(timestamp.getHours()).padStart(2, '0');
     const minutes = String(timestamp.getMinutes()).padStart(2, '0');
+    const timeFormatted = `${hours}:${minutes}`;
     
-    timeEl.innerHTML = `
-      ${hours}:${minutes}
-      ${message.is_edited ? '<span class="edited-indicator">· Edited</span>' : ''}
-    `;
+    timeEl.innerHTML = `${timeFormatted}${message.is_edited ? ' <span class="edited-indicator">· Edited</span>' : ''}`;
   }
 }
 

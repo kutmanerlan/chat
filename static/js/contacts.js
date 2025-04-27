@@ -105,6 +105,114 @@ function renderSidebar(contacts, groups, chats) {
 }
 
 /**
+ * Create a chat element
+ */
+function createChatElement(chat) {
+  const chatItem = document.createElement('div');
+  chatItem.className = 'contact-item';
+  chatItem.dataset.userId = chat.user_id;
+
+  // Avatar
+  const chatAvatar = document.createElement('div');
+  chatAvatar.className = 'contact-avatar';
+  if (chat.avatar_path) {
+    chatAvatar.innerHTML = `<img src="${chat.avatar_path}" alt="${chat.name}">`;
+  } else {
+    chatAvatar.innerHTML = `<div class="avatar-initials">${chat.name.charAt(0)}</div>`;
+  }
+
+  // Info container - holds name and message
+  const chatInfo = document.createElement('div');
+  chatInfo.className = 'contact-info';
+
+  // Name row
+  const nameRow = document.createElement('div');
+  nameRow.className = 'contact-name-row';
+  
+  // Name with text truncation
+  const nameContainer = document.createElement('div');
+  nameContainer.className = 'name-container';
+  nameContainer.textContent = chat.name;
+  nameRow.appendChild(nameContainer);
+
+  // Add indicator container
+  const indicatorContainer = document.createElement('div');
+  indicatorContainer.className = 'indicator-container';
+  
+  // Add appropriate indicator
+  if (chat.is_blocked_by_you) {
+    const indicator = document.createElement('span');
+    indicator.className = 'block-indicator blocked-by-you';
+    indicator.textContent = 'B';
+    indicator.setAttribute('data-tooltip', 'You have blocked this user');
+    indicator.addEventListener('mouseenter', showTooltip);
+    indicator.addEventListener('mouseleave', hideTooltip);
+    indicatorContainer.appendChild(indicator);
+  } else if (chat.has_blocked_you) {
+    const indicator = document.createElement('span');
+    indicator.className = 'block-indicator blocked-you';
+    indicator.textContent = 'B';
+    indicator.setAttribute('data-tooltip', 'This user has blocked you');
+    indicator.addEventListener('mouseenter', showTooltip);
+    indicator.addEventListener('mouseleave', hideTooltip);
+    indicatorContainer.appendChild(indicator);
+  } else if (chat.is_contact) {
+    const indicator = document.createElement('span');
+    indicator.className = 'contact-indicator';
+    indicator.textContent = 'C';
+    indicator.setAttribute('data-tooltip', 'This user is in your contacts');
+    indicator.addEventListener('mouseenter', showTooltip);
+    indicator.addEventListener('mouseleave', hideTooltip);
+    indicatorContainer.appendChild(indicator);
+  }
+  
+  nameRow.appendChild(indicatorContainer);
+  chatInfo.appendChild(nameRow);
+
+  // Message and time row
+  const messageRow = document.createElement('div');
+  messageRow.className = 'message-row';
+  
+  // Last message with text truncation
+  const lastMessage = document.createElement('div');
+  lastMessage.className = 'last-message';
+  lastMessage.textContent = chat.last_message || '';
+  messageRow.appendChild(lastMessage);
+  
+  // Time in its own container
+  const timeContainer = document.createElement('div');
+  timeContainer.className = 'time-container';
+  if (chat.last_timestamp) {
+    const timeSpan = document.createElement('span');
+    timeSpan.className = 'last-time';
+    timeSpan.textContent = formatMessageTime(chat.last_timestamp);
+    timeContainer.appendChild(timeSpan);
+  }
+  messageRow.appendChild(timeContainer);
+  
+  chatInfo.appendChild(messageRow);
+
+  // Assemble the chat item
+  chatItem.appendChild(chatAvatar);
+  chatItem.appendChild(chatInfo);
+
+  // Add unread badge if needed
+  if (chat.unread_count && chat.unread_count > 0) {
+    const unreadBadge = document.createElement('div');
+    unreadBadge.className = 'unread-badge';
+    unreadBadge.textContent = chat.unread_count;
+    chatItem.appendChild(unreadBadge);
+  }
+
+  // Add click listener
+  chatItem.addEventListener('click', () => {
+    openChatWithUser(chat.user_id, chat.name);
+  });
+
+  return chatItem;
+}
+
+/**
  * Create a group element
  */
 function createGroupElement(group) {
@@ -131,82 +239,82 @@ function createGroupElement(group) {
     groupAvatar.innerHTML = `<div class="avatar-initials">${initial}</div>`;
   }
   
-  // Group info
+  // Group info container
   const groupInfo = document.createElement('div');
   groupInfo.className = 'contact-info';
-  groupInfo.style.display = 'flex';
-  groupInfo.style.flexDirection = 'column';
-  groupInfo.style.justifyContent = 'center';
   
-  // Название и индикатор G в одной строке
-  const groupNameRow = document.createElement('div');
-  groupNameRow.style.display = 'flex';
-  groupNameRow.style.alignItems = 'center';
-  groupNameRow.style.width = '100%';
-
-  const groupName = document.createElement('div');
-  groupName.className = 'contact-name';
-  groupName.innerHTML = `<span class="name-text">${group.name}</span>`;
-  groupNameRow.appendChild(groupName);
-
+  // Name row
+  const nameRow = document.createElement('div');
+  nameRow.className = 'contact-name-row';
+  
+  // Name with text truncation
+  const nameContainer = document.createElement('div');
+  nameContainer.className = 'name-container';
+  nameContainer.textContent = group.name;
+  nameRow.appendChild(nameContainer);
+  
+  // Group indicator
+  const indicatorContainer = document.createElement('div');
+  indicatorContainer.className = 'indicator-container';
   const groupIndicator = document.createElement('span');
   groupIndicator.className = 'group-indicator';
   groupIndicator.textContent = 'G';
-  groupIndicator.style.marginLeft = '8px';
-  groupNameRow.appendChild(groupIndicator);
-
-  // Последнее сообщение и время
-  const groupDetailsRow = document.createElement('div');
-  groupDetailsRow.className = 'chat-details-row';
-  groupDetailsRow.style.display = 'flex';
-  groupDetailsRow.style.alignItems = 'center';
-  groupDetailsRow.style.width = '100%';
-  groupDetailsRow.style.minHeight = '20px';
-
-  const lastMessagePreview = document.createElement('span');
-  lastMessagePreview.className = 'last-message'; // Используем тот же класс для стилей
-  lastMessagePreview.style.flex = '1 1 auto';
-  lastMessagePreview.style.overflow = 'hidden';
-  lastMessagePreview.style.textOverflow = 'ellipsis';
-  lastMessagePreview.style.whiteSpace = 'nowrap';
-  lastMessagePreview.style.display = 'inline-block';
-  lastMessagePreview.style.verticalAlign = 'middle';
-
-  const lastTime = document.createElement('span');
-  lastTime.className = 'last-time';
-  lastTime.style.display = 'inline-block';
-  lastTime.style.verticalAlign = 'middle';
-
+  groupIndicator.setAttribute('data-tooltip', 'Group chat');
+  groupIndicator.addEventListener('mouseenter', showTooltip);
+  groupIndicator.addEventListener('mouseleave', hideTooltip);
+  indicatorContainer.appendChild(groupIndicator);
+  
+  nameRow.appendChild(indicatorContainer);
+  groupInfo.appendChild(nameRow);
+  
+  // Message and time row
+  const messageRow = document.createElement('div');
+  messageRow.className = 'message-row';
+  
+  // Last message preview
+  const lastMessage = document.createElement('div');
+  lastMessage.className = 'last-message';
+  
   if (group.last_message) {
     let messagePreviewText = group.last_message.content;
     if (messagePreviewText.length > 25) {
       messagePreviewText = messagePreviewText.substring(0, 25) + '...';
     }
     const senderName = group.last_message.sender_name || 'Someone';
-    lastMessagePreview.textContent = `${senderName}: ${messagePreviewText}`;
-    lastTime.textContent = formatMessageTime(group.last_message.timestamp);
+    lastMessage.textContent = `${senderName}: ${messagePreviewText}`;
   } else {
-    lastMessagePreview.textContent = `${group.member_count || 0} members`; // Если нет сообщений, показываем кол-во участников
-    lastTime.textContent = '';
+    lastMessage.textContent = `${group.member_count || 0} members`;
   }
-
-  groupDetailsRow.appendChild(lastMessagePreview);
-  groupDetailsRow.appendChild(lastTime);
-
-  groupInfo.appendChild(groupNameRow);
-  groupInfo.appendChild(groupDetailsRow);
-
+  
+  messageRow.appendChild(lastMessage);
+  
+  // Time container
+  const timeContainer = document.createElement('div');
+  timeContainer.className = 'time-container';
+  
+  if (group.last_message) {
+    const timeSpan = document.createElement('span');
+    timeSpan.className = 'last-time';
+    timeSpan.textContent = formatMessageTime(group.last_message.timestamp);
+    timeContainer.appendChild(timeSpan);
+  }
+  
+  messageRow.appendChild(timeContainer);
+  groupInfo.appendChild(messageRow);
+  
+  // Assemble the group item
   groupItem.appendChild(groupAvatar);
   groupItem.appendChild(groupInfo);
-
-  // Unread badge
+  
+  // Add unread badge if needed
   if (group.unread_count && group.unread_count > 0) {
     const unreadBadge = document.createElement('div');
     unreadBadge.className = 'unread-badge';
     unreadBadge.textContent = group.unread_count;
     groupItem.appendChild(unreadBadge);
   }
-
+  
+  // Add click handler
   groupItem.addEventListener('click', () => {
     openGroupChat(group.id, group.name);
   });
@@ -254,114 +362,6 @@ function createContactElement(contact) {
   });
   
   return contactItem;
-}
-
-/**
- * Create a chat element
- */
-function createChatElement(chat) {
-  const chatItem = document.createElement('div');
-  chatItem.className = 'contact-item';
-  chatItem.dataset.userId = chat.user_id;
-
-  // Аватар
-  const chatAvatar = document.createElement('div');
-  chatAvatar.className = 'contact-avatar';
-  if (chat.avatar_path) {
-    chatAvatar.innerHTML = `<img src="${chat.avatar_path}" alt="${chat.name}">`;
-  } else {
-    chatAvatar.innerHTML = `<div class="avatar-initials">${chat.name.charAt(0)}</div>`;
-  }
-
-  // Контейнер для имени и последнего сообщения
-  const chatInfo = document.createElement('div');
-  chatInfo.className = 'contact-info';
-  chatInfo.style.display = 'flex';
-  chatInfo.style.flexDirection = 'column';
-  chatInfo.style.justifyContent = 'center';
-
-  // Имя и индикатор в одной строке, выровнены по вертикали
-  const chatNameRow = document.createElement('div');
-  chatNameRow.style.display = 'flex';
-  chatNameRow.style.alignItems = 'center';
-  chatNameRow.style.width = '100%';
-
-  const chatName = document.createElement('div');
-  chatName.className = 'contact-name';
-  chatName.innerHTML = chat.name;
-  chatNameRow.appendChild(chatName);
-
-  // Индикатор контакта/блокировки
-  let indicator = null;
-  if (chat.is_blocked_by_you) {
-    indicator = document.createElement('span');
-    indicator.className = 'block-indicator blocked-by-you';
-    indicator.textContent = 'B';
-    indicator.setAttribute('data-tooltip', 'You have blocked this user');
-    indicator.addEventListener('mouseenter', showTooltip);
-    indicator.addEventListener('mouseleave', hideTooltip);
-  } else if (chat.has_blocked_you) {
-    indicator = document.createElement('span');
-    indicator.className = 'block-indicator blocked-you';
-    indicator.textContent = 'B';
-    indicator.setAttribute('data-tooltip', 'This user has blocked you');
-    indicator.addEventListener('mouseenter', showTooltip);
-    indicator.addEventListener('mouseleave', hideTooltip);
-  } else if (chat.is_contact) {
-    indicator = document.createElement('span');
-    indicator.className = 'contact-indicator';
-    indicator.textContent = 'C';
-    indicator.setAttribute('data-tooltip', 'This user is in your contacts');
-    indicator.addEventListener('mouseenter', showTooltip);
-    indicator.addEventListener('mouseleave', hideTooltip);
-  }
-  if (indicator) {
-    indicator.style.marginLeft = 'auto'; // Смещаем вправо
-    indicator.style.paddingLeft = '8px';
-    chatNameRow.appendChild(indicator);
-  }
-
-  // Последнее сообщение и время в одной строке (flex), выровнены по вертикали
-  const chatDetailsRow = document.createElement('div');
-  chatDetailsRow.className = 'chat-details-row';
-  chatDetailsRow.style.display = 'flex';
-  chatDetailsRow.style.alignItems = 'center';
-  chatDetailsRow.style.width = '100%';
-  chatDetailsRow.style.minHeight = '20px';
-
-  const lastMessage = document.createElement('span');
-  lastMessage.className = 'last-message';
-  lastMessage.textContent = chat.last_message || '';
-  lastMessage.style.flex = '1 1 auto';
-  lastMessage.style.overflow = 'hidden';
-  lastMessage.style.textOverflow = 'ellipsis';
-  lastMessage.style.whiteSpace = 'nowrap';
-  lastMessage.style.display = 'inline-block';
-  lastMessage.style.verticalAlign = 'middle';
-
-  const lastTime = document.createElement('span');
-  lastTime.className = 'last-time';
-  lastTime.textContent = chat.last_timestamp ? formatMessageTime(chat.last_timestamp) : '';
-  lastTime.style.display = 'inline-block';
-  lastTime.style.verticalAlign = 'middle';
-  lastTime.style.marginLeft = 'auto'; // Время всегда справа
-  lastTime.style.paddingLeft = '8px';
-
-  chatDetailsRow.appendChild(lastMessage);
-  chatDetailsRow.appendChild(lastTime);
-
-  chatInfo.appendChild(chatNameRow);
-  chatInfo.appendChild(chatDetailsRow);
-
-  chatItem.appendChild(chatAvatar);
-  chatItem.appendChild(chatInfo);
-
-  // Клик по чату
-  chatItem.addEventListener('click', () => {
-    openChatWithUser(chat.user_id, chat.name);
-  });
-
-  return chatItem;
 }
 
 /**
