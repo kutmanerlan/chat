@@ -265,3 +265,126 @@ function updateSidebarAvatar(avatarPath) {
     sidebarAvatar.appendChild(uploadIcon);
   }
 }
+
+// --- Emoji Panel Logic (Moved from group_chat.js) ---
+
+// Определение списка смайликов
+const categorizedEmojis = {
+  'Smileys & People': ['😀', '😃', '😄', '😁', '😆', '😅', '😂', '🤣', '😊', '😇', '🙂', '🙃', '😉', '😌', '😍', '🥰', '😘', '😗', '😙', '😚', '😋', '😛', '😜', '🤪', '🤨', '🧐', '🤓', '😎', '🤩', '🥳', '😏', '😒', '😞', '😔', '😟', '😕', '🙁', '☹️', '😣', '😖', '😫', '😩', '🥺', '😢', '😭', '😤', '😠', '😡', '🤬', '🤯', '😳', '🥵', '🥶', '😱', '😨', '😰', '😥', '😓', '🤗', '🤔', '🤭', '🤫', '🤥', '😶', '😐', '😑', '😬', '🙄', '😯', '😦', '😧', '😮', '😲', '🥱', '😴', '🤤', '😪', '😵', '🤐', '🥴', '🤢', '🤮', '🤧', '😷', '🤒', '🤕', '🤑', '🤠', '😈', '👿', '👹', '👺', '🤡', '💩', '👻', '💀', '☠️', '👽', '👾', '🤖', '🎃', '😺', '😸', '😹', '😻', '😼', '😽', '🙀', '😿', '😾'],
+  'Animals & Nature': ['🙈', '🙉', '🙊', '🐒', '🐕', '🐶', '🐩', '🐺', '🦊', '🦝', '🐈', '🐱', '🦁', '🐯', '🐅', '🐆', '🐴', '🐎', '🦄', '🦓', '🦌', '🐮', '🐂', '🐃', '🐄', '🐷', '🐖', '🐗', '🐽', '🐏', '🐑', '🐐', '🐪', '🐫', '🦙', '🦒', '🐘', '🦏', '🦛', '🐭', '🐁', '🐀', '🐹', '🐰', '🐇', '🐿️', '🦔', '🦇', '🐻', '🐨', '🐼', '🦥', '🦦', '🦨', '🦘', '🦡', '🐾', '🦃', '🐔', '🐓', '🐣', '🐤', '🐥', '🐦', '🐧', '🕊️', '🦅', '🦆', '🦢', '🦉', '🦩', '🦚', '🦜', '🐸', '🐊', '🐢', '🦎', '🐍', '🐲', '🐉', '🦕', '🦖', '🐳', '🐋', '🐬', '🐟', '🐠', '🐡', '🦈', '🐙', '🐚', '🐌', '🦋', '🐛', '🐜', '🐝', '🐞', '🦗', '🕷️', '🕸️', '🦂', '🦟', '🦠', '💐', '🌸', '💮', '🏵️', '🌹', '🥀', '🌺', '🌻', '🌼', '🌷', '🌱', '🌲', '🌳', '🌴', '🌵', '🌾', '🌿', '☘️', '🍀', '🍁', '🍂', '🍃'],
+  'Food & Drink': ['🍇', '🍈', '🍉', '🍊', '🍋', '🍌', '🍍', '🥭', '🍎', '🍏', '🍐', '🍑', '🍒', '🍓', '🥝', '🍅', '🥥', '🥑', '🍆', '🥔', '🥕', '🌽', '🌶️', '🥒', '🥬', '🥦', '🧄', '🧅', '🍄', '🥜', '🌰', '🍞', '🥐', '🥖', '🥨', '🥯', '🥞', '🧇', '🧀', '🍖', '🍗', '🥩', '🥓', '🍔', '🍟', '🍕', '🌭', '🥪', '🌮', '🌯', '🥙', '🧆', '🥚', '🍳', '🥘', '🍲', '🥣', '🥗', '🍿', '🧈', '🧂', '🥫', '🍱', '🍘', '🍙', '🍚', '🍛', '🍜', '🍝', '🍠', '🍢', '🍣', '🍤', '🍥', '🥮', '🍡', '🥟', '🥠', '🥡', '🦀', '🦞', '🦐', '🦑', '🦪', '🍦', '🍧', '🍨', '🍩', '🍪', '🎂', '🍰', '🧁', '🥧', '🍫', '🍬', '🍭', '🍮', '🍯', '🍼', '🥛', '☕', '🍵', '🍶', '🍾', '🍷', '🍸', '🍹', '🍺', '🍻', '🥂', '🥃', '🥤', '🧃', '🧉', '🧊', '🥢', '🍽️', '🍴', '🥄'],
+  'Symbols': ['❤️', '🧡', '💛', '💚', '💙', '💜', '🖤', '🤍', '🤎', '💔', '❣️', '💕', '💞', '💓', '💗', '💖', '💘', '💝', '💟', '☮️', '✝️', '☪️', '🕉️', '☸️', '✡️', '🔯', '🕎', '☯️', '☦️', '🛐', '⛎', '♈', '♉', '♊', '♋', '♌', '♍', '♎', '♏', '♐', '♑', '♒', '♓', '🆔', '⚛️', '🉑', '☢️', '☣️', '📴', '📳', '🈶', '🈚', '🈸', '🈺', '🈷️', '✴️', '🆚', '💮', '🉐', '㊙️', '㊗️', '🈴', '🈵', '🈹', '🈲', '🅰️', '🅱️', '🆎', '🆑', '🅾️', '🆘', '❌', '⭕', '🛑', '⛔', '📛', '🚫', '💯', '💢', '♨️', '🚷', '🚯', '🚳', '🚱', '🔞', '📵', '🚭', '❗️', '❕', '❓', '❔', '‼️', '⁉️', '🔅', '🔆', '〽️', '⚠️', '🚸', '🔱', '⚜️', '🔰', '♻️', '✅', '🈯', '💹', '❇️', '✳️', '❎', '🌐', '💠', 'Ⓜ️', '🌀', '💤', '🏧', '🚾', '♿', '🅿️', '🈳', '🈂️', '🛂', '🛃', '🛄', '🛅', '🚹', '🚺', '🚼', '🚻', '🚮', '🎦', '📶', '🈁', '🔣', 'ℹ️', '🔤', '🔡', '🔠', '🆖', '🆗', '🆙', '🆒', '🆕', '🆓', '0️⃣', '1️⃣', '2️⃣', '3️⃣', '4️⃣', '5️⃣', '6️⃣', '7️⃣', '8️⃣', '9️⃣', '🔟', '🔢', '#️⃣', '*️⃣', '⏏️', '▶️', '⏸️', '⏯️', '⏹️', '⏺️', '⏭️', '⏮️', '⏩', '⏪', '⏫', '⏬', '◀️', '🔼', '🔽', '➡️', '⬅️', '⬆️', '⬇️', '↗️', '↘️', '↙️', '↖️', '↕️', '↔️', '↪️', '↩️', '⤴️', '⤵️', '🔀', '🔁', '🔂', '🔄', '🔃', '🎵', '🎶', '➕', '➖', '➗', '✖️', '♾️', '💲', '💱', '™️', '©️', '®️', '〰️', '➰', '➿', '🔚', '🔙', '🔛', '🔝', '🔜', '✔️', '☑️', '🔘', '🔴', '🟠', '🟡', '🟢', '🔵', '🟣', '⚫', '⚪', '🟤', '🔺', '🔻', '🔸', '🔹', '🔶', '🔷', '🔳', '🔲', '▪️', '▫️', '◾', '◽', '◼️', '◻️', '🟥', '🟧', '🟨', '🟩', '🟦', '🟪', '⬛', '⬜', '🟫', '🔈', '🔇', '🔉', '🔊', '🔔', '🔕', '📣', '📢', '👁️‍🗨️', '💬', '💭', '🗯️', '♠️', '♣️', '♥️', '♦️', '🃏', '🎴', '🀄', '🕒', '🕓', '🕔', '🕕', '🕖', '🕗', '🕘', '🕙', '🕚', '🕛', '🕜', '🕝', '🕞', '🕟', '🕠', '🕡', '🕢', '🕣', '🕤', '🕥', '🕦', '🕧'],
+};
+
+// Ссылка на обработчик клика вне панели для его последующего удаления
+let closeEmojiPanelHandler = null;
+
+/**
+ * Toggles the visibility of the main emoji panel.
+ */
+function toggleEmojiPanel(inputField) {
+  const emojiPanel = document.getElementById('emojiPanel');
+  const emojiButton = document.querySelector('.emoji-button'); // Get the button for positioning/closing checks
+  if (!emojiPanel || !emojiButton) {
+      console.error("Emoji panel or button element not found!");
+      return;
+  }
+
+  const isVisible = emojiPanel.style.display === 'flex'; // Use 'flex' or 'block' based on your CSS
+
+  if (isVisible) {
+    emojiPanel.style.display = 'none';
+    if (closeEmojiPanelHandler) {
+        document.removeEventListener('click', closeEmojiPanelHandler);
+        closeEmojiPanelHandler = null;
+    }
+  } else {
+    if (!emojiPanel.dataset.built) {
+      buildEmojiPanelContent(emojiPanel, inputField);
+      emojiPanel.dataset.built = 'true';
+    }
+
+    // --- Position Panel Directly Above Button --- V2
+    const buttonRect = emojiButton.getBoundingClientRect();
+    emojiPanel.style.position = 'fixed'; // Use fixed to position relative to viewport
+    emojiPanel.style.bottom = `${window.innerHeight - buttonRect.top + 8}px`; // 8px offset above the button
+    // Align panel's left edge with button's left edge
+    emojiPanel.style.left = `${buttonRect.left}px`;
+    // Reset potentially conflicting styles
+    emojiPanel.style.right = 'auto';
+    emojiPanel.style.transform = 'none';
+
+    emojiPanel.style.display = 'flex'; // Show the panel
+    // --- End Position Panel ---
+
+    // Add listener to close when clicking outside
+    closeEmojiPanelHandler = (event) => closeEmojiPanelOnClickOutside(event, emojiButton, closeEmojiPanelHandler);
+    setTimeout(() => {
+      document.addEventListener('click', closeEmojiPanelHandler);
+    }, 0);
+  }
+}
+
+/**
+ * Builds the content (categories, grid) for the emoji panel.
+ */
+function buildEmojiPanelContent(panelElement, inputField) {
+  panelElement.innerHTML = ''; // Clear previous content
+
+  const gridContainer = document.createElement('div');
+  gridContainer.className = 'emoji-grid-container';
+
+  for (const category in categorizedEmojis) {
+    const categoryHeader = document.createElement('div');
+    categoryHeader.className = 'emoji-category-header';
+    categoryHeader.textContent = category;
+    gridContainer.appendChild(categoryHeader);
+
+    categorizedEmojis[category].forEach(emoji => {
+      const emojiBtn = document.createElement('button');
+      emojiBtn.className = 'emoji-select-btn';
+      emojiBtn.textContent = emoji;
+      emojiBtn.type = 'button';
+      emojiBtn.onclick = (e) => {
+        e.stopPropagation();
+        insertEmoji(inputField, emoji);
+      };
+      gridContainer.appendChild(emojiBtn);
+    });
+  }
+  panelElement.appendChild(gridContainer);
+}
+
+/**
+ * Closes the emoji panel if a click occurs outside of it and not on the toggle button.
+ */
+function closeEmojiPanelOnClickOutside(event, emojiButton, handlerRef) {
+  const emojiPanel = document.getElementById('emojiPanel');
+
+  // Check if elements exist and click is outside panel AND outside button
+  if (emojiPanel && emojiButton && !emojiPanel.contains(event.target) && !emojiButton.contains(event.target)) {
+    emojiPanel.style.display = 'none';
+    if (handlerRef) {
+        document.removeEventListener('click', handlerRef);
+        closeEmojiPanelHandler = null; // Reset global handler reference as well
+    }
+  }
+}
+
+/**
+ * Insert emoji into the input field.
+ */
+function insertEmoji(inputField, emoji) {
+  const start = inputField.selectionStart;
+  const end = inputField.selectionEnd;
+  const text = inputField.value;
+
+  inputField.value = text.substring(0, start) + emoji + text.substring(end);
+  const newCursorPos = start + emoji.length;
+  inputField.selectionStart = inputField.selectionEnd = newCursorPos;
+
+  inputField.dispatchEvent(new Event('input', { bubbles: true }));
+  inputField.focus();
+}
+
+// --- End Emoji Panel Logic ---

@@ -6,7 +6,7 @@
 .message {
     max-width: 50%;
     padding: 10px 12px;
-    position: relative;
+    position: relative; /* Ensure positioning context for timestamp */
     margin-bottom: 6px;
     line-height: 1.4;
     border-radius: 8px;
@@ -17,12 +17,42 @@
     hyphens: auto;
 }
 
+/* Special handling for messages with images */
+.message-with-image {
+    padding: 5px;
+    background-color: var(--message-sent);
+    max-width: 50%; /* Still respect overall max width */
+    width: -moz-fit-content; /* Firefox */
+    width: fit-content; /* Shrink wrap the content */
+    border-radius: 8px; /* Use consistent radius */
+    display: block; /* Keep as block for alignment context */
+    /* Ensure alignment is handled by parent flex container */
+    /* align-self: flex-end; */ /* Let .message-sent handle this */
+    line-height: 0; /* Prevent extra space */
+    position: relative; /* Add positioning context */
+}
+
+.message-sent.message-with-image {
+    /* Specific overrides for sent image messages if needed */
+    /* Example: border-radius: 8px 8px 2px 8px; */
+    border-radius: 8px; /* Keep consistent */
+}
+
+.message-received.message-with-image {
+    background-color: var(--message-received);
+    /* Example: border-radius: 8px 8px 8px 2px; */
+    border-radius: 8px; /* Keep consistent */
+    /* align-self: flex-start; */ /* Let .message-received handle this */
+}
+
 .message-content {
     font-size: 15px;
     white-space: pre-wrap;
     overflow-wrap: break-word;
     word-break: break-word;
     max-width: 100%;
+    padding: 0;
+    margin: 0;
 }
 
 .message-sent {
@@ -73,8 +103,8 @@
     margin-top: 5px;
     text-align: right;
     position: relative;
-    float: none !important;
-    clear: both;
+    float: right; /* Keep float for normal messages */
+    clear: none; /* Keep clear for normal messages */
     padding-left: 0;
     bottom: auto;
 }
@@ -83,11 +113,43 @@
     color: rgba(0, 0, 0, 0.6);
 }
 
+.message-with-image .message-time {
+    position: absolute;
+    bottom: 5px; /* Adjusted position from bottom */
+    right: 7px; /* Adjusted position from right */
+    background-color: rgba(0, 0, 0, 0.6); /* Darker background for contrast */
+    color: white;
+    padding: 1px 5px;
+    border-radius: 6px; /* Rounded corners for timestamp */
+    font-size: 10px;
+    z-index: 2; /* Increased z-index */
+    margin: 0; /* Reset margin */
+    float: none; /* Override float */
+    clear: none; /* Override clear */
+    line-height: 1.2; /* Adjust line height */
+}
+
+.message-sent.message-with-image .message-time {
+    color: white; /* Ensure white text on dark background */
+}
+
+.message-received.message-with-image .message-time {
+    /* Same styling applies, background provides contrast */
+    color: white;
+}
+
 .edited-indicator {
     font-size: 11px;
     color: inherit;
     opacity: 0.8;
     margin-left: 2px;
+}
+
+.message-with-image .edited-indicator {
+    /* Adjust edited indicator position if needed */
+    display: inline; /* Ensure it stays with time */
+    margin-left: 3px;
+    font-size: 9px; /* Slightly smaller */
 }
 
 .message a {
@@ -101,7 +163,33 @@
 }
 
 .message-image {
-    margin-bottom: 8px;
+    margin: 0;
+    border-radius: 6px; /* Inner radius for image container */
+    overflow: hidden;
+    display: block;
+    /* position: relative; */ /* REMOVED - Parent provides context */
+    line-height: 0;
+    /* Set explicit max dimensions - INCREASED */
+    max-width: 400px;
+    max-height: 400px;
+    /* Remove fit-content here, let bubble handle shrinking */
+    /* width: fit-content; */
+    /* Ensure it doesn't collapse if image fails to load */
+    min-width: 50px; 
+    min-height: 50px;
+    background-color: rgba(0,0,0,0.1);
+}
+
+.message-image img {
+    display: block;
+    width: 100%; /* Fill container width */
+    height: 100%; /* Fill container height */
+    max-width: 100%; /* Redundant but safe */
+    max-height: 100%; /* Redundant but safe */
+    border-radius: 6px; /* Match container */
+    margin: 0;
+    vertical-align: middle;
+    object-fit: cover; /* Fill container, crop if needed */
 }
 
 .message-file-icon {
