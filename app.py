@@ -1,4 +1,4 @@
-from flask import Flask, json, request, render_template, redirect, url_for, flash, session, jsonify, make_response
+from flask import Flask, json, request, render_template, redirect, url_for, flash, session, jsonify, make_response, send_from_directory
 import logging
 import os
 import datetime
@@ -36,14 +36,18 @@ else:
     app.config['SERVER_NAME'] = 'localhost:5000'
 
 # Добавляем конфигурацию для загрузки файлов
-UPLOAD_FOLDER = os.path.join(basedir, 'static', 'avatars')
-ALLOWED_EXTENSIONS = {'png', 'jpg', 'jpeg', 'gif'}
+# UPLOAD_FOLDER теперь указывает на корень 'uploads' внутри 'static'
+# Конкретные подпапки (avatars, group_files) будут создаваться по мере необходимости
+UPLOAD_FOLDER = os.path.join(basedir, 'static', 'uploads')
 app.config['UPLOAD_FOLDER'] = UPLOAD_FOLDER
-# Создаем папку для загрузок, если её нет
+
+# Создаем корневую папку для загрузок, если её нет
 os.makedirs(app.config['UPLOAD_FOLDER'], exist_ok=True)
 
 # Инициализация базы данных
 from models.user import db, User, Contact, Message, Block, Group, GroupMember, GroupMessage
+from flask import send_from_directory # Import send_from_directory
+
 db.init_app(app)
 
 # Import database utility functions from utils
@@ -62,6 +66,65 @@ app.register_blueprint(user_bp)
 app.register_blueprint(contacts_bp)
 app.register_blueprint(messages_bp)
 app.register_blueprint(groups_bp)
+
+# --- NEW ROUTE TO SERVE UPLOADED FILES ---
+@app.route('/uploads/<path:filepath>')
+def serve_uploaded_file(filepath):
+    if 'user_id' not in session:
+        return jsonify({"error": "Unauthorized"}), 401
+
+    logging.debug(f"Attempting to serve file: {filepath}")
+    # Security Check: Basic check for path traversal
+    if '..' in filepath or filepath.startswith('/'):
+        logging.warning(f"Potential path traversal attempt: {filepath}")
+        return jsonify({"error": "Forbidden"}), 403
+
+    # More specific security for group files
+    if filepath.startswith('group_files/'):
+        try:
+            # Extract group_id from the path (e.g., group_files/123/image.png -> 123)
+            parts = filepath.split('/')
+            if len(parts) < 3 or not parts[1].isdigit():
+                 logging.warning(f"Invalid group file path format: {filepath}")
+                 return jsonify({"error": "Not found"}), 404
+            group_id = int(parts[1])
+            
+            # Check if current user is a member of this group
+            is_member = GroupMember.query.filter_by(
+                group_id=group_id,
+                user_id=session['user_id'],
+                invitation_status='accepted'
+            ).first()
+            
+            if not is_member:
+                logging.warning(f"User {session['user_id']} not member of group {group_id}, denied access to {filepath}")
+                return jsonify({"error": "Forbidden"}), 403
+                
+            logging.debug(f"User {session['user_id']} is member of group {group_id}. Serving file: {filepath}")
+        except Exception as e:
+            logging.error(f"Error during group file access check for {filepath}: {e}")
+            return jsonify({"error": "Server Error"}), 500
+    # Add similar checks here for other sensitive directories if needed (e.g., private user files)
+    elif filepath.startswith('avatars/'):
+        # Avatars are generally considered public within the app, less strict check needed
+        # You might still want basic validation or ensure the file exists
+        logging.debug(f"Serving avatar: {filepath}")
+    else:
+        # Handle other potential paths or deny by default
+        logging.warning(f"Attempt to access potentially restricted path: {filepath}")
+        return jsonify({"error": "Forbidden"}), 403
+
+    # Serve the file using send_from_directory
+    # UPLOAD_FOLDER is the base directory (e.g., static/uploads)
+    try:
+        return send_from_directory(app.config['UPLOAD_FOLDER'], filepath, as_attachment=False)
+    except FileNotFoundError:
+         logging.error(f"File not found: {os.path.join(app.config['UPLOAD_FOLDER'], filepath)}")
+         return jsonify({"error": "Not found"}), 404
+    except Exception as e:
+        logging.error(f"Error serving file {filepath}: {e}")
+        return jsonify({"error": "Server error"}), 500
+# --- END NEW ROUTE ---
 
 # Маршруты для автообновления PythonAnywhere
 @app.route('/update_server', methods=['POST'])

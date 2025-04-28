@@ -233,12 +233,16 @@ function createGroupChatInterface(group) {
     </svg>
   `;
   
-  // Emoji picker container (initially hidden)
-  const emojiPickerContainer = document.createElement('div');
-  emojiPickerContainer.id = 'emojiPickerContainer';
-  emojiPickerContainer.className = 'emoji-picker-container';
-  emojiPickerContainer.style.display = 'none'; // Hide initially
-  
+  // --- File Input ---
+  const fileInput = document.createElement('input');
+  fileInput.type = 'file';
+  fileInput.accept = '*/*'; // Accept all file types initially
+  fileInput.style.display = 'none'; // Hide the actual input
+  fileInput.id = `groupFileInput_${group.id}`; // Unique ID
+
+  // Add file input to the container (doesn't matter where visually)
+  messageInputContainer.appendChild(fileInput);
+
   // Send button
   const sendButton = document.createElement('button');
   sendButton.className = 'send-button';
@@ -290,9 +294,18 @@ function createGroupChatInterface(group) {
   inputWrapper.appendChild(sendButton);
   
   messageInputContainer.appendChild(inputWrapper);
-  messageInputContainer.appendChild(emojiPickerContainer);
   
-  mainContent.appendChild(chatHeader);
+  // --- Create Emoji Panel (Initially Hidden) ---
+  // Check if panel already exists from a previous chat creation in the same session
+  let emojiPanel = document.getElementById('emojiPanel');
+  if (!emojiPanel) {
+    emojiPanel = document.createElement('div');
+    emojiPanel.id = 'emojiPanel'; // Add ID for styling and selection
+    emojiPanel.style.display = 'none'; // Hide initially
+    // Add it to the mainContent for positioning relative to the chat area
+    mainContent.appendChild(emojiPanel);
+  }
+  
   mainContent.appendChild(chatMessages);
   mainContent.appendChild(messageInputContainer);
   
@@ -302,83 +315,263 @@ function createGroupChatInterface(group) {
   // Focus input field
   inputField.focus();
 
-  // Emoji button click handler
+  // --- Event Listeners ---
+
+  // Paperclip button triggers file input
+  paperclipButton.addEventListener('click', () => {
+    fileInput.click(); // Trigger click on hidden file input
+  });
+
+  // Handle file selection
+  fileInput.addEventListener('change', (event) => {
+    const files = event.target.files;
+    if (files && files.length > 0) {
+      // Handle single file upload for now
+      const file = files[0];
+      console.log('File selected:', file.name, file.size);
+      uploadGroupFile(file, group.id, chatMessages); // Pass necessary info
+
+      // Reset file input value to allow selecting the same file again
+      event.target.value = null;
+    }
+  });
+
+  // Emoji button click handler - toggles the new large panel
   emojiButton.addEventListener('click', (e) => {
     e.stopPropagation();
-    toggleEmojiPicker(emojiPickerContainer, inputField, emojiButton);
+    // Call the new toggle function for the large panel
+    toggleEmojiPanel(inputField); // Pass inputField if needed by insertEmoji later
   });
 }
 
-// --- Emoji Picker Logic ---
+// --- Emoji Panel Logic ---
 
-const basicEmojis = [
-  '😀', '😂', '😍', '🤔', '😊', '😎', '😭', '👍', '❤️', '🎉', '🔥', '💀', '👋', '🙏'
-];
+// Определение списка смайликов ДО функций, которые его используют
+const categorizedEmojis = {
+  'Smileys & People': ['😀', '😃', '😄', '😁', '😆', '😅', '😂', '🤣', '😊', '😇', '🙂', '🙃', '😉', '😌', '😍', '🥰', '😘', '😗', '😙', '😚', '😋', '😛', '😜', '🤪', '🤨', '🧐', '🤓', '😎', '🤩', '🥳', '😏', '😒', '😞', '😔', '😟', '😕', '🙁', '☹️', '😣', '😖', '😫', '😩', '🥺', '😢', '😭', '😤', '😠', '😡', '🤬', '🤯', '😳', '🥵', '🥶', '😱', '😨', '😰', '😥', '😓', '🤗', '🤔', '🤭', '🤫', '🤥', '😶', '😐', '😑', '😬', '🙄', '😯', '😦', '😧', '😮', '😲', '🥱', '😴', '🤤', '😪', '😵', '🤐', '🥴', '🤢', '🤮', '🤧', '😷', '🤒', '🤕', '🤑', '🤠', '😈', '👿', '👹', '👺', '🤡', '💩', '👻', '💀', '☠️', '👽', '👾', '🤖', '🎃', '😺', '😸', '😹', '😻', '😼', '😽', '🙀', '😿', '😾'],
+  'Animals & Nature': ['🙈', '🙉', '🙊', '🐒', '🐕', '🐶', '🐩', '🐺', '🦊', '🦝', '🐈', '🐱', '🦁', '🐯', '🐅', '🐆', '🐴', '🐎', '🦄', '🦓', '🦌', '🐮', '🐂', '🐃', '🐄', '🐷', '🐖', '🐗', '🐽', '🐏', '🐑', '🐐', '🐪', '🐫', '🦙', '🦒', '🐘', '🦏', '🦛', '🐭', '🐁', '🐀', '🐹', '🐰', '🐇', '🐿️', '🦔', '🦇', '🐻', '🐨', '🐼', '🦥', '🦦', '🦨', '🦘', '🦡', '🐾', '🦃', '🐔', '🐓', '🐣', '🐤', '🐥', '🐦', '🐧', '🕊️', '🦅', '🦆', '🦢', '🦉', '🦩', '🦚', '🦜', '🐸', '🐊', '🐢', '🦎', '🐍', '🐲', '🐉', '🦕', '🦖', '🐳', '🐋', '🐬', '🐟', '🐠', '🐡', '🦈', '🐙', '🐚', '🐌', '🦋', '🐛', '🐜', '🐝', '🐞', '🦗', '🕷️', '🕸️', '🦂', '🦟', '🦠', '💐', '🌸', '💮', '🏵️', '🌹', '🥀', '🌺', '🌻', '🌼', '🌷', '🌱', '🌲', '🌳', '🌴', '🌵', '🌾', '🌿', '☘️', '🍀', '🍁', '🍂', '🍃'],
+  'Food & Drink': ['🍇', '🍈', '🍉', '🍊', '🍋', '🍌', '🍍', '🥭', '🍎', '🍏', '🍐', '🍑', '🍒', '🍓', '🥝', '🍅', '🥥', '🥑', '🍆', '🥔', '🥕', '🌽', '🌶️', '🥒', '🥬', '🥦', '🧄', '🧅', '🍄', '🥜', '🌰', '🍞', '🥐', '🥖', '🥨', '🥯', '🥞', '🧇', '🧀', '🍖', '🍗', '🥩', '🥓', '🍔', '🍟', '🍕', '🌭', '🥪', '🌮', '🌯', '🥙', '🧆', '🥚', '🍳', '🥘', '🍲', '🥣', '🥗', '🍿', '🧈', '🧂', '🥫', '🍱', '🍘', '🍙', '🍚', '🍛', '🍜', '🍝', '🍠', '🍢', '🍣', '🍤', '🍥', '🥮', '🍡', '🥟', '🥠', '🥡', '🦀', '🦞', '🦐', '🦑', '🦪', '🍦', '🍧', '🍨', '🍩', '🍪', '🎂', '🍰', '🧁', '🥧', '🍫', '🍬', '🍭', '🍮', '🍯', '🍼', '🥛', '☕', '🍵', '🍶', '🍾', '🍷', '🍸', '🍹', '🍺', '🍻', '🥂', '🥃', '🥤', '🧃', '🧉', '🧊', '🥢', '🍽️', '🍴', '🥄'],
+  'Symbols': ['❤️', '🧡', '💛', '💚', '💙', '💜', '🖤', '🤍', '🤎', '💔', '❣️', '💕', '💞', '💓', '💗', '💖', '💘', '💝', '💟', '☮️', '✝️', '☪️', '🕉️', '☸️', '✡️', '🔯', '🕎', '☯️', '☦️', '🛐', '⛎', '♈', '♉', '♊', '♋', '♌', '♍', '♎', '♏', '♐', '♑', '♒', '♓', '🆔', '⚛️', '🉑', '☢️', '☣️', '📴', '📳', '🈶', '🈚', '🈸', '🈺', '🈷️', '✴️', '🆚', '💮', '🉐', '㊙️', '㊗️', '🈴', '🈵', '🈹', '🈲', '🅰️', '🅱️', '🆎', '🆑', '🅾️', '🆘', '❌', '⭕', '🛑', '⛔', '📛', '🚫', '💯', '💢', '♨️', '🚷', '🚯', '🚳', '🚱', '🔞', '📵', '🚭', '❗️', '❕', '❓', '❔', '‼️', '⁉️', '🔅', '🔆', '〽️', '⚠️', '🚸', '🔱', '⚜️', '🔰', '♻️', '✅', '🈯', '💹', '❇️', '✳️', '❎', '🌐', '💠', 'Ⓜ️', '🌀', '💤', '🏧', '🚾', '♿', '🅿️', '🈳', '🈂️', '🛂', '🛃', '🛄', '🛅', '🚹', '🚺', '🚼', '🚻', '🚮', '🎦', '📶', '🈁', '🔣', 'ℹ️', '🔤', '🔡', '🔠', '🆖', '🆗', '🆙', '🆒', '🆕', '🆓', '0️⃣', '1️⃣', '2️⃣', '3️⃣', '4️⃣', '5️⃣', '6️⃣', '7️⃣', '8️⃣', '9️⃣', '🔟', '🔢', '#️⃣', '*️⃣', '⏏️', '▶️', '⏸️', '⏯️', '⏹️', '⏺️', '⏭️', '⏮️', '⏩', '⏪', '⏫', '⏬', '◀️', '🔼', '🔽', '➡️', '⬅️', '⬆️', '⬇️', '↗️', '↘️', '↙️', '↖️', '↕️', '↔️', '↪️', '↩️', '⤴️', '⤵️', '🔀', '🔁', '🔂', '🔄', '🔃', '🎵', '🎶', '➕', '➖', '➗', '✖️', '♾️', '💲', '💱', '™️', '©️', '®️', '〰️', '➰', '➿', '🔚', '🔙', '🔛', '🔝', '🔜', '✔️', '☑️', '🔘', '🔴', '🟠', '🟡', '🟢', '🔵', '🟣', '⚫', '⚪', '🟤', '🔺', '🔻', '🔸', '🔹', '🔶', '🔷', '🔳', '🔲', '▪️', '▫️', '◾', '◽', '◼️', '◻️', '🟥', '🟧', '🟨', '🟩', '🟦', '🟪', '⬛', '⬜', '🟫', '🔈', '🔇', '🔉', '🔊', '🔔', '🔕', '📣', '📢', '👁️‍🗨️', '💬', '💭', '🗯️', '♠️', '♣️', '♥️', '♦️', '🃏', '🎴', '🀄', '🕒', '🕓', '🕔', '🕕', '🕖', '🕗', '🕘', '🕙', '🕚', '🕛', '🕜', '🕝', '🕞', '🕟', '🕠', '🕡', '🕢', '🕣', '🕤', '🕥', '🕦', '🕧'],
+};
 
-function toggleEmojiPicker(pickerContainer, inputField, button) {
-  const isVisible = pickerContainer.style.display === 'block';
-  
+// Ссылка на обработчик клика вне панели для его последующего удаления
+let closeEmojiPanelHandler = null;
+
+/**
+ * Toggles the visibility of the main emoji panel.
+ */
+function toggleEmojiPanel(inputField) {
+  const emojiPanel = document.getElementById('emojiPanel');
+  const emojiButton = document.querySelector('.emoji-button'); // Get the button for positioning/closing checks
+  if (!emojiPanel || !emojiButton) {
+      console.error("Emoji panel or button element not found!");
+      return;
+  }
+
+  const isVisible = emojiPanel.style.display === 'flex'; // Use 'flex' or 'block' based on your CSS
+
   if (isVisible) {
-    pickerContainer.style.display = 'none';
-    document.removeEventListener('click', closeEmojiPickerOnClickOutside);
+    emojiPanel.style.display = 'none';
+    if (closeEmojiPanelHandler) {
+        document.removeEventListener('click', closeEmojiPanelHandler);
+        closeEmojiPanelHandler = null;
+    }
   } else {
-    // Clear previous content and rebuild
-    pickerContainer.innerHTML = '';
-    
-    basicEmojis.forEach(emoji => {
+    if (!emojiPanel.dataset.built) {
+      buildEmojiPanelContent(emojiPanel, inputField);
+      emojiPanel.dataset.built = 'true';
+    }
+
+    // --- Position Panel Directly Above Button --- V2
+    const buttonRect = emojiButton.getBoundingClientRect();
+    emojiPanel.style.position = 'fixed'; // Use fixed to position relative to viewport
+    emojiPanel.style.bottom = `${window.innerHeight - buttonRect.top + 8}px`; // 8px offset above the button
+    // Align panel's left edge with button's left edge
+    emojiPanel.style.left = `${buttonRect.left}px`;
+    // Reset potentially conflicting styles
+    emojiPanel.style.right = 'auto';
+    emojiPanel.style.transform = 'none';
+
+    emojiPanel.style.display = 'flex'; // Show the panel
+    // --- End Position Panel ---
+
+    // Add listener to close when clicking outside
+    closeEmojiPanelHandler = (event) => closeEmojiPanelOnClickOutside(event, emojiButton, closeEmojiPanelHandler);
+    setTimeout(() => {
+      document.addEventListener('click', closeEmojiPanelHandler);
+    }, 0);
+  }
+}
+
+/**
+ * Builds the content (categories, grid) for the emoji panel.
+ */
+function buildEmojiPanelContent(panelElement, inputField) {
+  panelElement.innerHTML = ''; // Clear previous content
+
+  const gridContainer = document.createElement('div');
+  gridContainer.className = 'emoji-grid-container';
+
+  for (const category in categorizedEmojis) {
+    const categoryHeader = document.createElement('div');
+    categoryHeader.className = 'emoji-category-header';
+    categoryHeader.textContent = category;
+    gridContainer.appendChild(categoryHeader);
+
+    categorizedEmojis[category].forEach(emoji => {
       const emojiBtn = document.createElement('button');
       emojiBtn.className = 'emoji-select-btn';
       emojiBtn.textContent = emoji;
-      emojiBtn.onclick = () => {
+      emojiBtn.type = 'button';
+      emojiBtn.onclick = (e) => {
+        e.stopPropagation();
         insertEmoji(inputField, emoji);
-        pickerContainer.style.display = 'none'; // Close after selection
-        document.removeEventListener('click', closeEmojiPickerOnClickOutside);
       };
-      pickerContainer.appendChild(emojiBtn);
+      gridContainer.appendChild(emojiBtn);
     });
-    
-    // Position and show the picker
-    const buttonRect = button.getBoundingClientRect();
-    pickerContainer.style.position = 'absolute';
-    pickerContainer.style.bottom = `${window.innerHeight - buttonRect.top + 5}px`;
-    pickerContainer.style.left = `${buttonRect.left + (buttonRect.width / 2)}px`;
-    pickerContainer.style.transform = 'translateX(-50%)';
-    pickerContainer.style.display = 'block';
-    
-    // Add listener to close when clicking outside
-    document.addEventListener('click', closeEmojiPickerOnClickOutside); 
+  }
+  panelElement.appendChild(gridContainer);
+}
+
+/**
+ * Closes the emoji panel if a click occurs outside of it and not on the toggle button.
+ */
+function closeEmojiPanelOnClickOutside(event, emojiButton, handlerRef) {
+  const emojiPanel = document.getElementById('emojiPanel');
+
+  // Check if elements exist and click is outside panel AND outside button
+  if (emojiPanel && emojiButton && !emojiPanel.contains(event.target) && !emojiButton.contains(event.target)) {
+    emojiPanel.style.display = 'none';
+    if (handlerRef) {
+        document.removeEventListener('click', handlerRef);
+        closeEmojiPanelHandler = null; // Reset global handler reference as well
+    }
   }
 }
 
-// Named function to handle closing the picker
-function closeEmojiPickerOnClickOutside(event) {
-  const picker = document.getElementById('emojiPickerContainer');
-  const button = document.querySelector('.emoji-button'); 
-  
-  // Close if clicked outside the picker and the button
-  if (picker && button && !picker.contains(event.target) && !button.contains(event.target)) {
-    picker.style.display = 'none';
-    document.removeEventListener('click', closeEmojiPickerOnClickOutside);
-  }
-}
-
+/**
+ * Insert emoji into the input field.
+ */
 function insertEmoji(inputField, emoji) {
   const start = inputField.selectionStart;
   const end = inputField.selectionEnd;
   const text = inputField.value;
-  
-  // Insert emoji at cursor position
+
   inputField.value = text.substring(0, start) + emoji + text.substring(end);
-  
-  // Move cursor position after inserted emoji
-  inputField.selectionStart = inputField.selectionEnd = start + emoji.length;
-  
-  // Trigger input event for send button activation etc.
-  inputField.dispatchEvent(new Event('input', { bubbles: true })); 
+  const newCursorPos = start + emoji.length;
+  inputField.selectionStart = inputField.selectionEnd = newCursorPos;
+
+  inputField.dispatchEvent(new Event('input', { bubbles: true }));
   inputField.focus();
 }
 
-// --- End Emoji Picker Logic ---
+// --- End Emoji Panel Logic ---
+
+/**
+ * Upload a file to the group chat
+ */
+function uploadGroupFile(file, groupId, chatMessages) {
+  // Basic validation (e.g., size limit - 10MB)
+  const maxSize = 10 * 1024 * 1024; // 10 MB
+  if (file.size > maxSize) {
+    showErrorNotification(`File is too large (max ${maxSize / 1024 / 1024} MB)`);
+    return;
+  }
+
+  // Create FormData
+  const formData = new FormData();
+  formData.append('file', file);
+  formData.append('group_id', groupId);
+
+  // Show temporary "Uploading..." message in chat
+  const tempMsgId = `temp_upload_${Date.now()}`;
+  const tempMsgElement = createTemporaryMessageElement(tempMsgId, `Uploading ${file.name}...`);
+  addMessageElementToChat(tempMsgElement, chatMessages);
+
+  // Perform the upload
+  fetch('/upload_group_file', { // Needs backend route
+    method: 'POST',
+    body: formData
+    // Headers are automatically set by browser for FormData
+  })
+  .then(response => {
+    if (!response.ok) {
+      // Try to get error message from backend response
+      return response.json().then(err => {
+        throw new Error(err.error || `HTTP error! status: ${response.status}`);
+      }).catch(() => {
+        // Fallback if no JSON error message
+        throw new Error(`HTTP error! status: ${response.status}`);
+      });
+    }
+    return response.json();
+  })
+  .then(data => {
+    // Remove temporary message
+    removeMessageElement(tempMsgId, chatMessages);
+
+    if (data.success && data.message) {
+      // Backend should return the new message object upon success
+      addMessageToGroupChat(data.message, chatMessages);
+      loadSidebar(); // Refresh sidebar
+    } else {
+      showErrorNotification(data.error || 'Failed to upload file.');
+    }
+  })
+  .catch(error => {
+    console.error('Error uploading file:', error);
+    // Remove temporary message on error too
+    removeMessageElement(tempMsgId, chatMessages);
+    showErrorNotification(`Upload failed: ${error.message}`);
+  });
+}
+
+/**
+ * Creates a temporary message element (e.g., for upload status)
+ */
+function createTemporaryMessageElement(id, text) {
+  const messageEl = document.createElement('div');
+  messageEl.className = 'message message-sent message-temporary'; // Style as sent, add temp class
+  messageEl.dataset.messageId = id; // Use specific ID
+  messageEl.innerHTML = `
+    <div class="message-content">${escapeHtml(text)}</div>
+    <div class="message-footer">
+      <div class="message-time">Sending...</div>
+    </div>
+  `;
+  return messageEl;
+}
+
+/**
+ * Adds any message element to the chat container
+ */
+function addMessageElementToChat(messageEl, chatMessages) {
+  let messagesContainer = chatMessages.querySelector('.messages-container');
+  const noMessages = chatMessages.querySelector('.no-messages');
+
+  if (noMessages) {
+    chatMessages.removeChild(noMessages);
+  }
+
+  if (!messagesContainer) {
+    messagesContainer = document.createElement('div');
+    messagesContainer.className = 'messages-container';
+    chatMessages.appendChild(messagesContainer);
+  }
+
+  messagesContainer.appendChild(messageEl);
+  chatMessages.scrollTop = chatMessages.scrollHeight;
+}
+
+/**
+ * Removes a message element by its data-message-id
+ */
+function removeMessageElement(id, chatMessages) {
+  const messageEl = chatMessages.querySelector(`.message[data-message-id="${id}"]`);
+  if (messageEl) {
+    messageEl.remove();
+  }
+}
 
 /**
  * Show group menu when chat menu button is clicked
@@ -1311,14 +1504,6 @@ function showGroupMessageContextMenu(event, message, messageEl, isSent) {
       document.removeEventListener('click', closeMenu);
     }
   });
-  
-  // Закрытие по Esc
-  document.addEventListener('keydown', function escHandler(e) {
-    if (e.key === 'Escape') {
-      contextMenu.remove();
-      document.removeEventListener('keydown', escHandler);
-    }
-  });
 }
 
 /**
@@ -1400,8 +1585,8 @@ function addMessageToGroupChat(message, chatMessages) {
  * Create a group message element
  */
 function createGroupMessageElement(message, memberMap) {
-  // Примитивная проверка на system-сообщение по тексту
-  const isSystem = /added|removed|admin|changed|set group|left the group|joined the group|назначен|снят|добавил|удалил|покинул|сменил|изменил|аватар|описание|название/i.test(message.content);
+  // Проверка на системное сообщение (оставим как есть или улучшим позже)
+  const isSystem = /added|removed|admin|changed|set group|left the group|joined the group|назначен|снят|добавил|удалил|покинул|сменил|изменил|аватар|описание|название/i.test(message.content) && !message.message_type; // Добавим проверку, что это не файл
 
   if (isSystem) {
     const el = document.createElement('div');
@@ -1411,43 +1596,137 @@ function createGroupMessageElement(message, memberMap) {
   }
 
   const messageEl = document.createElement('div');
-  
+
   // Determine if this is a sent or received message
-  const isSent = parseInt(message.sender_id) === parseInt(ChatApp.currentUser.user_id);
+  const currentUserIdStr = String(ChatApp.currentUser.user_id);
+  const senderIdStr = String(message.sender_id);
+  const isSent = senderIdStr === currentUserIdStr;
+
   messageEl.className = `message ${isSent ? 'message-sent' : 'message-received'}`;
   messageEl.dataset.messageId = message.id;
   messageEl.dataset.senderId = message.sender_id;
-  
+
   // Format timestamp with hours and minutes
   const timestamp = new Date(message.timestamp);
   const hours = String(timestamp.getHours()).padStart(2, '0');
   const minutes = String(timestamp.getMinutes()).padStart(2, '0');
   const timeFormatted = `${hours}:${minutes}`;
-  
+
   // Check if is_edited exists, default to false if not
   const isEdited = message.is_edited === true;
-  
+
   // Add sender name for received messages
   let senderNameHTML = '';
   if (!isSent) {
     const senderName = memberMap[message.sender_id] || message.sender_name || 'Unknown';
-    senderNameHTML = `<div class="message-sender">${escapeHtml(senderName)}</div>`;
+    // Ensure senderName is a string before escaping
+    senderNameHTML = `<div class="message-sender">${escapeHtml(String(senderName))}</div>`;
   }
-  
-  // Using a completely direct approach to ensure time displays
+
+  // --- Determine message content based on type ---
+  let messageContentHTML = '';
+  // Use message.message_type which we expect from backend (even if temporary)
+  if (message.message_type === 'file' && message.mime_type && message.original_filename && message.file_path) {
+      // Construct the URL for the file serving endpoint
+      // The backend route /uploads/<path:filepath> will handle serving
+      const fileUrl = `/uploads/${message.file_path}`; 
+
+      if (message.mime_type.startsWith('image/')) {
+          // Display image
+          messageContentHTML = `
+              <a href="${fileUrl}" target="_blank" rel="noopener noreferrer" class="message-image-link">
+                  <img src="${fileUrl}" alt="${escapeHtml(message.original_filename)}" class="message-image-attachment" loading="lazy">
+              </a>
+              ${message.content ? `<div class="message-text-caption">${escapeHtml(message.content)}</div>` : ''}
+          `;
+      } else if (message.mime_type.startsWith('video/')) {
+          // Display video player
+           messageContentHTML = `
+              <video controls class="message-video-attachment" preload="metadata">
+                 <source src="${fileUrl}" type="${message.mime_type}">
+                 Your browser does not support the video tag.
+              </video>
+              <div class="message-file-caption">
+                 <a href="${fileUrl}" download="${escapeHtml(message.original_filename)}">${escapeHtml(message.original_filename)}</a>
+                 ${message.content && message.content !== `File: ${message.original_filename} (Upload OK, DB disabled)` ? `<div class="message-text-caption">${escapeHtml(message.content)}</div>` : ''}
+              </div>
+           `;
+      } else if (message.mime_type.startsWith('audio/')) {
+           // Display audio player
+           messageContentHTML = `
+             <div class="message-audio-container">
+                 <audio controls src="${fileUrl}" class="message-audio-attachment" preload="metadata">
+                    Your browser does not support the audio element.
+                 </audio>
+                 <div class="message-file-caption" style="margin-left: 10px;">
+                    <a href="${fileUrl}" download="${escapeHtml(message.original_filename)}">${escapeHtml(message.original_filename)}</a>
+                 </div>
+             </div>
+             ${message.content && message.content !== `File: ${message.original_filename} (Upload OK, DB disabled)` ? `<div class="message-text-caption">${escapeHtml(message.content)}</div>` : ''}
+           `;
+      } else {
+          // Display generic file link
+          // Simple file icon from Unicode: 📄
+          messageContentHTML = `
+              <a href="${fileUrl}" download="${escapeHtml(message.original_filename)}" class="message-file-link">
+                  <div class="file-icon">📄</div>
+                  <div class="file-info">
+                      <div class="file-name">${escapeHtml(message.original_filename)}</div>
+                      <!-- Optionally add file size here later -->
+                  </div>
+              </a>
+              ${message.content && message.content !== `File: ${message.original_filename} (Upload OK, DB disabled)` ? `<div class="message-text-caption">${escapeHtml(message.content)}</div>` : ''}
+          `;
+      }
+  } else {
+      // Default to text content if type is not 'file' or data is missing
+      // Check if content is just an image URL/link
+      const imgLinkRegex = /(https?:\/\/[^\s]+\.(jpg|jpeg|png|gif|webp))|<a[^>]+>[^<]*\.(jpg|jpeg|png|gif|webp)<\/a>|(\w+\.(png|jpg|jpeg|gif|webp))/i;
+      
+      if (message.content && imgLinkRegex.test(message.content)) {
+        // Extract the image URL
+        let imageUrl = message.content;
+        
+        // If it's an HTML link, extract the href
+        if (message.content.includes('<a href=')) {
+          const hrefMatch = message.content.match(/href=["']([^"']+)["']/);
+          if (hrefMatch && hrefMatch[1]) {
+            imageUrl = hrefMatch[1];
+          }
+        }
+        
+        // If it's just a filename, construct a path
+        if (!/^https?:\/\//.test(imageUrl) && !/^\/uploads\//.test(imageUrl)) {
+          imageUrl = `/uploads/${imageUrl}`;
+        }
+        
+        // Display the image directly
+        messageContentHTML = `
+          <a href="${imageUrl}" target="_blank" rel="noopener noreferrer" class="message-image-link">
+            <img src="${imageUrl}" alt="Image" class="message-image-attachment" loading="lazy">
+          </a>
+        `;
+      } else {
+        // Regular text message
+        messageContentHTML = escapeHtml(String(message.content || ''));
+      }
+  }
+  // --- End Determine message content ---
+
   messageEl.innerHTML = `
     ${senderNameHTML}
-    <div class="message-content">${escapeHtml(message.content)}</div>
+    <div class="message-content">${messageContentHTML}</div>
     <div class="message-footer">
       <div class="message-time">${timeFormatted}${isEdited ? ' <span class="edited-indicator">· Edited</span>' : ''}</div>
     </div>
   `;
-  
+
   // Add context menu event listener
   messageEl.addEventListener('contextmenu', function(e) {
-    showGroupMessageContextMenu(e, message, messageEl, isSent);
+      e.preventDefault(); // Prevent default browser context menu
+      showGroupMessageContextMenu(e, message, messageEl, isSent);
   });
-  
+
   return messageEl;
 }
 

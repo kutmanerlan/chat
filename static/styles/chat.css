@@ -315,3 +315,125 @@
   text-align: center;
   padding: 20px;
 }
+
+/* Styling for file attachments */
+.message-file-link {
+    display: flex;
+    align-items: center;
+    background-color: rgba(255, 255, 255, 0.08);
+    border-radius: 8px;
+    padding: 8px 12px;
+    text-decoration: none;
+    color: #ccc;
+    max-width: 300px; /* Limit width for better layout */
+    transition: background-color 0.2s ease;
+}
+
+.message-file-link:hover {
+    background-color: rgba(255, 255, 255, 0.12);
+}
+
+.file-icon {
+    font-size: 24px;
+    margin-right: 10px;
+}
+
+.file-info {
+    display: flex;
+    flex-direction: column;
+    overflow: hidden; /* Prevent long filenames from breaking layout */
+}
+
+.file-name {
+    font-weight: 500;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis; /* Add ellipsis for long filenames */
+}
+
+/* Reduce padding on message bubbles containing only images */
+.message-sent > .message-content:has(.message-image-link:only-child),
+.message-received > .message-content:has(.message-image-link:only-child) {
+    padding: 5px; /* Reduced padding */
+    background-color: transparent; /* Optional: remove bubble background if image fills it */
+    border: none; /* Ensure no borders are causing lines */
+    outline: none; /* Ensure no outlines are causing lines */
+}
+
+/* Styling for image attachments */
+.message-image-link {
+    display: inline-block; /* Allow bubble to shrink-wrap */
+    max-width: 100%;
+    margin-bottom: 0; /* Remove margin if caption padding handles spacing */
+    outline: none; /* Remove potential blue lines */
+    vertical-align: top; /* Align properly */
+}
+
+.message-image-attachment {
+    display: block;
+    max-width: 300px;
+    max-height: 300px;
+    width: auto;
+    height: auto;
+    border-radius: 8px;
+    object-fit: cover;
+    cursor: pointer;
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    outline: none; /* Remove potential blue lines */
+    vertical-align: top; /* Ensure proper alignment */
+}
+
+/* Styling for captions below files/images */
+.message-text-caption {
+    font-size: 0.9em;
+    color: #bbb;
+    /* Add padding inside the main message bubble instead */
+    padding: 5px 8px 8px 8px; /* Padding around caption text */
+    white-space: pre-wrap; 
+    word-wrap: break-word; 
+}
+
+/* Adjust message content padding slightly if there IS a caption */
+.message-sent > .message-content:has(.message-image-link + .message-text-caption),
+.message-received > .message-content:has(.message-image-link + .message-text-caption) {
+    padding: 5px 5px 0 5px; /* Top/sides padding for image, bottom handled by caption */
+}
+
+/* Styling for video attachments */
+.message-video-attachment {
+    display: block;
+    max-width: 350px;
+    max-height: 300px;
+    border-radius: 8px;
+    background-color: #000; /* Black background for letterboxing */
+}
+
+/* Styling for audio attachments */
+.message-audio-container {
+    display: flex;
+    align-items: center;
+    background-color: rgba(255, 255, 255, 0.08);
+    border-radius: 8px;
+    padding: 8px 12px;
+    max-width: 300px;
+}
+
+.message-audio-attachment {
+    flex-grow: 1;
+    height: 40px; /* Standard height for audio player */
+}
+
+.message-file-caption {
+    margin-top: 5px;
+    font-size: 0.9em;
+    color: #aaa;
+}
+
+.message-file-caption a {
+    color: #8ab4f8;
+    text-decoration: none;
+}
+
+.message-file-caption a:hover {
+    text-decoration: underline;
+}
