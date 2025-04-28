@@ -49,6 +49,33 @@ function openChatWithUser(userId, userName) {
 }
 
 /**
+ * Highlight the active item in the sidebar (for both user and group chats)
+ */
+function highlightActiveItem(itemId, type = 'user') {
+  // Remove active class from all items
+  document.querySelectorAll('.contact-item').forEach(item => {
+    item.classList.remove('active');
+  });
+  
+  // Find and highlight item based on type
+  let selector;
+  if (type === 'group') {
+    selector = `.group-item[data-group-id="${itemId}"]`;
+  } else {
+    selector = `.contact-item[data-user-id="${itemId}"], .contact-item[data-contact-id="${itemId}"]`;
+  }
+  
+  const itemElement = document.querySelector(selector);
+  if (itemElement) {
+    itemElement.classList.add('active');
+    
+    // Remove unread badge if exists
+    const badge = itemElement.querySelector('.unread-badge');
+    if (badge) badge.remove();
+  }
+}
+
+/**
  * Create the chat interface
  */
 function createChatInterface(user) {

@@ -2,8 +2,7 @@
  * Main CSS file that imports all modular styles
  */
 
-/* Import reset and base styles */
-@import url('reset.css');
+/* Import base styles */
 @import url('base.css');
 
 /* Import layout components */
@@ -27,7 +26,7 @@
 @import url('login.css');
 
 /* Import component styles */
-@import url('notification.css');
+@import url('notification.css'); /* Changed from notifications.css to match the actual file */
 @import url('file-menu.css');
 @import url('message-menu.css');
-@import url('emoji.css'); /* Added emoji styles */
+@import url('emoji.css');
