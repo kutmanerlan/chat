@@ -17,14 +17,31 @@ document.addEventListener('DOMContentLoaded', () => {
 function initializeChat() {
   console.log('Initializing chat application...');
   
+  // Initialize the ChatApp global object if it doesn't exist
+  if (!window.ChatApp) {
+    window.ChatApp = {
+      activeChat: null,
+      currentUser: {},
+      contacts: []
+    };
+    console.log('ChatApp global object initialized');
+  } else {
+    console.log('ChatApp global object already exists:', ChatApp);
+  }
+  
   // Fetch current user information first
   fetchCurrentUser()
-    .then(() => {
-      // Load sidebar with contacts and chats
-      loadSidebar();
+    .then(userData => {
+      console.log('Current user data loaded:', userData);
+      ChatApp.currentUser = userData;
       
+      // Load sidebar with contacts and chats
+      return loadSidebar();
+    })
+    .then(() => {
       // Setup event listeners
       setupEventListeners();
+      console.log('Chat initialization completed successfully');
     })
     .catch(error => {
       console.error('Failed to initialize chat:', error);
@@ -258,5 +275,37 @@ function createGroupHandler(form) {
   .catch(error => {
     console.error('Error creating group:', error);
     showErrorNotification('Failed to create group');
+  });
+}
+
+/**
+ * Setup event listeners
+ */
+function setupEventListeners() {
+  // Menu buttons setup...
+  setupMenuButtons();
+  
+  // Add debug code to check sidebar items
+  console.log('Checking sidebar group chat items...');
+  const groupItems = document.querySelectorAll('.group-item');
+  console.log(`Found ${groupItems.length} group items`);
+  
+  groupItems.forEach(item => {
+    const groupId = item.dataset.groupId;
+    const groupName = item.querySelector('.contact-name')?.textContent || 'Unknown Group';
+    
+    console.log(`Setting up click handler for group: ${groupName} (${groupId})`);
+    
+    // Remove any existing handlers (to prevent duplicates)
+    item.removeEventListener('click', item.groupClickHandler);
+    
+    // Add click handler
+    item.groupClickHandler = function() {
+      console.log(`Group item clicked: ${groupName} (${groupId})`);
+      openGroupChat(groupId, groupName);
+    };
+    
+    item.addEventListener('click', item.groupClickHandler);
+    console.log(`Click handler attached to group: ${groupName}`);
   });
 }
