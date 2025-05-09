@@ -266,7 +266,7 @@ function updateSidebarAvatar(avatarPath) {
   }
 }
 
-// --- Emoji Panel Logic (Moved from group_chat.js) ---
+// --- Emoji Panel Logic ---
 
 // Определение списка смайликов
 const categorizedEmojis = {
