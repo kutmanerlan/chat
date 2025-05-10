@@ -1504,7 +1504,7 @@ function showGroupFileUploadMenu(button, group) {
   document.getElementById('groupPhotoVideoOption').addEventListener('click', function() {
     mediaInput.onchange = function() {
       if (this.files.length > 0) {
-        showNotImplementedNotification('Group media sharing');
+        handleGroupFileSelection(this.files, group);
       }
       // Remove the input element after use
       document.body.removeChild(mediaInput);
@@ -1516,7 +1516,7 @@ function showGroupFileUploadMenu(button, group) {
   document.getElementById('groupDocumentOption').addEventListener('click', function() {
     fileInput.onchange = function() {
       if (this.files.length > 0) {
-        showNotImplementedNotification('Group file sharing');
+        handleGroupFileSelection(this.files, group);
       }
       // Remove the input element after use
       document.body.removeChild(fileInput);
@@ -1534,6 +1534,87 @@ function showGroupFileUploadMenu(button, group) {
       if (document.body.contains(fileInput)) document.body.removeChild(fileInput);
       if (document.body.contains(mediaInput)) document.body.removeChild(mediaInput);
     }
+  });
+}
+
+/**
+ * Handle group file selection and display files
+ */
+function handleGroupFileSelection(files, group) {
+  if (!files || files.length === 0) return;
+  
+  // Get chat messages container
+  const chatMessages = document.querySelector('.chat-messages');
+  if (!chatMessages) return;
+  
+  // Get or create messages container
+  let messagesContainer = chatMessages.querySelector('.messages-container');
+  const noMessages = chatMessages.querySelector('.no-messages');
+  if (noMessages) {
+    chatMessages.removeChild(noMessages);
+    messagesContainer = document.createElement('div');
+    messagesContainer.className = 'messages-container';
+    chatMessages.appendChild(messagesContainer);
+  }
+  
+  if (!messagesContainer) {
+    messagesContainer = document.createElement('div');
+    messagesContainer.className = 'messages-container';
+    chatMessages.appendChild(messagesContainer);
+  }
+  
+  // Process each file
+  Array.from(files).forEach(file => {
+    // Create message element to show the file
+    const message = document.createElement('div');
+    message.className = 'message message-sent message-file';
+    
+    // Format timestamp
+    const now = new Date();
+    const hours = String(now.getHours()).padStart(2, '0');
+    const minutes = String(now.getMinutes()).padStart(2, '0');
+    
+    // Determine file type and create content
+    const isImage = file.type.startsWith('image/');
+    let fileContent;
+    
+    if (isImage) {
+      const imageUrl = URL.createObjectURL(file);
+      fileContent = `
+        <div class="message-image">
+          <img src="${imageUrl}" alt="${file.name}" style="max-width: 200px; max-height: 200px; border-radius: 8px;">
+        </div>
+        <div class="message-file-name">${file.name} (${formatFileSize(file.size)})</div>
+      `;
+    } else {
+      // Icon based on file type
+      let iconSvg = `
+        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2">
+          <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
+          <polyline points="14 2 14 8 20 8"></polyline>
+        </svg>
+      `;
+      
+      fileContent = `
+        <div class="message-file-icon">${iconSvg}</div>
+        <div class="message-file-name">${file.name} (${formatFileSize(file.size)})</div>
+      `;
+    }
+    
+    // Add content to message
+    message.innerHTML = `
+      ${fileContent}
+      <div class="message-time">${hours}:${minutes}</div>
+    `;
+    
+    // Add message to container
+    messagesContainer.appendChild(message);
+    
+    // Scroll to new message
+    chatMessages.scrollTop = chatMessages.scrollHeight;
+    
+    // TODO: Send file to server (implement server-side handling)
+    // This would involve using FormData and fetch to upload the file to the group
   });
 }
 
