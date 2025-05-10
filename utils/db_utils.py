@@ -86,47 +86,6 @@ def create_tables():
                     logging.info('edited_at column added successfully')
                 except Exception as column_error:
                     logging.error(f"Error adding edited_at column: {str(column_error)}")
-            
-            # Check for file columns in message table
-            if 'file_path' not in message_columns:
-                logging.info('Adding file_path column to message table')
-                try:
-                    with db.engine.connect() as connection:
-                        connection.execute(text("ALTER TABLE message ADD COLUMN file_path VARCHAR(255)"))
-                        connection.commit()
-                    logging.info('file_path column added successfully')
-                except Exception as column_error:
-                    logging.error(f"Error adding file_path column: {str(column_error)}")
-            
-            if 'mime_type' not in message_columns:
-                logging.info('Adding mime_type column to message table')
-                try:
-                    with db.engine.connect() as connection:
-                        connection.execute(text("ALTER TABLE message ADD COLUMN mime_type VARCHAR(100)"))
-                        connection.commit()
-                    logging.info('mime_type column added successfully')
-                except Exception as column_error:
-                    logging.error(f"Error adding mime_type column: {str(column_error)}")
-            
-            if 'original_filename' not in message_columns:
-                logging.info('Adding original_filename column to message table')
-                try:
-                    with db.engine.connect() as connection:
-                        connection.execute(text("ALTER TABLE message ADD COLUMN original_filename VARCHAR(255)"))
-                        connection.commit()
-                    logging.info('original_filename column added successfully')
-                except Exception as column_error:
-                    logging.error(f"Error adding original_filename column: {str(column_error)}")
-            
-            if 'message_type' not in message_columns:
-                logging.info('Adding message_type column to message table')
-                try:
-                    with db.engine.connect() as connection:
-                        connection.execute(text("ALTER TABLE message ADD COLUMN message_type VARCHAR(50)"))
-                        connection.commit()
-                    logging.info('message_type column added successfully')
-                except Exception as column_error:
-                    logging.error(f"Error adding message_type column: {str(column_error)}")
         
         # Check if block table exists
         if 'block' not in inspector.get_table_names():
@@ -155,71 +114,6 @@ def create_tables():
             # Create the group_message table
             db.create_all()
             logging.info('Таблица group_message создана')
-        else:
-            logging.info("Проверяем наличие новых колонок в таблице group_message...")
-            group_message_columns = [column['name'] for column in inspector.get_columns('group_message')]
-            
-            # Check for file columns in group_message table
-            if 'file_path' not in group_message_columns:
-                logging.info('Adding file_path column to group_message table')
-                try:
-                    with db.engine.connect() as connection:
-                        connection.execute(text("ALTER TABLE group_message ADD COLUMN file_path VARCHAR(255)"))
-                        connection.commit()
-                    logging.info('file_path column added successfully to group_message')
-                except Exception as column_error:
-                    logging.error(f"Error adding file_path column to group_message: {str(column_error)}")
-            
-            if 'mime_type' not in group_message_columns:
-                logging.info('Adding mime_type column to group_message table')
-                try:
-                    with db.engine.connect() as connection:
-                        connection.execute(text("ALTER TABLE group_message ADD COLUMN mime_type VARCHAR(100)"))
-                        connection.commit()
-                    logging.info('mime_type column added successfully to group_message')
-                except Exception as column_error:
-                    logging.error(f"Error adding mime_type column to group_message: {str(column_error)}")
-            
-            if 'original_filename' not in group_message_columns:
-                logging.info('Adding original_filename column to group_message table')
-                try:
-                    with db.engine.connect() as connection:
-                        connection.execute(text("ALTER TABLE group_message ADD COLUMN original_filename VARCHAR(255)"))
-                        connection.commit()
-                    logging.info('original_filename column added successfully to group_message')
-                except Exception as column_error:
-                    logging.error(f"Error adding original_filename column to group_message: {str(column_error)}")
-            
-            if 'message_type' not in group_message_columns:
-                logging.info('Adding message_type column to group_message table')
-                try:
-                    with db.engine.connect() as connection:
-                        connection.execute(text("ALTER TABLE group_message ADD COLUMN message_type VARCHAR(50)"))
-                        connection.commit()
-                    logging.info('message_type column added successfully to group_message')
-                except Exception as column_error:
-                    logging.error(f"Error adding message_type column to group_message: {str(column_error)}")
-                    
-            # Check for is_edited and edited_at in group_message
-            if 'is_edited' not in group_message_columns:
-                logging.info('Adding is_edited column to group_message table')
-                try:
-                    with db.engine.connect() as connection:
-                        connection.execute(text("ALTER TABLE group_message ADD COLUMN is_edited BOOLEAN DEFAULT FALSE"))
-                        connection.commit()
-                    logging.info('is_edited column added successfully to group_message')
-                except Exception as column_error:
-                    logging.error(f"Error adding is_edited column to group_message: {str(column_error)}")
-            
-            if 'edited_at' not in group_message_columns:
-                logging.info('Adding edited_at column to group_message table')
-                try:
-                    with db.engine.connect() as connection:
-                        connection.execute(text("ALTER TABLE group_message ADD COLUMN edited_at TIMESTAMP"))
-                        connection.commit()
-                    logging.info('edited_at column added successfully to group_message')
-                except Exception as column_error:
-                    logging.error(f"Error adding edited_at column to group_message: {str(column_error)}")
         
         logging.info("Схема базы данных проверена и обновлена")
         return True

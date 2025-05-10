@@ -49,33 +49,6 @@ function openChatWithUser(userId, userName) {
 }
 
 /**
- * Highlight the active item in the sidebar (for both user and group chats)
- */
-function highlightActiveItem(itemId, type = 'user') {
-  // Remove active class from all items
-  document.querySelectorAll('.contact-item').forEach(item => {
-    item.classList.remove('active');
-  });
-  
-  // Find and highlight item based on type
-  let selector;
-  if (type === 'group') {
-    selector = `.group-item[data-group-id="${itemId}"]`;
-  } else {
-    selector = `.contact-item[data-user-id="${itemId}"], .contact-item[data-contact-id="${itemId}"]`;
-  }
-  
-  const itemElement = document.querySelector(selector);
-  if (itemElement) {
-    itemElement.classList.add('active');
-    
-    // Remove unread badge if exists
-    const badge = itemElement.querySelector('.unread-badge');
-    if (badge) badge.remove();
-  }
-}
-
-/**
  * Create the chat interface
  */
 function createChatInterface(user) {
@@ -140,11 +113,10 @@ function createChatInterface(user) {
   const inputWrapper = document.createElement('div');
   inputWrapper.className = 'input-wrapper';
   
-  // Clip button container
+  // Clip button
   const clipButtonContainer = document.createElement('div');
   clipButtonContainer.className = 'clip-button-container';
   
-  // Paperclip button
   const paperclipButton = document.createElement('button');
   paperclipButton.className = 'paperclip-button';
   paperclipButton.innerHTML = `
@@ -158,18 +130,6 @@ function createChatInterface(user) {
     e.preventDefault();
     showFileUploadMenu(paperclipButton, user);
   });
-  
-  // Emoji button
-  const emojiButton = document.createElement('button');
-  emojiButton.className = 'emoji-button paperclip-button';
-  emojiButton.innerHTML = `
-    <svg viewBox="0 0 24 24" width="20" height="20" fill="currentColor">
-      <path d="M12 2C6.486 2 2 6.486 2 12s4.486 10 10 10 10-4.486 10-10S17.514 2 12 2zm0 18c-4.411 0-8-3.589-8-8s3.589-8 8-8 8 3.589 8 8-3.589 8-8 8z"/>
-      <path d="M12 15c-2.09 0-3.933-1.034-5.121-2.819-.19-.287-.01-0.69.277-0.88.287-.19.69-.01.88.277C9.038 13.036 10.426 14 12 14s2.962-0.964 3.964-2.423c.19-.287.593-0.467.88-0.277.287.19.467.593.277.88C15.933 13.966 14.09 15 12 15z"/>
-      <circle cx="8.5" cy="9.5" r="1.5"/>
-      <circle cx="15.5" cy="9.5" r="1.5"/>
-    </svg>
-  `;
   
   // Input field
   const messageInputField = document.createElement('div');
@@ -225,7 +185,6 @@ function createChatInterface(user) {
   chatHeader.appendChild(menuButton);
   
   clipButtonContainer.appendChild(paperclipButton);
-  clipButtonContainer.appendChild(emojiButton); // Add emoji button
   messageInputField.appendChild(inputField);
   
   inputWrapper.appendChild(clipButtonContainer);
@@ -233,17 +192,6 @@ function createChatInterface(user) {
   inputWrapper.appendChild(sendButton);
   
   messageInputContainer.appendChild(inputWrapper);
-  
-  // --- Create Emoji Panel (Initially Hidden) ---
-  // Check if panel already exists from a previous chat creation in the same session
-  let emojiPanel = document.getElementById('emojiPanel');
-  if (!emojiPanel) {
-    emojiPanel = document.createElement('div');
-    emojiPanel.id = 'emojiPanel'; // Add ID for styling and selection
-    emojiPanel.style.display = 'none'; // Hide initially
-    // Add it to the mainContent for positioning relative to the chat area
-    mainContent.appendChild(emojiPanel);
-  }
   
   mainContent.appendChild(chatHeader);
   mainContent.appendChild(chatMessages);
@@ -254,15 +202,6 @@ function createChatInterface(user) {
   
   // Focus input field
   inputField.focus();
-  
-  // --- Event Listeners ---
-  
-  // Emoji button click handler - toggles the emoji panel
-  emojiButton.addEventListener('click', (e) => {
-    e.stopPropagation();
-    // Call the toggle function for the emoji panel
-    toggleEmojiPanel(inputField); // Pass inputField for use in insertEmoji
-  });
 }
 
 /**
@@ -367,7 +306,7 @@ function showContactMenu(menuButton, userId, userName) {
                 <div class="dropdown-option-icon">
                   <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#e74c3c" stroke-width="2">
                     <rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect>
-                    <line x1="9" y="9" x2="15" y2="15"></line>
+                    <line x1="9" y1="9" x2="15" y2="15"></line>
                     <line x1="15" y1="9" x2="9" y2="15"></line>
                   </svg>
                 </div>

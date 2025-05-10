@@ -221,28 +221,6 @@ function createGroupChatInterface(group) {
   inputField.type = 'text';
   inputField.placeholder = 'Message';
   
-  // Emoji button
-  const emojiButton = document.createElement('button');
-  emojiButton.className = 'emoji-button paperclip-button';
-  emojiButton.innerHTML = `
-    <svg viewBox="0 0 24 24" width="20" height="20" fill="currentColor">
-      <path d="M12 2C6.486 2 2 6.486 2 12s4.486 10 10 10 10-4.486 10-10S17.514 2 12 2zm0 18c-4.411 0-8-3.589-8-8s3.589-8 8-8 8 3.589 8 8-3.589 8-8 8z"/>
-      <path d="M12 15c-2.09 0-3.933-1.034-5.121-2.819-.19-.287-.01-0.69.277-0.88.287-.19.69-.01.88.277C9.038 13.036 10.426 14 12 14s2.962-0.964 3.964-2.423c.19-.287.593-0.467.88-0.277.287.19.467.593.277.88C15.933 13.966 14.09 15 12 15z"/>
-      <circle cx="8.5" cy="9.5" r="1.5"/>
-      <circle cx="15.5" cy="9.5" r="1.5"/>
-    </svg>
-  `;
-  
-  // --- File Input ---
-  const fileInput = document.createElement('input');
-  fileInput.type = 'file';
-  fileInput.accept = '*/*'; // Accept all file types initially
-  fileInput.style.display = 'none'; // Hide the actual input
-  fileInput.id = `groupFileInput_${group.id}`; // Unique ID
-
-  // Add file input to the container (doesn't matter where visually)
-  messageInputContainer.appendChild(fileInput);
-
   // Send button
   const sendButton = document.createElement('button');
   sendButton.className = 'send-button';
@@ -286,7 +264,6 @@ function createGroupChatInterface(group) {
   chatHeader.appendChild(menuButton);
   
   clipButtonContainer.appendChild(paperclipButton);
-  clipButtonContainer.appendChild(emojiButton);
   messageInputField.appendChild(inputField);
   
   inputWrapper.appendChild(clipButtonContainer);
@@ -295,20 +272,7 @@ function createGroupChatInterface(group) {
   
   messageInputContainer.appendChild(inputWrapper);
   
-  // --- Create Emoji Panel (Initially Hidden) ---
-  // Check if panel already exists from a previous chat creation in the same session
-  let emojiPanel = document.getElementById('emojiPanel');
-  if (!emojiPanel) {
-    emojiPanel = document.createElement('div');
-    emojiPanel.id = 'emojiPanel'; // Add ID for styling and selection
-    emojiPanel.style.display = 'none'; // Hide initially
-    // Add it to the mainContent for positioning relative to the chat area
-    mainContent.appendChild(emojiPanel);
-  }
-  
-  // Add the chat header to the main content - THIS LINE WAS MISSING
   mainContent.appendChild(chatHeader);
-  
   mainContent.appendChild(chatMessages);
   mainContent.appendChild(messageInputContainer);
   
@@ -317,139 +281,6 @@ function createGroupChatInterface(group) {
   
   // Focus input field
   inputField.focus();
-
-  // --- Event Listeners ---
-
-  // Paperclip button triggers file input
-  paperclipButton.addEventListener('click', () => {
-    fileInput.click(); // Trigger click on hidden file input
-  });
-
-  // Handle file selection
-  fileInput.addEventListener('change', (event) => {
-    const files = event.target.files;
-    if (files && files.length > 0) {
-      // Handle single file upload for now
-      const file = files[0];
-      console.log('File selected:', file.name, file.size);
-      uploadGroupFile(file, group.id, chatMessages); // Pass necessary info
-
-      // Reset file input value to allow selecting the same file again
-      event.target.value = null;
-    }
-  });
-
-  // Emoji button click handler - use the function from ui.js
-  emojiButton.addEventListener('click', (e) => {
-    e.stopPropagation();
-    toggleEmojiPanel(inputField); // This function is defined in ui.js
-  });
-}
-
-/**
- * Upload a file to the group chat
- */
-function uploadGroupFile(file, groupId, chatMessages) {
-  // Basic validation (e.g., size limit - 10MB)
-  const maxSize = 10 * 1024 * 1024; // 10 MB
-  if (file.size > maxSize) {
-    showErrorNotification(`File is too large (max ${maxSize / 1024 / 1024} MB)`);
-    return;
-  }
-
-  // Create FormData
-  const formData = new FormData();
-  formData.append('file', file);
-  formData.append('group_id', groupId);
-
-  // Show temporary "Uploading..." message in chat
-  const tempMsgId = `temp_upload_${Date.now()}`;
-  const tempMsgElement = createTemporaryMessageElement(tempMsgId, `Uploading ${file.name}...`);
-  addMessageElementToChat(tempMsgElement, chatMessages);
-
-  // Perform the upload
-  fetch('/upload_group_file', { // Needs backend route
-    method: 'POST',
-    body: formData
-    // Headers are automatically set by browser for FormData
-  })
-  .then(response => {
-    if (!response.ok) {
-      // Try to get error message from backend response
-      return response.json().then(err => {
-        throw new Error(err.error || `HTTP error! status: ${response.status}`);
-      }).catch(() => {
-        // Fallback if no JSON error message
-        throw new Error(`HTTP error! status: ${response.status}`);
-      });
-    }
-    return response.json();
-  })
-  .then(data => {
-    // Remove temporary message
-    removeMessageElement(tempMsgId, chatMessages);
-
-    if (data.success && data.message) {
-      // Backend should return the new message object upon success
-      addMessageToGroupChat(data.message, chatMessages);
-      loadSidebar(); // Refresh sidebar
-    } else {
-      showErrorNotification(data.error || 'Failed to upload file.');
-    }
-  })
-  .catch(error => {
-    console.error('Error uploading file:', error);
-    // Remove temporary message on error too
-    removeMessageElement(tempMsgId, chatMessages);
-    showErrorNotification(`Upload failed: ${error.message}`);
-  });
-}
-
-/**
- * Creates a temporary message element (e.g., for upload status)
- */
-function createTemporaryMessageElement(id, text) {
-  const messageEl = document.createElement('div');
-  messageEl.className = 'message message-sent message-temporary'; // Style as sent, add temp class
-  messageEl.dataset.messageId = id; // Use specific ID
-  messageEl.innerHTML = `
-    <div class="message-content">${escapeHtml(text)}</div>
-    <div class="message-footer">
-      <div class="message-time">Sending...</div>
-    </div>
-  `;
-  return messageEl;
-}
-
-/**
- * Adds any message element to the chat container
- */
-function addMessageElementToChat(messageEl, chatMessages) {
-  let messagesContainer = chatMessages.querySelector('.messages-container');
-  const noMessages = chatMessages.querySelector('.no-messages');
-
-  if (noMessages) {
-    chatMessages.removeChild(noMessages);
-  }
-
-  if (!messagesContainer) {
-    messagesContainer = document.createElement('div');
-    messagesContainer.className = 'messages-container';
-    chatMessages.appendChild(messagesContainer);
-  }
-
-  messagesContainer.appendChild(messageEl);
-  chatMessages.scrollTop = chatMessages.scrollHeight;
-}
-
-/**
- * Removes a message element by its data-message-id
- */
-function removeMessageElement(id, chatMessages) {
-  const messageEl = chatMessages.querySelector(`.message[data-message-id="${id}"]`);
-  if (messageEl) {
-    messageEl.remove();
-  }
 }
 
 /**
@@ -586,13 +417,11 @@ function showGroupMembers(group) {
   const oldModal = document.getElementById('viewMembersModal');
   if (oldModal) oldModal.remove();
 
-  // Сортируем: сначала создатель, потом админы, потом остальные
+  // Сортируем: сначала админы, потом остальные
   const members = (group.members || []).slice().sort((a, b) => {
-    if (a.id === group.creator_id) return -1; // Creator first
-    if (b.id === group.creator_id) return 1;
-    if (a.role === 'admin' && b.role !== 'admin') return -1; // Admins next
+    if (a.role === 'admin' && b.role !== 'admin') return -1;
     if (a.role !== 'admin' && b.role === 'admin') return 1;
-    return a.name.localeCompare(b.name); // Sort others by name
+    return a.name.localeCompare(b.name);
   });
 
   // Модалка
@@ -628,13 +457,9 @@ function showGroupMembers(group) {
       if (user.role === 'admin') {
         adminBadge = `<span style="border:1.5px solid #2a5885; color:#2a5885; border-radius:6px; font-size:12px; padding:1px 7px; margin-left:8px; vertical-align:middle; background:#181818;">admin</span>`;
       }
-      let creatorBadge = '';
-      if (user.id === group.creator_id) {
-        creatorBadge = `<span style="color:#aaa;font-size:12px;margin-left:8px;vertical-align:middle;">creator</span>`;
-      }
       memberItem.innerHTML = `
         <div class="member-avatar">${avatarContent}</div>
-        <div class="member-name">${user.name} ${adminBadge}${creatorBadge}</div>
+        <div class="member-name">${user.name} ${adminBadge}</div>
       `;
       list.appendChild(memberItem);
     });
@@ -785,13 +610,11 @@ function showEditGroup(group) {
   const oldModal = document.getElementById('editGroupModal');
   if (oldModal) oldModal.remove();
 
-  // Сортируем участников: сначала создатель, потом админы, потом остальные
+  // Сортируем участников: сначала админы
   const members = (group.members || []).slice().sort((a, b) => {
-    if (a.id === group.creator_id) return -1; // Creator first
-    if (b.id === group.creator_id) return 1;
-    if (a.role === 'admin' && b.role !== 'admin') return -1; // Admins next
+    if (a.role === 'admin' && b.role !== 'admin') return -1;
     if (a.role !== 'admin' && b.role === 'admin') return 1;
-    return a.name.localeCompare(b.name); // Sort others by name
+    return a.name.localeCompare(b.name);
   });
 
   // Модалка
@@ -1383,6 +1206,14 @@ function showGroupMessageContextMenu(event, message, messageEl, isSent) {
       document.removeEventListener('click', closeMenu);
     }
   });
+  
+  // Закрытие по Esc
+  document.addEventListener('keydown', function escHandler(e) {
+    if (e.key === 'Escape') {
+      contextMenu.remove();
+      document.removeEventListener('keydown', escHandler);
+    }
+  });
 }
 
 /**
@@ -1464,8 +1295,8 @@ function addMessageToGroupChat(message, chatMessages) {
  * Create a group message element
  */
 function createGroupMessageElement(message, memberMap) {
-  // Проверка на системное сообщение (оставим как есть или улучшим позже)
-  const isSystem = /added|removed|admin|changed|set group|left the group|joined the group|назначен|снят|добавил|удалил|покинул|сменил|изменил|аватар|описание|название/i.test(message.content) && !message.message_type; // Добавим проверку, что это не файл
+  // Примитивная проверка на system-сообщение по тексту
+  const isSystem = /added|removed|admin|changed|set group|left the group|joined the group|назначен|снят|добавил|удалил|покинул|сменил|изменил|аватар|описание|название/i.test(message.content);
 
   if (isSystem) {
     const el = document.createElement('div');
@@ -1475,137 +1306,43 @@ function createGroupMessageElement(message, memberMap) {
   }
 
   const messageEl = document.createElement('div');
-
+  
   // Determine if this is a sent or received message
-  const currentUserIdStr = String(ChatApp.currentUser.user_id);
-  const senderIdStr = String(message.sender_id);
-  const isSent = senderIdStr === currentUserIdStr;
-
+  const isSent = parseInt(message.sender_id) === parseInt(ChatApp.currentUser.user_id);
   messageEl.className = `message ${isSent ? 'message-sent' : 'message-received'}`;
   messageEl.dataset.messageId = message.id;
   messageEl.dataset.senderId = message.sender_id;
-
+  
   // Format timestamp with hours and minutes
   const timestamp = new Date(message.timestamp);
   const hours = String(timestamp.getHours()).padStart(2, '0');
   const minutes = String(timestamp.getMinutes()).padStart(2, '0');
   const timeFormatted = `${hours}:${minutes}`;
-
+  
   // Check if is_edited exists, default to false if not
   const isEdited = message.is_edited === true;
-
+  
   // Add sender name for received messages
   let senderNameHTML = '';
   if (!isSent) {
     const senderName = memberMap[message.sender_id] || message.sender_name || 'Unknown';
-    // Ensure senderName is a string before escaping
-    senderNameHTML = `<div class="message-sender">${escapeHtml(String(senderName))}</div>`;
+    senderNameHTML = `<div class="message-sender">${escapeHtml(senderName)}</div>`;
   }
-
-  // --- Determine message content based on type ---
-  let messageContentHTML = '';
-  // Use message.message_type which we expect from backend (even if temporary)
-  if (message.message_type === 'file' && message.mime_type && message.original_filename && message.file_path) {
-      // Construct the URL for the file serving endpoint
-      // The backend route /uploads/<path:filepath> will handle serving
-      const fileUrl = `/uploads/${message.file_path}`; 
-
-      if (message.mime_type.startsWith('image/')) {
-          // Display image
-          messageContentHTML = `
-              <a href="${fileUrl}" target="_blank" rel="noopener noreferrer" class="message-image-link">
-                  <img src="${fileUrl}" alt="${escapeHtml(message.original_filename)}" class="message-image-attachment" loading="lazy">
-              </a>
-              ${message.content ? `<div class="message-text-caption">${escapeHtml(message.content)}</div>` : ''}
-          `;
-      } else if (message.mime_type.startsWith('video/')) {
-          // Display video player
-           messageContentHTML = `
-              <video controls class="message-video-attachment" preload="metadata">
-                 <source src="${fileUrl}" type="${message.mime_type}">
-                 Your browser does not support the video tag.
-              </video>
-              <div class="message-file-caption">
-                 <a href="${fileUrl}" download="${escapeHtml(message.original_filename)}">${escapeHtml(message.original_filename)}</a>
-                 ${message.content && message.content !== `File: ${message.original_filename} (Upload OK, DB disabled)` ? `<div class="message-text-caption">${escapeHtml(message.content)}</div>` : ''}
-              </div>
-           `;
-      } else if (message.mime_type.startsWith('audio/')) {
-           // Display audio player
-           messageContentHTML = `
-             <div class="message-audio-container">
-                 <audio controls src="${fileUrl}" class="message-audio-attachment" preload="metadata">
-                    Your browser does not support the audio element.
-                 </audio>
-                 <div class="message-file-caption" style="margin-left: 10px;">
-                    <a href="${fileUrl}" download="${escapeHtml(message.original_filename)}">${escapeHtml(message.original_filename)}</a>
-                 </div>
-             </div>
-             ${message.content && message.content !== `File: ${message.original_filename} (Upload OK, DB disabled)` ? `<div class="message-text-caption">${escapeHtml(message.content)}</div>` : ''}
-           `;
-      } else {
-          // Display generic file link
-          // Simple file icon from Unicode: 📄
-          messageContentHTML = `
-              <a href="${fileUrl}" download="${escapeHtml(message.original_filename)}" class="message-file-link">
-                  <div class="file-icon">📄</div>
-                  <div class="file-info">
-                      <div class="file-name">${escapeHtml(message.original_filename)}</div>
-                      <!-- Optionally add file size here later -->
-                  </div>
-              </a>
-              ${message.content && message.content !== `File: ${message.original_filename} (Upload OK, DB disabled)` ? `<div class="message-text-caption">${escapeHtml(message.content)}</div>` : ''}
-          `;
-      }
-  } else {
-      // Default to text content if type is not 'file' or data is missing
-      // Check if content is just an image URL/link
-      const imgLinkRegex = /(https?:\/\/[^\s]+\.(jpg|jpeg|png|gif|webp))|<a[^>]+>[^<]*\.(jpg|jpeg|png|gif|webp)<\/a>|(\w+\.(png|jpg|jpeg|gif|webp))/i;
-      
-      if (message.content && imgLinkRegex.test(message.content)) {
-        // Extract the image URL
-        let imageUrl = message.content;
-        
-        // If it's an HTML link, extract the href
-        if (message.content.includes('<a href=')) {
-          const hrefMatch = message.content.match(/href=["']([^"']+)["']/);
-          if (hrefMatch && hrefMatch[1]) {
-            imageUrl = hrefMatch[1];
-          }
-        }
-        
-        // If it's just a filename, construct a path
-        if (!/^https?:\/\//.test(imageUrl) && !/^\/uploads\//.test(imageUrl)) {
-          imageUrl = `/uploads/${imageUrl}`;
-        }
-        
-        // Display the image directly
-        messageContentHTML = `
-          <a href="${imageUrl}" target="_blank" rel="noopener noreferrer" class="message-image-link">
-            <img src="${imageUrl}" alt="Image" class="message-image-attachment" loading="lazy">
-          </a>
-        `;
-      } else {
-        // Regular text message
-        messageContentHTML = escapeHtml(String(message.content || ''));
-      }
-  }
-  // --- End Determine message content ---
-
+  
+  // Using a completely direct approach to ensure time displays
   messageEl.innerHTML = `
     ${senderNameHTML}
-    <div class="message-content">${messageContentHTML}</div>
+    <div class="message-content">${escapeHtml(message.content)}</div>
     <div class="message-footer">
       <div class="message-time">${timeFormatted}${isEdited ? ' <span class="edited-indicator">· Edited</span>' : ''}</div>
     </div>
   `;
-
+  
   // Add context menu event listener
   messageEl.addEventListener('contextmenu', function(e) {
-      e.preventDefault(); // Prevent default browser context menu
-      showGroupMessageContextMenu(e, message, messageEl, isSent);
+    showGroupMessageContextMenu(e, message, messageEl, isSent);
   });
-
+  
   return messageEl;
 }
 
@@ -1684,247 +1421,4 @@ function deleteGroupMessage(messageId) {
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({ message_id: messageId })
   }).then(r => r.json());
-}
-
-/**
- * Create a new group chat
- */
-function createNewGroup(groupName, members) {
-  // Show loading indicator
-  showLoadingIndicator('Creating group...');
-  
-  return fetch('/create_group', {
-    method: 'POST',
-    headers: {
-      'Content-Type': 'application/json'
-    },
-    body: JSON.stringify({
-      name: groupName,
-      members: members
-    })
-  })
-  .then(response => response.json())
-  .then(data => {
-    hideLoadingIndicator();
-    
-    // SOLUTION: Always treat it as success and never show error 
-    // as long as we got a response from the server
-    
-    // Only show success notification 
-    showSuccessNotification('Group created successfully');
-    
-    // Check if group ID exists in the response
-    const groupId = data.group_id || (data.group ? data.group.id : null);
-    const groupName = data.group_name || groupName;
-    
-    if (groupId) {
-      openGroupChat(groupId, groupName);
-      // Refresh sidebar to show the new group
-      if (typeof loadSidebar === 'function') loadSidebar();
-    }
-    
-    return data;
-  })
-  .catch(error => {
-    hideLoadingIndicator();
-    
-    // Only show error for network/connection issues
-    // not for cases where the group might still have been created
-    console.error('Error creating group:', error);
-    return Promise.reject(error);
-  });
-}
-
-// Helper functions for loading indicators
-function showLoadingIndicator(message) {
-  let loadingOverlay = document.getElementById('loadingOverlay');
-  
-  if (!loadingOverlay) {
-    loadingOverlay = document.createElement('div');
-    loadingOverlay.id = 'loadingOverlay';
-    loadingOverlay.className = 'loading-overlay';
-    
-    const spinner = document.createElement('div');
-    spinner.className = 'loading-spinner';
-    
-    const loadingText = document.createElement('div');
-    loadingText.id = 'loadingText';
-    loadingText.className = 'loading-text';
-    
-    loadingOverlay.appendChild(spinner);
-    loadingOverlay.appendChild(loadingText);
-    document.body.appendChild(loadingOverlay);
-  }
-  
-  document.getElementById('loadingText').textContent = message || 'Loading...';
-  loadingOverlay.style.display = 'flex';
-}
-
-function hideLoadingIndicator() {
-  const loadingOverlay = document.getElementById('loadingOverlay');
-  if (loadingOverlay) {
-    loadingOverlay.style.display = 'none';
-  }
-}
-
-/**
- * Get group information from the server
- */
-function getGroupInfo(groupId) {
-  return fetch(`/get_group_info?group_id=${groupId}`)
-    .then(response => response.json())
-    .catch(error => {
-      console.error('Error fetching group info:', error);
-      return { success: false, error: 'Failed to fetch group info' };
-    });
-}
-
-/**
- * Fetch messages for a group chat
- */
-function fetchGroupMessages(groupId) {
-  return fetch(`/get_group_messages?group_id=${groupId}`)
-    .then(response => response.json())
-    .catch(error => {
-      console.error('Error fetching group messages:', error);
-      return { success: false, error: 'Failed to fetch messages' };
-    });
-}
-
-/**
- * Send a message to a group
- */
-function sendGroupMessage(groupId, text) {
-  return fetch('/send_group_message', {
-    method: 'POST',
-    headers: {
-      'Content-Type': 'application/json'
-    },
-    body: JSON.stringify({
-      group_id: groupId,
-      content: text
-    })
-  })
-  .then(response => response.json())
-  .catch(error => {
-    console.error('Error sending group message:', error);
-    return { success: false, error: 'Failed to send message' };
-  });
-}
-
-/**
- * Enter edit mode for a message
- */
-function enterEditMode(messageEl, content) {
-  // Create edit form
-  const form = document.createElement('form');
-  form.className = 'edit-message-form';
-  
-  // Create edit input with current message
-  const input = document.createElement('input');
-  input.type = 'text';
-  input.className = 'edit-message-input';
-  input.value = content;
-  
-  // Create buttons container
-  const actions = document.createElement('div');
-  actions.className = 'edit-message-actions';
-  
-  // Save button
-  const saveBtn = document.createElement('button');
-  saveBtn.type = 'submit';
-  saveBtn.className = 'edit-save-btn';
-  saveBtn.textContent = 'Save';
-  
-  // Cancel button
-  const cancelBtn = document.createElement('button');
-  cancelBtn.type = 'button';
-  cancelBtn.className = 'edit-cancel-btn';
-  cancelBtn.textContent = 'Cancel';
-  
-  // Add buttons to actions
-  actions.appendChild(saveBtn);
-  actions.appendChild(cancelBtn);
-  
-  // Add everything to form
-  form.appendChild(input);
-  form.appendChild(actions);
-  
-  // Save the original content
-  const originalContent = messageEl.querySelector('.message-content').innerHTML;
-  
-  // Replace message content with edit form
-  messageEl.querySelector('.message-content').innerHTML = '';
-  messageEl.querySelector('.message-content').appendChild(form);
-  
-  // Focus input and position cursor at end
-  input.focus();
-  input.selectionStart = input.selectionEnd = input.value.length;
-  
-  // Handle cancel button
-  cancelBtn.addEventListener('click', function() {
-    messageEl.querySelector('.message-content').innerHTML = originalContent;
-  });
-  
-  // Handle form submit (save)
-  form.addEventListener('submit', function(e) {
-    e.preventDefault();
-    const newText = input.value.trim();
-    
-    if (!newText) {
-      showErrorNotification('Message cannot be empty');
-      return;
-    }
-    
-    if (newText === content) {
-      messageEl.querySelector('.message-content').innerHTML = originalContent;
-      return;
-    }
-    
-    const messageId = messageEl.dataset.messageId;
-    
-    // Update message on server
-    editGroupMessage(messageId, newText)
-      .then(res => {
-        if (res.success) {
-          messageEl.querySelector('.message-content').innerHTML = escapeHtml(newText);
-          
-          // Add edited indicator if not already there
-          const footer = messageEl.querySelector('.message-footer');
-          if (footer) {
-            let timeEl = footer.querySelector('.message-time');
-            if (timeEl && !timeEl.querySelector('.edited-indicator')) {
-              timeEl.innerHTML += ' <span class="edited-indicator">· Edited</span>';
-            }
-          }
-        } else {
-          messageEl.querySelector('.message-content').innerHTML = originalContent;
-          showErrorNotification(res.error || 'Failed to edit message');
-        }
-      })
-      .catch(() => {
-        messageEl.querySelector('.message-content').innerHTML = originalContent;
-        showErrorNotification('Failed to edit message');
-      });
-  });
-}
-
-/**
- * Edit a group message
- */
-function editGroupMessage(messageId, content) {
-  return fetch('/edit_group_message', {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ message_id: messageId, content: content })
-  }).then(r => r.json());
-}
-
-/**
- * Escape HTML to prevent XSS
- */
-function escapeHtml(text) {
-  const div = document.createElement('div');
-  div.textContent = text;
-  return div.innerHTML;
 }
