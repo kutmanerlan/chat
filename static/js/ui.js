@@ -35,7 +35,7 @@ function updateAvatar(avatarPath) {
   avatarElements.forEach(img => {
     if (avatarPath) {
       let src = avatarPath;
-      if (!src.startsWith('http')) {
+      if (!src.startsWith('http') && !src.startsWith('/uploads/')) {
         src = `/uploads/${src}`;
       }
       img.src = src;
@@ -222,7 +222,7 @@ function updateSidebarAvatar(avatarPath) {
     
     if (avatarPath) {
       let src = avatarPath;
-      if (!src.startsWith('http')) {
+      if (!src.startsWith('http') && !src.startsWith('/uploads/')) {
         src = `/uploads/${src}`;
       }
       // Create and set the new avatar image
