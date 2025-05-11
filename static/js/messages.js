@@ -132,15 +132,26 @@ function createMessageElement(message) {
   if (message.message_type === 'file' && message.mime_type && message.original_filename && message.file_path) {
     const fileUrl = `/uploads/${message.file_path}`;
     if (message.mime_type.startsWith('image/')) {
-      isImageOnly = true;
+      // Render as compact file bubble (not photo/image-only message)
       messageContentHTML = `
-        <div class="image-card">
-          <a href="${fileUrl}" target="_blank" rel="noopener noreferrer" class="message-image-link">
-            <img src="${fileUrl}" alt="${escapeHtml(message.original_filename)}" class="message-image-attachment" loading="lazy">
+        <div class="message-file-bubble">
+          <a href="${fileUrl}" target="_blank" rel="noopener noreferrer">
+            <img src="${fileUrl}" alt="${escapeHtml(message.original_filename)}" class="file-thumb" loading="lazy">
           </a>
-          <div class="image-time">${timeFormatted}</div>
+          <div class="file-info">
+            <div class="file-name">${escapeHtml(message.original_filename)}</div>
+            <div class="file-size">${formatFileSize(message.file_size)}</div>
+          </div>
         </div>
       `;
+      // Render the file bubble and a regular message-footer with timestamp
+      messageEl.innerHTML = `
+        ${messageContentHTML}
+        <div class="message-footer">
+          <div class="message-time">${timeFormatted}${isEdited ? ' <span class=\"edited-indicator\">· Edited</span>' : ''}</div>
+        </div>
+      `;
+      return messageEl;
     } else if (message.mime_type.startsWith('video/')) {
       messageContentHTML = `
         <video controls class="message-video-attachment" preload="metadata">
@@ -165,15 +176,23 @@ function createMessageElement(message) {
         ${message.content && message.content !== `File: ${message.original_filename} (Upload OK, DB disabled)` ? `<div class="message-text-caption">${escapeHtml(message.content)}</div>` : ''}
       `;
     } else {
+      // Render as compact file/document bubble
       messageContentHTML = `
-        <a href="${fileUrl}" download="${escapeHtml(message.original_filename)}" class="message-file-link">
+        <div class="message-file-bubble">
           <div class="file-icon">📄</div>
           <div class="file-info">
-            <div class="file-name">${escapeHtml(message.original_filename)}</div>
+            <a href="${fileUrl}" download="${escapeHtml(message.original_filename)}" class="file-name file-download-link">${escapeHtml(message.original_filename)}</a>
+            <div class="file-size">${formatFileSize(message.file_size)}</div>
           </div>
-        </a>
-        ${message.content && message.content !== `File: ${message.original_filename} (Upload OK, DB disabled)` ? `<div class="message-text-caption">${escapeHtml(message.content)}</div>` : ''}
+        </div>
       `;
+      messageEl.innerHTML = `
+        ${messageContentHTML}
+        <div class="message-footer">
+          <div class="message-time">${timeFormatted}${isEdited ? ' <span class=\"edited-indicator\">· Edited</span>' : ''}</div>
+        </div>
+      `;
+      return messageEl;
     }
   } else {
     // Default to text content if type is not 'file' or data is missing
@@ -657,4 +676,71 @@ function deleteMessage(messageId) {
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({ message_id: messageId })
   }).then(r => r.json());
+}
+
+// --- Image Lightbox Modal for Full Image View ---
+(function setupImageLightbox() {
+  // Create modal element
+  let modal = document.createElement('div');
+  modal.id = 'imageLightboxModal';
+  modal.style.display = 'none';
+  modal.style.position = 'fixed';
+  modal.style.top = '0';
+  modal.style.left = '0';
+  modal.style.width = '100vw';
+  modal.style.height = '100vh';
+  modal.style.background = 'rgba(0,0,0,0.92)';
+  modal.style.zIndex = '9999';
+  modal.style.justifyContent = 'center';
+  modal.style.alignItems = 'center';
+  modal.style.cursor = 'zoom-out';
+  modal.innerHTML = '<img id="lightboxImage" style="max-width:90vw;max-height:90vh;border-radius:16px;box-shadow:0 4px 32px rgba(0,0,0,0.5);display:block;margin:auto;" />';
+  document.body.appendChild(modal);
+
+  // Show modal with image
+  function showImageLightbox(src, alt) {
+    const img = document.getElementById('lightboxImage');
+    img.src = src;
+    img.alt = alt || '';
+    modal.style.display = 'flex';
+    document.body.style.overflow = 'hidden';
+  }
+
+  // Hide modal
+  function hideImageLightbox() {
+    modal.style.display = 'none';
+    document.body.style.overflow = '';
+  }
+
+  // Click to close
+  modal.addEventListener('click', hideImageLightbox);
+  // Escape to close
+  document.addEventListener('keydown', function(e) {
+    if (modal.style.display === 'flex' && e.key === 'Escape') hideImageLightbox();
+  });
+
+  // Attach click handlers to image-card images (delegated)
+  document.addEventListener('click', function(e) {
+    const link = e.target.closest('.image-card a');
+    if (link && link.querySelector('img')) {
+      e.preventDefault();
+      const img = link.querySelector('img');
+      showImageLightbox(img.src, img.alt);
+    }
+    // Also handle .message-file-bubble thumbnails
+    const fileThumb = e.target.closest('.message-file-bubble a');
+    if (fileThumb && fileThumb.querySelector('img')) {
+      e.preventDefault();
+      const img = fileThumb.querySelector('img');
+      showImageLightbox(img.src, img.alt);
+    }
+  });
+})();
+
+// Helper to format file size
+function formatFileSize(size) {
+  if (!size || isNaN(size)) return '';
+  if (size < 1024) return size + ' B';
+  if (size < 1024 * 1024) return (size / 1024).toFixed(1) + ' KB';
+  return (size / (1024 * 1024)).toFixed(1) + ' MB';
 }

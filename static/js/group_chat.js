@@ -1511,15 +1511,33 @@ function createGroupMessageElement(message, memberMap) {
       const fileUrl = `/uploads/${message.file_path}`; 
 
       if (message.mime_type.startsWith('image/')) {
-          // Display image
-          messageContentHTML = `
-              <div class="image-card">
-                <a href="${fileUrl}" target="_blank" rel="noopener noreferrer" class="message-image-link">
-                  <img src="${fileUrl}" alt="${escapeHtml(message.original_filename)}" class="message-image-attachment" loading="lazy">
+          // Render as compact file bubble (not photo/image-only message)
+          const fileBubbleHTML = `
+              <div class="message-file-bubble">
+                <a href="${fileUrl}" target="_blank" rel="noopener noreferrer">
+                  <img src="${fileUrl}" alt="${escapeHtml(message.original_filename)}" class="file-thumb" loading="lazy">
                 </a>
-                <div class="image-time">${timeFormatted}</div>
+                <div class="file-info">
+                  <div class="file-name">${escapeHtml(message.original_filename)}</div>
+                  <div class="file-size">${formatFileSize(message.file_size)}</div>
+                </div>
               </div>
           `;
+          messageContentHTML = fileBubbleHTML;
+          // Render the file bubble and a regular message-footer with timestamp
+          messageEl.innerHTML = `
+            ${senderNameHTML}
+            ${messageContentHTML}
+            <div class="message-footer">
+              <div class="message-time">${timeFormatted}${isEdited ? ' <span class=\"edited-indicator\">· Edited</span>' : ''}</div>
+            </div>
+          `;
+          // Add context menu event listener
+          messageEl.addEventListener('contextmenu', function(e) {
+              e.preventDefault(); // Prevent default browser context menu
+              showGroupMessageContextMenu(e, message, messageEl, isSent);
+          });
+          return messageEl;
       } else if (message.mime_type.startsWith('video/')) {
           // Display video player
            messageContentHTML = `
@@ -1546,18 +1564,29 @@ function createGroupMessageElement(message, memberMap) {
              ${message.content && message.content !== `File: ${message.original_filename} (Upload OK, DB disabled)` ? `<div class="message-text-caption">${escapeHtml(message.content)}</div>` : ''}
            `;
       } else {
-          // Display generic file link
-          // Simple file icon from Unicode: 📄
-          messageContentHTML = `
-              <a href="${fileUrl}" download="${escapeHtml(message.original_filename)}" class="message-file-link">
-                  <div class="file-icon">📄</div>
-                  <div class="file-info">
-                      <div class="file-name">${escapeHtml(message.original_filename)}</div>
-                      <!-- Optionally add file size here later -->
-                  </div>
-              </a>
-              ${message.content && message.content !== `File: ${message.original_filename} (Upload OK, DB disabled)` ? `<div class="message-text-caption">${escapeHtml(message.content)}</div>` : ''}
+          // Render as compact file/document bubble
+          const fileBubbleHTML = `
+              <div class="message-file-bubble">
+                <div class="file-icon">📄</div>
+                <div class="file-info">
+                  <a href="${fileUrl}" download="${escapeHtml(message.original_filename)}" class="file-name file-download-link">${escapeHtml(message.original_filename)}</a>
+                  <div class="file-size">${formatFileSize(message.file_size)}</div>
+                </div>
+              </div>
           `;
+          messageContentHTML = fileBubbleHTML;
+          messageEl.innerHTML = `
+            ${senderNameHTML}
+            ${messageContentHTML}
+            <div class="message-footer">
+              <div class="message-time">${timeFormatted}${isEdited ? ' <span class=\"edited-indicator\">· Edited</span>' : ''}</div>
+            </div>
+          `;
+          messageEl.addEventListener('contextmenu', function(e) {
+              e.preventDefault();
+              showGroupMessageContextMenu(e, message, messageEl, isSent);
+          });
+          return messageEl;
       }
   } else {
       // Default to text content if type is not 'file' or data is missing
@@ -1960,4 +1989,12 @@ function escapeHtml(text) {
   const div = document.createElement('div');
   div.textContent = text;
   return div.innerHTML;
+}
+
+// Helper to format file size
+function formatFileSize(size) {
+  if (!size || isNaN(size)) return '';
+  if (size < 1024) return size + ' B';
+  if (size < 1024 * 1024) return (size / 1024).toFixed(1) + ' KB';
+  return (size / (1024 * 1024)).toFixed(1) + ' MB';
 }

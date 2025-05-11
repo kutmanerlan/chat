@@ -248,36 +248,184 @@
     display: inline-block;
 }
 
-/* --- Image bubble fix for image-only messages (Telegram style) --- */
+/* --- Telegram-style image bubble: image fills card, time overlayed --- */
+div.message.image-only {
+    background: none !important;
+    box-shadow: none !important;
+    border-radius: 0 !important;
+    padding: 0 !important;
+    margin: 0 0 4px 0 !important;
+    width: auto !important;
+    max-width: 100% !important;
+    display: flex !important;
+    justify-content: flex-end;
+}
+div.message.image-only.message-received {
+    justify-content: flex-start !important;
+}
+div.message.image-only > div.message-content {
+    background: none !important;
+    box-shadow: none !important;
+    border-radius: 0 !important;
+    padding: 0 !important;
+    margin: 0 !important;
+    width: auto !important;
+    max-width: 100% !important;
+    display: block !important;
+}
 div.message.image-only > div.message-content > div.image-card {
+    display: inline-block !important;
+    position: relative !important;
+    border-radius: 18px !important;
+    box-shadow: 0 1px 4px rgba(0,0,0,0.10) !important;
+    overflow: hidden !important;
     max-width: 340px !important;
     max-height: 340px !important;
-    margin: 8px auto 0 auto !important;
-    display: flex !important;
-    justify-content: center !important;
-    align-items: center !important;
-    background: #181818 !important;
-    border-radius: 18px !important;
-    box-shadow: 0 2px 12px rgba(0,0,0,0.18) !important;
-    overflow: hidden !important;
-    border: 2px solid red !important; /* debug border */
+    border: 1px solid #333 !important;
+    background: none !important;
+    margin: 0 !important;
+    padding: 0 !important;
+    vertical-align: bottom;
 }
 div.message.image-only > div.message-content > div.image-card > a > img,
 div.message.image-only > div.message-content > div.image-card > img {
+    display: block !important;
+    width: 100% !important;
+    height: 100% !important;
     max-width: 340px !important;
     max-height: 340px !important;
-    width: auto !important;
-    height: auto !important;
-    object-fit: contain !important;
+    object-fit: cover !important;
+    border-radius: 18px !important;
+    background: transparent !important;
+    margin: 0 !important;
+}
+.image-card .image-time {
+    position: absolute !important;
+    right: 8px !important;
+    bottom: 8px !important;
+    background: rgba(0,0,0,0.55) !important;
+    color: #fff !important;
+    font-size: 13px !important;
+    padding: 2px 10px !important;
+    border-radius: 10px !important;
+    z-index: 2 !important;
+    margin: 0 !important;
+    box-shadow: 0 1px 4px rgba(0,0,0,0.18);
+    pointer-events: none;
+    line-height: 1.1;
+}
+
+/* Remove blue link lines from image links */
+.message-image-link {
+    text-decoration: none !important;
+    outline: none !important;
+    border: none !important;
+    box-shadow: none !important;
+}
+.message-image-link:focus,
+.message-image-link:active {
+    outline: none !important;
+    border: none !important;
+    box-shadow: none !important;
+}
+
+/* Telegram-like image fill: object-fit: cover */
+div.message.image-only > div.message-content > div.image-card > a > img,
+div.message.image-only > div.message-content > div.image-card > img {
+    object-fit: cover !important;
+    width: 100% !important;
+    height: 100% !important;
+    max-width: 340px !important;
+    max-height: 340px !important;
     border-radius: 18px !important;
     background: #222 !important;
     margin: 0 auto !important;
     display: block !important;
 }
-div.message.image-only > div.message-content {
-    max-width: 340px !important;
-    margin: 0 auto !important;
-    padding: 0 !important;
+
+.message-file-bubble {
+    display: flex;
+    align-items: center;
     background: none !important;
+    border-radius: 16px;
     box-shadow: none !important;
+    padding: 0 0 0 0;
+    max-width: 320px;
+    min-width: 160px;
+    margin: 0 0 6px 0;
+    position: relative;
+}
+.message-file-bubble .file-thumb {
+    width: 44px;
+    height: 44px;
+    border-radius: 10px;
+    object-fit: cover;
+    margin-right: 12px;
+    background: #181818;
+    flex-shrink: 0;
+    box-shadow: none !important;
+    border: none !important;
+    outline: none !important;
+}
+.message-file-bubble a {
+    text-decoration: none !important;
+    border: none !important;
+    outline: none !important;
+    box-shadow: none !important;
+}
+.message-file-bubble .file-info {
+    display: flex;
+    flex-direction: column;
+    flex: 1 1 auto;
+    min-width: 0;
+}
+.message-file-bubble .file-name {
+    font-weight: 500;
+    color: #fff;
+    font-size: 15px;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    margin-bottom: 2px;
+}
+.message-file-bubble .file-size {
+    color: #b0b0b0;
+    font-size: 13px;
+    margin-bottom: 0;
+}
+.message-file-bubble .file-time {
+    position: absolute;
+    right: 0;
+    bottom: 0;
+    color: #fff;
+    font-size: 12px;
+    background: rgba(0,0,0,0.45);
+    padding: 1px 7px;
+    border-radius: 8px;
+    z-index: 2;
+}
+.message-file-bubble .file-icon {
+    width: 44px;
+    height: 44px;
+    border-radius: 10px;
+    background: #23232b;
+    color: #fff;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 28px;
+    margin-right: 12px;
+    flex-shrink: 0;
+}
+.message-file-bubble .file-download-link {
+    color: #6c6cff;
+    font-size: 15px;
+    text-decoration: none;
+    margin-top: 2px;
+    transition: color 0.15s;
+    display: inline-block;
+}
+.message-file-bubble .file-download-link:hover {
+    color: #a0a0ff;
+    text-decoration: underline;
 }
