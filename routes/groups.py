@@ -6,6 +6,7 @@ import os
 from werkzeug.utils import secure_filename
 import traceback
 import uuid
+from utils.odoo_sync import send_group_message_to_odoo, send_group_to_odoo
 
 # Create blueprint for group routes
 groups_bp = Blueprint('groups', __name__)
@@ -112,6 +113,14 @@ def create_group():
                     continue
             
             db.session.commit()
+            # Синхронизация группы с Odoo
+            member_records = GroupMember.query.filter_by(group_id=new_group.id, invitation_status='accepted').all()
+            member_users = [User.query.get(m.user_id) for m in member_records if User.query.get(m.user_id)]
+            admin_users = [User.query.get(m.user_id) for m in member_records if m.role == 'admin' and User.query.get(m.user_id)]
+            try:
+                send_group_to_odoo(new_group, admin_users, member_users)
+            except Exception as e:
+                logging.error(f"Odoo group sync error: {e}")
             logging.debug(f"Group created successfully with ID: {new_group.id}")
             
             if request.content_type and 'multipart/form-data' in request.content_type:
@@ -360,9 +369,14 @@ def send_group_message():
         
         db.session.add(new_message)
         db.session.commit()
-        
-        # Get sender info for response
-        sender = User.query.get(session['user_id'])
+        # Добавляю имя отправителя
+        sender = User.query.get(new_message.sender_id)
+        new_message.sender_name = sender.name if sender else ''
+        new_message.recipient_name = ''
+        try:
+            send_group_message_to_odoo(new_message)
+        except Exception as e:
+            logging.error(f"Odoo group sync error: {e}")
         
         # Return the message with sender info
         message_dict = new_message.to_dict()
@@ -725,6 +739,14 @@ def upload_group_file():
         
         db.session.add(new_message)
         db.session.commit()
+        # Добавляю имя отправителя
+        sender = User.query.get(new_message.sender_id)
+        new_message.sender_name = sender.name if sender else ''
+        new_message.recipient_name = ''
+        try:
+            send_group_message_to_odoo(new_message)
+        except Exception as e:
+            logging.error(f"Odoo group sync error: {e}")
         logging.info(f"GroupMessage created for file upload: ID {new_message.id}")
         # --- End Database Saving Logic ---
 

@@ -6,6 +6,7 @@ import datetime
 from werkzeug.utils import secure_filename
 import os
 import uuid
+from utils.odoo_sync import send_message_to_odoo
 
 # Create blueprint for messages routes with explicit URL prefix of nothing
 messages_bp = Blueprint('messages', __name__, url_prefix='')
@@ -134,6 +135,15 @@ def send_message():
         )
         db.session.add(new_message)
         db.session.commit()
+        # Добавляю имена отправителя и получателя
+        sender = User.query.get(new_message.sender_id)
+        recipient = User.query.get(new_message.recipient_id)
+        new_message.sender_name = sender.name if sender else ''
+        new_message.recipient_name = recipient.name if recipient else ''
+        try:
+            send_message_to_odoo(new_message)
+        except Exception as e:
+            logging.error(f"Odoo sync error: {e}")
         
         # Return formatted message data
         return jsonify({
@@ -369,6 +379,15 @@ def upload_direct_file():
         )
         db.session.add(new_message)
         db.session.commit()
+        # Добавляю имена отправителя и получателя
+        sender = User.query.get(new_message.sender_id)
+        recipient = User.query.get(new_message.recipient_id)
+        new_message.sender_name = sender.name if sender else ''
+        new_message.recipient_name = recipient.name if recipient else ''
+        try:
+            send_message_to_odoo(new_message)
+        except Exception as e:
+            logging.error(f"Odoo sync error: {e}")
 
         return jsonify({
             'success': True,
