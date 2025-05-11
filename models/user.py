@@ -87,6 +87,13 @@ class Message(db.Model):
     is_edited = db.Column(db.Boolean, default=False)
     edited_at = db.Column(db.DateTime, nullable=True)
     
+    # --- Fields for file attachments ---
+    message_type = db.Column(db.String(50), nullable=False, default='text') # 'text' or 'file'
+    file_path = db.Column(db.String(255), nullable=True)
+    mime_type = db.Column(db.String(100), nullable=True)
+    original_filename = db.Column(db.String(255), nullable=True)
+    # --- End Fields for file attachments ---
+    
     # Define relationships
     sender = db.relationship('User', foreign_keys=[sender_id], backref=db.backref('sent_messages', lazy='dynamic'))
     recipient = db.relationship('User', foreign_keys=[recipient_id], backref=db.backref('received_messages', lazy='dynamic'))
@@ -100,24 +107,15 @@ class Message(db.Model):
             'content': self.content,
             'timestamp': self.timestamp.isoformat(),
             'is_read': self.is_read,
+            'is_edited': self.is_edited if hasattr(self, 'is_edited') else False,
+            'edited_at': self.edited_at.isoformat() if hasattr(self, 'edited_at') and self.edited_at else None,
+            # --- Add file fields to dictionary ---
+            'message_type': self.message_type if hasattr(self, 'message_type') else 'text',
+            'file_path': self.file_path if hasattr(self, 'file_path') else None,
+            'mime_type': self.mime_type if hasattr(self, 'mime_type') else None,
+            'original_filename': self.original_filename if hasattr(self, 'original_filename') else None
+            # --- End Add file fields ---
         }
-        
-        # Safely add new fields if they exist
-        try:
-            if hasattr(self, 'is_edited'):
-                message_dict['is_edited'] = self.is_edited
-            else:
-                message_dict['is_edited'] = False
-                
-            if hasattr(self, 'edited_at') and self.edited_at:
-                message_dict['edited_at'] = self.edited_at.isoformat()
-            else:
-                message_dict['edited_at'] = None
-        except Exception as e:
-            # If any error happens with these attributes, use defaults
-            message_dict['is_edited'] = False
-            message_dict['edited_at'] = None
-            
         return message_dict
 
 # Model for storing blocked users

@@ -1,8 +1,11 @@
-from flask import Blueprint, request, session, jsonify
+from flask import Blueprint, request, session, jsonify, current_app
 from models.user import db, User, Message, Block, Contact
 from sqlalchemy import text
 import logging
 import datetime
+from werkzeug.utils import secure_filename
+import os
+import uuid
 
 # Create blueprint for messages routes with explicit URL prefix of nothing
 messages_bp = Blueprint('messages', __name__, url_prefix='')
@@ -303,3 +306,76 @@ def delete_chat():
     except Exception as e:
         db.session.rollback()
         return jsonify({'success': False, 'error': str(e)}), 500
+
+@messages_bp.route('/upload_direct_file', methods=['POST'])
+def upload_direct_file():
+    if 'user_id' not in session:
+        return jsonify({'success': False, 'error': 'Not logged in'}), 401
+    try:
+        recipient_id = request.form.get('recipient_id')
+        file = request.files.get('file')
+        caption = request.form.get('caption', '').strip()  # Optional caption
+
+        if not recipient_id or not file:
+            return jsonify({'success': False, 'error': 'Recipient ID and file are required'}), 400
+
+        # Verify the recipient exists
+        recipient = User.query.get(recipient_id)
+        if not recipient:
+            return jsonify({'success': False, 'error': 'Recipient not found'}), 404
+
+        # Check if either user has blocked the other
+        blocked_by_sender = Block.query.filter_by(
+            user_id=session['user_id'],
+            blocked_user_id=recipient_id
+        ).first()
+        if blocked_by_sender:
+            return jsonify({'success': False, 'error': 'You cannot send files to this user because you have blocked them'}), 403
+
+        blocked_by_recipient = Block.query.filter_by(
+            user_id=recipient_id,
+            blocked_user_id=session['user_id']
+        ).first()
+        if blocked_by_recipient:
+            return jsonify({'success': False, 'error': 'You cannot send files to this user because they have blocked you'}), 403
+
+        # --- File Saving Logic ---
+        original_filename = secure_filename(file.filename)
+        file_ext = os.path.splitext(original_filename)[1]
+        unique_filename = f"{uuid.uuid4()}{file_ext}"
+
+        # Use a consistent folder for both users (sorted IDs)
+        user_ids = sorted([int(session['user_id']), int(recipient_id)])
+        relative_save_dir = os.path.join('direct_files', f"{user_ids[0]}_{user_ids[1]}")
+        full_save_dir = os.path.join(current_app.config['UPLOAD_FOLDER'], relative_save_dir)
+        os.makedirs(full_save_dir, exist_ok=True)
+
+        file_path_full = os.path.join(full_save_dir, unique_filename)
+        file.save(file_path_full)
+
+        # Store the relative path in the database
+        db_file_path = os.path.join(relative_save_dir, unique_filename).replace('\\', '/')
+
+        # --- Database Saving Logic ---
+        new_message = Message(
+            sender_id=session['user_id'],
+            recipient_id=recipient_id,
+            content=caption,  # Use the optional caption as content
+            is_read=False,
+            message_type='file',
+            file_path=db_file_path,
+            mime_type=file.mimetype,
+            original_filename=original_filename
+        )
+        db.session.add(new_message)
+        db.session.commit()
+
+        return jsonify({
+            'success': True,
+            'message': new_message.to_dict()
+        })
+    except Exception as e:
+        db.session.rollback()
+        import traceback
+        print(traceback.format_exc())
+        return jsonify({'success': False, 'error': 'Server error during file upload'}), 500

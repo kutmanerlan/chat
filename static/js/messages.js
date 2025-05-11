@@ -114,48 +114,100 @@ function formatDate(date) {
  */
 function createMessageElement(message) {
   const messageEl = document.createElement('div');
-  
-  // Determine if this is a sent or received message
   const isSent = parseInt(message.sender_id) === parseInt(ChatApp.currentUser.user_id);
-  
-  // Check if this message contains an image
-  const hasImage = message.content && (
-    message.content.includes('<img') || 
-    (message.file_type && message.file_type.startsWith('image/'))
-  );
-  
-  // Apply appropriate classes
-  messageEl.className = `message ${isSent ? 'message-sent' : 'message-received'}${hasImage ? ' message-with-image' : ''}`;
+  messageEl.className = `message ${isSent ? 'message-sent' : 'message-received'}`;
   messageEl.dataset.messageId = message.id;
   messageEl.dataset.senderId = message.sender_id;
-  
-  // Format timestamp with hours and minutes
+
+  // Format timestamp
   const timestamp = new Date(message.timestamp);
   const hours = String(timestamp.getHours()).padStart(2, '0');
   const minutes = String(timestamp.getMinutes()).padStart(2, '0');
   const timeFormatted = `${hours}:${minutes}`;
-  
-  // Check if is_edited exists, default to false if not
   const isEdited = message.is_edited === true;
-  
-  // Create message structure with time in a footer div
-  const contentDiv = document.createElement('div');
-  contentDiv.className = 'message-content';
-  contentDiv.textContent = message.content;
-  
-  const timeDiv = document.createElement('div');
-  timeDiv.className = 'message-time';
-  timeDiv.innerHTML = `${timeFormatted}${isEdited ? ' <span class="edited-indicator">· Edited</span>' : ''}`;
-  
-  messageEl.appendChild(contentDiv);
-  messageEl.appendChild(timeDiv);
-  
-  // Add context menu event listener
+
+  // --- Unified file/image display logic ---
+  let messageContentHTML = '';
+  if (message.message_type === 'file' && message.mime_type && message.original_filename && message.file_path) {
+    const fileUrl = `/uploads/${message.file_path}`;
+    if (message.mime_type.startsWith('image/')) {
+      messageContentHTML = `
+        <a href="${fileUrl}" target="_blank" rel="noopener noreferrer" class="message-image-link">
+          <img src="${fileUrl}" alt="${escapeHtml(message.original_filename)}" class="message-image-attachment" loading="lazy">
+        </a>
+        ${message.content ? `<div class="message-text-caption">${escapeHtml(message.content)}</div>` : ''}
+      `;
+    } else if (message.mime_type.startsWith('video/')) {
+      messageContentHTML = `
+        <video controls class="message-video-attachment" preload="metadata">
+          <source src="${fileUrl}" type="${message.mime_type}">
+          Your browser does not support the video tag.
+        </video>
+        <div class="message-file-caption">
+          <a href="${fileUrl}" download="${escapeHtml(message.original_filename)}">${escapeHtml(message.original_filename)}</a>
+          ${message.content && message.content !== `File: ${message.original_filename} (Upload OK, DB disabled)` ? `<div class="message-text-caption">${escapeHtml(message.content)}</div>` : ''}
+        </div>
+      `;
+    } else if (message.mime_type.startsWith('audio/')) {
+      messageContentHTML = `
+        <div class="message-audio-container">
+          <audio controls src="${fileUrl}" class="message-audio-attachment" preload="metadata">
+            Your browser does not support the audio element.
+          </audio>
+          <div class="message-file-caption" style="margin-left: 10px;">
+            <a href="${fileUrl}" download="${escapeHtml(message.original_filename)}">${escapeHtml(message.original_filename)}</a>
+          </div>
+        </div>
+        ${message.content && message.content !== `File: ${message.original_filename} (Upload OK, DB disabled)` ? `<div class="message-text-caption">${escapeHtml(message.content)}</div>` : ''}
+      `;
+    } else {
+      messageContentHTML = `
+        <a href="${fileUrl}" download="${escapeHtml(message.original_filename)}" class="message-file-link">
+          <div class="file-icon">📄</div>
+          <div class="file-info">
+            <div class="file-name">${escapeHtml(message.original_filename)}</div>
+          </div>
+        </a>
+        ${message.content && message.content !== `File: ${message.original_filename} (Upload OK, DB disabled)` ? `<div class="message-text-caption">${escapeHtml(message.content)}</div>` : ''}
+      `;
+    }
+  } else {
+    // Default to text content if type is not 'file' or data is missing
+    const imgLinkRegex = /(https?:\/\/[\S]+\.(jpg|jpeg|png|gif|webp))|<a[^>]+>[^<]*\.(jpg|jpeg|png|gif|webp)<\/a>|(\w+\.(png|jpg|jpeg|gif|webp))/i;
+    if (message.content && imgLinkRegex.test(message.content)) {
+      let imageUrl = message.content;
+      if (message.content.includes('<a href=')) {
+        const hrefMatch = message.content.match(/href=["']([^"']+)["']/);
+        if (hrefMatch && hrefMatch[1]) {
+          imageUrl = hrefMatch[1];
+        }
+      }
+      if (!/^https?:\/\//.test(imageUrl) && !/^\/uploads\//.test(imageUrl)) {
+        imageUrl = `/uploads/${imageUrl}`;
+      }
+      messageContentHTML = `
+        <a href="${imageUrl}" target="_blank" rel="noopener noreferrer" class="message-image-link">
+          <img src="${imageUrl}" alt="Image" class="message-image-attachment" loading="lazy">
+        </a>
+      `;
+    } else {
+      messageContentHTML = escapeHtml(String(message.content || ''));
+    }
+  }
+  // --- End unified logic ---
+
+  messageEl.innerHTML = `
+    <div class="message-content">${messageContentHTML}</div>
+    <div class="message-footer">
+      <div class="message-time">${timeFormatted}${isEdited ? ' <span class="edited-indicator">· Edited</span>' : ''}</div>
+    </div>
+  `;
+
   messageEl.addEventListener('contextmenu', function(e) {
     e.preventDefault();
     showMessageContextMenu(e, message, messageEl);
   });
-  
+
   return messageEl;
 }
 
@@ -545,57 +597,46 @@ function handleFileSelection(files, user) {
   
   // Process each file
   Array.from(files).forEach(file => {
-    // Determine file type and create message with appropriate class
-    const isImage = file.type.startsWith('image/');
-    
-    // Create message element to show the file
-    const message = document.createElement('div');
-    message.className = `message message-sent ${isImage ? 'message-with-image' : 'message-file'}`;
-    
-    // Format timestamp
-    const now = new Date();
-    const hours = String(now.getHours()).padStart(2, '0');
-    const minutes = String(now.getMinutes()).padStart(2, '0');
-    
-    let fileContent;
-    
-    if (isImage) {
-      const imageUrl = URL.createObjectURL(file);
-      fileContent = `
-        <div class="message-image">
-          <img src="${imageUrl}" alt="${file.name}" style="max-width: 200px;">
-        </div>
-        <div class="message-file-name">${file.name} (${formatFileSize(file.size)})</div>
-      `;
-    } else {
-      // Icon based on file type
-      let iconSvg = `
-        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2">
-          <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
-          <polyline points="14 2 14 8 20 8"></polyline>
-        </svg>
-      `;
-      
-      fileContent = `
-        <div class="message-file-icon">${iconSvg}</div>
-        <div class="message-file-name">${file.name} (${formatFileSize(file.size)})</div>
-      `;
-    }
-    
-    // Add content to message
-    message.innerHTML = `
-      ${fileContent}
-      <div class="message-time">${hours}:${minutes}</div>
-    `;
-    
-    // Add message to container
-    messagesContainer.appendChild(message);
-    
-    // Scroll to new message
+    // Show temporary uploading message
+    const tempMsgId = `temp_upload_${Date.now()}_${Math.random()}`;
+    const tempMsgElement = document.createElement('div');
+    tempMsgElement.className = 'message message-sent message-temporary';
+    tempMsgElement.dataset.messageId = tempMsgId;
+    tempMsgElement.innerHTML = `<div class="message-content">Uploading ${file.name}...</div><div class="message-footer"><div class="message-time">Sending...</div></div>`;
+    messagesContainer.appendChild(tempMsgElement);
     chatMessages.scrollTop = chatMessages.scrollHeight;
-    
-    // TODO: Send file to server (implement server-side handling)
-    // This would involve using FormData and fetch to upload the file
+
+    // Prepare FormData
+    const formData = new FormData();
+    formData.append('file', file);
+    formData.append('recipient_id', user.id);
+    // Optionally, add a caption field if you want to support it
+    // formData.append('caption', '');
+
+    // Upload to backend
+    fetch('/upload_direct_file', {
+      method: 'POST',
+      body: formData
+    })
+    .then(response => {
+      if (!response.ok) {
+        return response.json().then(err => { throw new Error(err.error || `HTTP error! status: ${response.status}`); });
+      }
+      return response.json();
+    })
+    .then(data => {
+      // Remove temporary message
+      tempMsgElement.remove();
+      if (data.success && data.message) {
+        addMessageToChat(data.message, chatMessages);
+      } else {
+        showErrorNotification(data.error || 'Failed to upload file.');
+      }
+    })
+    .catch(error => {
+      tempMsgElement.remove();
+      showErrorNotification(`Upload failed: ${error.message}`);
+    });
   });
 }
 

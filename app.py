@@ -25,6 +25,7 @@ app.jinja_env.globals.update(hasattr=hasattr)
 app.config['SECRET_KEY'] = 'ваш_секретный_ключ'  # Измените это в продакшне
 app.config['SQLALCHEMY_DATABASE_URI'] = f'sqlite:///{os.path.join(instance_path, "chat.db")}'
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
+app.config['MAX_CONTENT_LENGTH'] = 50 * 1024 * 1024  # 50 MB
 
 # Настройка SERVER_NAME
 if os.environ.get('FLASK_ENV') == 'production':
@@ -103,6 +104,27 @@ def serve_uploaded_file(filepath):
             logging.debug(f"User {session['user_id']} is member of group {group_id}. Serving file: {filepath}")
         except Exception as e:
             logging.error(f"Error during group file access check for {filepath}: {e}")
+            return jsonify({"error": "Server Error"}), 500
+    # Handle direct chat files
+    elif filepath.startswith('direct_files/'):
+        try:
+            # Extract user IDs from the path (e.g., direct_files/1_2/file.png -> 1_2)
+            parts = filepath.split('/')
+            if len(parts) < 3 or '_' not in parts[1]:
+                logging.warning(f"Invalid direct file path format: {filepath}")
+                return jsonify({"error": "Not found"}), 404
+            user_ids = parts[1].split('_')
+            if len(user_ids) != 2 or not all(uid.isdigit() for uid in user_ids):
+                logging.warning(f"Invalid user IDs in direct file path: {filepath}")
+                return jsonify({"error": "Not found"}), 404
+            user_id_1, user_id_2 = map(int, user_ids)
+            current_user_id = int(session['user_id'])
+            if current_user_id not in (user_id_1, user_id_2):
+                logging.warning(f"User {current_user_id} not authorized for direct file {filepath}")
+                return jsonify({"error": "Forbidden"}), 403
+            logging.debug(f"User {current_user_id} is authorized for direct file: {filepath}")
+        except Exception as e:
+            logging.error(f"Error during direct file access check for {filepath}: {e}")
             return jsonify({"error": "Server Error"}), 500
     # Handle avatars
     elif filepath.startswith('avatars/'):

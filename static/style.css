@@ -1,2 +1,23 @@
 /* This file is kept for backward compatibility - redirects to modular styles */
 @import url('styles/main.css');
+
+/* Limit images in chat messages */
+.chat-message img,
+.message-content img {
+    max-width: 300px;
+    max-height: 300px;
+    width: auto;
+    height: auto;
+    border-radius: 8px;
+    object-fit: contain;
+    display: block;
+    margin: 8px 0;
+}
+
+/* Style file previews */
+.chat-message .file-preview,
+.message-content .file-preview {
+    max-width: 300px;
+    word-break: break-all;
+    margin: 8px 0;
+}
