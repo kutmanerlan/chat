@@ -620,6 +620,55 @@ function showFileUploadMenu(button, user) {
 }
 
 /**
+ * Handle file selection
+ */
+function handleFileSelection(files, user) {
+  if (!files || files.length === 0) return;
+
+  // Process each file
+  Array.from(files).forEach(file => {
+    // Show temporary uploading message
+    const tempMsgId = `temp_upload_${Date.now()}_${Math.random()}`;
+    const tempMsgElement = document.createElement('div');
+    tempMsgElement.className = 'message message-sent message-temporary';
+    tempMsgElement.dataset.messageId = tempMsgId;
+    tempMsgElement.innerHTML = `<div class="message-content">Uploading ${file.name}...</div><div class="message-footer"><div class="message-time">Sending...</div></div>`;
+    messagesContainer.appendChild(tempMsgElement);
+    chatMessages.scrollTop = chatMessages.scrollHeight;
+
+    // Prepare FormData
+    const formData = new FormData();
+    formData.append('file', file);
+    formData.append('recipient_id', user.id);
+
+    // Upload to backend
+    fetch('/upload_direct_file', {
+      method: 'POST',
+      body: formData
+    })
+    .then(response => {
+      if (!response.ok) {
+        return response.json().then(err => { throw new Error(err.error || `HTTP error! status: ${response.status}`); });
+      }
+      return response.json();
+    })
+    .then(data => {
+      // Remove temporary message
+      tempMsgElement.remove();
+      if (data.success && data.message) {
+        addMessageToChat(data.message, chatMessages);
+      } else {
+        showErrorNotification(data.error || 'Failed to upload file.');
+      }
+    })
+    .catch(error => {
+      tempMsgElement.remove();
+      showErrorNotification(`Upload failed: ${error.message}`);
+    });
+  });
+}
+
+/**
  * Create interface for when you've blocked a user
  */
 function createBlockedByYouInterface(userId, userName) {

@@ -321,23 +321,58 @@ function createGroupChatInterface(group) {
   // --- Event Listeners ---
 
   // Paperclip button triggers file input
-  paperclipButton.addEventListener('click', () => {
-    fileInput.click(); // Trigger click on hidden file input
+  paperclipButton.addEventListener('click', (e) => {
+    e.preventDefault();
+    showFileUploadMenu(paperclipButton, group);
   });
 
   // Handle file selection
-  fileInput.addEventListener('change', (event) => {
-    const files = event.target.files;
-    if (files && files.length > 0) {
-      // Handle single file upload for now
-      const file = files[0];
-      console.log('File selected:', file.name, file.size);
-      uploadGroupFile(file, group.id, chatMessages); // Pass necessary info
+  function handleFileSelection(files, group) {
+    if (!files || files.length === 0) return;
 
-      // Reset file input value to allow selecting the same file again
-      event.target.value = null;
-    }
-  });
+    // Process each file
+    Array.from(files).forEach(file => {
+      // Show temporary uploading message
+      const tempMsgId = `temp_upload_${Date.now()}_${Math.random()}`;
+      const tempMsgElement = document.createElement('div');
+      tempMsgElement.className = 'message message-sent message-temporary';
+      tempMsgElement.dataset.messageId = tempMsgId;
+      tempMsgElement.innerHTML = `<div class="message-content">Uploading ${file.name}...</div><div class="message-footer"><div class="message-time">Sending...</div></div>`;
+      chatMessages.appendChild(tempMsgElement);
+      chatMessages.scrollTop = chatMessages.scrollHeight;
+
+      // Prepare FormData
+      const formData = new FormData();
+      formData.append('file', file);
+      formData.append('group_id', group.id);
+
+      // Upload to backend
+      fetch('/upload_group_file', {
+        method: 'POST',
+        body: formData
+      })
+      .then(response => {
+        if (!response.ok) {
+          return response.json().then(err => { throw new Error(err.error || `HTTP error! status: ${response.status}`); });
+        }
+        return response.json();
+      })
+      .then(data => {
+        // Remove temporary message
+        tempMsgElement.remove();
+        if (data.success && data.message) {
+          addMessageToGroupChat(data.message, chatMessages);
+          loadSidebar(); // Refresh sidebar
+        } else {
+          showErrorNotification(data.error || 'Failed to upload file.');
+        }
+      })
+      .catch(error => {
+        tempMsgElement.remove();
+        showErrorNotification(`Upload failed: ${error.message}`);
+      });
+    });
+  }
 
   // Emoji button click handler - use the function from ui.js
   emojiButton.addEventListener('click', (e) => {
