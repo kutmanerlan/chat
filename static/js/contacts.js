@@ -126,10 +126,9 @@ function createGroupElement(group) {
   
   // Check if group has an avatar path
   if (group.avatar_path) {
-    // Fix avatar path - ensure it starts with /static/ if needed
     let avatarSrc = group.avatar_path;
-    if (!avatarSrc.startsWith('http') && !avatarSrc.startsWith('/static/')) {
-      avatarSrc = `/static/${avatarSrc}`;
+    if (!avatarSrc.startsWith('http')) {
+      avatarSrc = `/uploads/${avatarSrc}`;
     }
     groupAvatar.innerHTML = `<img src="${avatarSrc}" alt="${group.name}" class="avatar-image">`;
   } else {
@@ -224,7 +223,11 @@ function createContactElement(contact) {
   contactAvatar.className = 'contact-avatar';
   
   if (contact.avatar_path) {
-    contactAvatar.innerHTML = `<img src="${contact.avatar_path}" alt="${contact.name}">`;
+    let avatarSrc = contact.avatar_path;
+    if (!avatarSrc.startsWith('http')) {
+      avatarSrc = `/uploads/${avatarSrc}`;
+    }
+    contactAvatar.innerHTML = `<img src="${avatarSrc}" alt="${contact.name}">`;
   } else {
     contactAvatar.innerHTML = `<div class="avatar-initials">${contact.name.charAt(0)}</div>`;
   }
@@ -265,7 +268,11 @@ function createChatElement(chat) {
   const chatAvatar = document.createElement('div');
   chatAvatar.className = 'contact-avatar';
   if (chat.avatar_path) {
-    chatAvatar.innerHTML = `<img src="${chat.avatar_path}" alt="${chat.name}">`;
+    let avatarSrc = chat.avatar_path;
+    if (!avatarSrc.startsWith('http')) {
+      avatarSrc = `/uploads/${avatarSrc}`;
+    }
+    chatAvatar.innerHTML = `<img src="${avatarSrc}" alt="${chat.name}">`;
   } else {
     chatAvatar.innerHTML = `<div class="avatar-initials">${chat.name.charAt(0)}</div>`;
   }

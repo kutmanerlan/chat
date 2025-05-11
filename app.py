@@ -104,10 +104,9 @@ def serve_uploaded_file(filepath):
         except Exception as e:
             logging.error(f"Error during group file access check for {filepath}: {e}")
             return jsonify({"error": "Server Error"}), 500
-    # Add similar checks here for other sensitive directories if needed (e.g., private user files)
+    # Handle avatars
     elif filepath.startswith('avatars/'):
-        # Avatars are generally considered public within the app, less strict check needed
-        # You might still want basic validation or ensure the file exists
+        # Avatars are generally considered public within the app
         logging.debug(f"Serving avatar: {filepath}")
     else:
         # Handle other potential paths or deny by default
@@ -115,12 +114,19 @@ def serve_uploaded_file(filepath):
         return jsonify({"error": "Forbidden"}), 403
 
     # Serve the file using send_from_directory
-    # UPLOAD_FOLDER is the base directory (e.g., static/uploads)
     try:
+        # Remove 'static/' prefix if present in the filepath
+        if filepath.startswith('static/'):
+            filepath = filepath[7:]  # Remove 'static/' prefix
+            
+        # Ensure the upload directory exists
+        upload_dir = os.path.join(app.config['UPLOAD_FOLDER'], os.path.dirname(filepath))
+        os.makedirs(upload_dir, exist_ok=True)
+        
         return send_from_directory(app.config['UPLOAD_FOLDER'], filepath, as_attachment=False)
     except FileNotFoundError:
-         logging.error(f"File not found: {os.path.join(app.config['UPLOAD_FOLDER'], filepath)}")
-         return jsonify({"error": "Not found"}), 404
+        logging.error(f"File not found: {os.path.join(app.config['UPLOAD_FOLDER'], filepath)}")
+        return jsonify({"error": "Not found"}), 404
     except Exception as e:
         logging.error(f"Error serving file {filepath}: {e}")
         return jsonify({"error": "Server error"}), 500

@@ -204,10 +204,17 @@ class GroupMessage(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     group_id = db.Column(db.Integer, db.ForeignKey('group.id'), nullable=False)
     sender_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
-    content = db.Column(db.Text, nullable=False)
+    content = db.Column(db.Text, nullable=True) # Allow content to be null for file-only messages
     timestamp = db.Column(db.DateTime, default=datetime.utcnow, index=True)
     is_edited = db.Column(db.Boolean, default=False)
     edited_at = db.Column(db.DateTime, nullable=True)
+    
+    # --- Fields for file attachments ---
+    message_type = db.Column(db.String(50), nullable=False, default='text') # 'text' or 'file'
+    file_path = db.Column(db.String(255), nullable=True)
+    mime_type = db.Column(db.String(100), nullable=True)
+    original_filename = db.Column(db.String(255), nullable=True)
+    # --- End Fields for file attachments ---
     
     # Define relationships
     group = db.relationship('Group', backref=db.backref('messages', lazy='dynamic'))
@@ -222,6 +229,12 @@ class GroupMessage(db.Model):
             'content': self.content,
             'timestamp': self.timestamp.isoformat(),
             'is_edited': self.is_edited,
-            'edited_at': self.edited_at.isoformat() if self.edited_at else None
+            'edited_at': self.edited_at.isoformat() if self.edited_at else None,
+            # --- Add file fields to dictionary ---
+            'message_type': self.message_type,
+            'file_path': self.file_path,
+            'mime_type': self.mime_type,
+            'original_filename': self.original_filename
+            # --- End Add file fields ---
         }
         return message_dict

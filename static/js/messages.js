@@ -117,7 +117,15 @@ function createMessageElement(message) {
   
   // Determine if this is a sent or received message
   const isSent = parseInt(message.sender_id) === parseInt(ChatApp.currentUser.user_id);
-  messageEl.className = `message ${isSent ? 'message-sent' : 'message-received'}`;
+  
+  // Check if this message contains an image
+  const hasImage = message.content && (
+    message.content.includes('<img') || 
+    (message.file_type && message.file_type.startsWith('image/'))
+  );
+  
+  // Apply appropriate classes
+  messageEl.className = `message ${isSent ? 'message-sent' : 'message-received'}${hasImage ? ' message-with-image' : ''}`;
   messageEl.dataset.messageId = message.id;
   messageEl.dataset.senderId = message.sender_id;
   
@@ -537,24 +545,25 @@ function handleFileSelection(files, user) {
   
   // Process each file
   Array.from(files).forEach(file => {
+    // Determine file type and create message with appropriate class
+    const isImage = file.type.startsWith('image/');
+    
     // Create message element to show the file
     const message = document.createElement('div');
-    message.className = 'message message-sent message-file';
+    message.className = `message message-sent ${isImage ? 'message-with-image' : 'message-file'}`;
     
     // Format timestamp
     const now = new Date();
     const hours = String(now.getHours()).padStart(2, '0');
     const minutes = String(now.getMinutes()).padStart(2, '0');
     
-    // Determine file type and create content
-    const isImage = file.type.startsWith('image/');
     let fileContent;
     
     if (isImage) {
       const imageUrl = URL.createObjectURL(file);
       fileContent = `
         <div class="message-image">
-          <img src="${imageUrl}" alt="${file.name}" style="max-width: 200px; max-height: 200px; border-radius: 8px;">
+          <img src="${imageUrl}" alt="${file.name}" style="max-width: 200px;">
         </div>
         <div class="message-file-name">${file.name} (${formatFileSize(file.size)})</div>
       `;
@@ -596,17 +605,4 @@ function deleteMessage(messageId) {
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({ message_id: messageId })
   }).then(r => r.json());
-}
-
-/**
- * Format file size in human-readable format
- */
-function formatFileSize(bytes) {
-  if (bytes === 0) return '0 Bytes';
-  
-  const k = 1024;
-  const sizes = ['Bytes', 'KB', 'MB', 'GB', 'TB'];
-  const i = Math.floor(Math.log(bytes) / Math.log(k));
-  
-  return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
 }

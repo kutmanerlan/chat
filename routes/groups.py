@@ -5,6 +5,7 @@ import datetime
 import os
 from werkzeug.utils import secure_filename
 import traceback
+import uuid
 
 # Create blueprint for group routes
 groups_bp = Blueprint('groups', __name__)
@@ -40,14 +41,18 @@ def create_group():
                             filename = secure_filename(avatar_file.filename)
                             unique_filename = f"group_{datetime.datetime.now().strftime('%Y%m%d%H%M%S')}_{filename}"
                             
+                            # Create avatars directory if it doesn't exist
+                            avatars_dir = os.path.join(current_app.config['UPLOAD_FOLDER'], 'avatars')
+                            os.makedirs(avatars_dir, exist_ok=True)
+                            
                             # Get file path
-                            file_path = os.path.join(current_app.config['UPLOAD_FOLDER'], unique_filename)
+                            file_path = os.path.join(avatars_dir, unique_filename)
                             
                             # Save the file
                             avatar_file.save(file_path)
                             logging.debug(f"Saved avatar to {file_path}")
                             
-                            # Store the path relative to static folder
+                            # Store the path relative to uploads folder (without static/ prefix)
                             avatar_path = f"avatars/{unique_filename}"
                         else:
                             logging.warning(f"Invalid file extension: {avatar_file.filename}")
@@ -349,7 +354,8 @@ def send_group_message():
         new_message = GroupMessage(
             group_id=group_id,
             sender_id=session['user_id'],
-            content=content
+            content=content,
+            message_type='text'
         )
         
         db.session.add(new_message)
@@ -536,7 +542,12 @@ def edit_group():
                 import datetime, os
                 filename = secure_filename(avatar_file.filename)
                 unique_filename = f"group_{datetime.datetime.now().strftime('%Y%m%d%H%M%S')}_{filename}"
-                file_path = os.path.join(current_app.config['UPLOAD_FOLDER'], unique_filename)
+                
+                # Create avatars directory if it doesn't exist
+                avatars_dir = os.path.join(current_app.config['UPLOAD_FOLDER'], 'avatars')
+                os.makedirs(avatars_dir, exist_ok=True)
+                
+                file_path = os.path.join(avatars_dir, unique_filename)
                 avatar_file.save(file_path)
                 group.avatar_path = f"avatars/{unique_filename}"
         db.session.commit()
@@ -654,3 +665,86 @@ def delete_group_message():
     except Exception as e:
         db.session.rollback()
         return jsonify({'success': False, 'error': str(e)}), 500
+
+# --- NEW ROUTE for File Upload ---
+@groups_bp.route('/upload_group_file', methods=['POST'])
+def upload_group_file():
+    if 'user_id' not in session:
+        return jsonify({'success': False, 'error': 'Not logged in'}), 401
+
+    try:
+        group_id = request.form.get('group_id')
+        file = request.files.get('file')
+        caption = request.form.get('caption', '').strip() # Optional caption
+
+        if not group_id or not file:
+            return jsonify({'success': False, 'error': 'Group ID and file are required'}), 400
+
+        # Check if user is a member
+        member = GroupMember.query.filter_by(
+            group_id=group_id,
+            user_id=session['user_id'],
+            invitation_status='accepted'
+        ).first()
+        if not member:
+            return jsonify({'success': False, 'error': 'You are not a member of this group'}), 403
+
+        # --- File Saving Logic ---
+        original_filename = secure_filename(file.filename)
+        file_ext = os.path.splitext(original_filename)[1]
+        unique_filename = f"{uuid.uuid4()}{file_ext}"
+        
+        # Relative path within UPLOAD_FOLDER/group_files/<group_id>
+        relative_save_dir = os.path.join('group_files', str(group_id))
+        full_save_dir = os.path.join(current_app.config['UPLOAD_FOLDER'], relative_save_dir)
+        
+        # Create directory if it doesn't exist
+        os.makedirs(full_save_dir, exist_ok=True)
+        
+        file_path_full = os.path.join(full_save_dir, unique_filename)
+        file.save(file_path_full)
+        
+        # Store the relative path in the database
+        db_file_path = os.path.join(relative_save_dir, unique_filename).replace('\\', '/') # Use forward slashes for consistency
+        
+        logging.info(f"File saved to: {file_path_full}")
+        logging.info(f"Database path: {db_file_path}")
+        # --- End File Saving Logic ---
+
+        # --- Database Saving Logic ---
+        # Now create the GroupMessage entry
+        new_message = GroupMessage(
+            group_id=group_id,
+            sender_id=session['user_id'],
+            content=caption, # Use the optional caption as content
+            message_type='file', # Set the type to 'file'
+            file_path=db_file_path, # Store the relative path
+            mime_type=file.mimetype,
+            original_filename=original_filename
+        )
+        
+        db.session.add(new_message)
+        db.session.commit()
+        logging.info(f"GroupMessage created for file upload: ID {new_message.id}")
+        # --- End Database Saving Logic ---
+
+        # Fetch sender name for the response
+        sender = User.query.get(session['user_id'])
+        sender_name = sender.name if sender else 'Unknown'
+        
+        # Convert the *actual* saved message to dict
+        message_data = new_message.to_dict()
+        message_data['sender_name'] = sender_name
+
+        return jsonify({
+            'success': True,
+            'message': message_data # Return the actual message data
+        })
+
+    except Exception as e:
+        db.session.rollback()
+        logging.error(f"Error uploading group file: {str(e)}")
+        logging.error(traceback.format_exc())
+        return jsonify({'success': False, 'error': 'Server error during file upload'}), 500
+
+# Make sure this is the end of the file or followed by other routes/code

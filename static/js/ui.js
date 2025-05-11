@@ -23,117 +23,27 @@ function updateUserInterface(userData) {
   // Only update avatar if there's avatar data
   // This prevents clearing the avatar when only updating the status
   if (userData.avatar_path) {
-    updateAvatar(userData);
+    updateAvatar(userData.avatar_path);
   }
-}
-
-/**
- * Helper function to construct the correct avatar path.
- * Handles all possible avatar path formats in the application.
- */
-function getCorrectAvatarPath(relativePath) {
-  if (!relativePath) {
-    return null;
-  }
-  
-  // For debugging
-  console.log('Original avatar path:', relativePath);
-  
-  // If it's an absolute URL, use it as is
-  if (relativePath.startsWith('http')) {
-    return relativePath;
-  }
-  
-  // Remove any leading slashes for consistent processing
-  let path = relativePath.replace(/^\/+/, '');
-  
-  // Case 1: Special handling for komnata.jpg which we know works
-  if (path.includes('komnata.jpg')) {
-    if (path.startsWith('static/')) {
-      return '/' + path;
-    } else {
-      return '/static/' + (path.startsWith('avatars/') ? path : 'avatars/' + path);
-    }
-  }
-  
-  // Case 2: User avatars (pattern: user_X_filename)
-  if (path.match(/user_\d+_/)) {
-    // Ensure it has the correct path structure
-    if (path.startsWith('static/')) {
-      return '/' + path; // Already correct format with static/
-    } else if (path.startsWith('avatars/')) {
-      return '/static/' + path; // Add static/ prefix
-    } else {
-      return '/static/avatars/' + path; // Add complete path prefix
-    }
-  }
-  
-  // Case 3: Group avatars - try /static/ path instead of /uploads/
-  if (path.includes('group_')) {
-    // Use /static/ instead of /uploads/ for group avatars
-    if (path.startsWith('static/')) {
-      return '/' + path;
-    } else if (path.startsWith('avatars/')) {
-      return '/static/' + path;
-    } else {
-      return '/static/avatars/' + path;
-    }
-  }
-  
-  // Case 4: Handle paths with "static/" prefix
-  if (path.startsWith('static/')) {
-    return '/' + path;  // Add leading slash for absolute URL path
-  }
-  
-  // Case 5: For paths starting with "avatars/" directly
-  if (path.startsWith('avatars/')) {
-    return '/static/' + path;
-  }
-  
-  // Case 6: For just filenames without directories
-  if (!path.includes('/')) {
-    return '/static/avatars/' + path;
-  }
-
-  // Final fallback - just prepend with slash if needed
-  return path.startsWith('/') ? path : '/' + path;
 }
 
 /**
  * Update avatar display
  */
-function updateAvatar(userData) {
-  const avatarPlaceholder = document.getElementById('avatarPlaceholder');
-  if (!avatarPlaceholder) return;
-  
-  // Clear existing content
-  avatarPlaceholder.innerHTML = '';
-  
-  if (userData.avatar_path) {
-    // Create and add image
-    const img = document.createElement('img');
-    img.src = getCorrectAvatarPath(userData.avatar_path);
-    img.alt = userData.user_name || 'Avatar';
-    img.className = 'avatar-image';
-    avatarPlaceholder.appendChild(img);
-  } else {
-    // Create initials avatar
-    const initialsDiv = document.createElement('div');
-    initialsDiv.className = 'avatar-initials';
-    initialsDiv.textContent = (userData.user_name || 'U').charAt(0);
-    avatarPlaceholder.appendChild(initialsDiv);
-  }
-  
-  // Add upload icon
-  const uploadIcon = document.createElement('div');
-  uploadIcon.className = 'avatar-upload-icon';
-  uploadIcon.innerHTML = `
-    <svg width="24" height="24" viewBox="0 0 24 24" fill="none">
-      <path d="M12 5V19" stroke="white" stroke-width="2" stroke-linecap="round"/>
-      <path d="M5 12H19" stroke="white" stroke-width="2" stroke-linecap="round"/>
-    </svg>
-  `;
-  avatarPlaceholder.appendChild(uploadIcon);
+function updateAvatar(avatarPath) {
+  const avatarElements = document.querySelectorAll('.user-avatar img, .chat-user-avatar img, .user-info-avatar img');
+  avatarElements.forEach(img => {
+    if (avatarPath) {
+      let src = avatarPath;
+      if (!src.startsWith('http')) {
+        src = `/uploads/${src}`;
+      }
+      img.src = src;
+    } else {
+      const initials = img.alt ? img.alt.charAt(0) : '?';
+      img.parentElement.innerHTML = `<div class="avatar-initials">${initials}</div>`;
+    }
+  });
 }
 
 /**
@@ -307,25 +217,25 @@ function setupAvatarUpload() {
 function updateSidebarAvatar(avatarPath) {
   const sidebarAvatar = document.getElementById('avatarPlaceholder');
   if (sidebarAvatar) {
-    sidebarAvatar.innerHTML = ''; // Clear previous avatar/initials
+    // Clear existing avatar content
+    sidebarAvatar.innerHTML = '';
     
-    const finalAvatarPath = getCorrectAvatarPath(avatarPath);
-    
-    if (finalAvatarPath) {
+    if (avatarPath) {
+      // Create and set the new avatar image
       const img = document.createElement('img');
-      img.src = finalAvatarPath;
-      img.alt = 'Avatar';
+      img.src = avatarPath;
+      img.alt = 'User Avatar';
       img.className = 'avatar-image';
       sidebarAvatar.appendChild(img);
     } else {
-      const initials = document.createElement('div');
-      initials.className = 'avatar-initials';
-      // Assuming ChatApp.currentUser.name is available for initials
-      initials.textContent = (ChatApp.currentUser && ChatApp.currentUser.name ? ChatApp.currentUser.name.charAt(0) : 'U');
-      sidebarAvatar.appendChild(initials);
+      // Create initials avatar if no avatar path
+      const initialsDiv = document.createElement('div');
+      initialsDiv.className = 'avatar-initials';
+      initialsDiv.textContent = ChatApp.currentUser.user_name.charAt(0);
+      sidebarAvatar.appendChild(initialsDiv);
     }
-
-    // Re-add upload icon
+    
+    // Re-add the upload icon
     const uploadIcon = document.createElement('div');
     uploadIcon.className = 'avatar-upload-icon';
     uploadIcon.innerHTML = `
@@ -345,7 +255,7 @@ const categorizedEmojis = {
   'Smileys & People': ['😀', '😃', '😄', '😁', '😆', '😅', '😂', '🤣', '😊', '😇', '🙂', '🙃', '😉', '😌', '😍', '🥰', '😘', '😗', '😙', '😚', '😋', '😛', '😜', '🤪', '🤨', '🧐', '🤓', '😎', '🤩', '🥳', '😏', '😒', '😞', '😔', '😟', '😕', '🙁', '☹️', '😣', '😖', '😫', '😩', '🥺', '😢', '😭', '😤', '😠', '😡', '🤬', '🤯', '😳', '🥵', '🥶', '😱', '😨', '😰', '😥', '😓', '🤗', '🤔', '🤭', '🤫', '🤥', '😶', '😐', '😑', '😬', '🙄', '😯', '😦', '😧', '😮', '😲', '🥱', '😴', '🤤', '😪', '😵', '🤐', '🥴', '🤢', '🤮', '🤧', '😷', '🤒', '🤕', '🤑', '🤠', '😈', '👿', '👹', '👺', '🤡', '💩', '👻', '💀', '☠️', '👽', '👾', '🤖', '🎃', '😺', '😸', '😹', '😻', '😼', '😽', '🙀', '😿', '😾'],
   'Animals & Nature': ['🙈', '🙉', '🙊', '🐒', '🐕', '🐶', '🐩', '🐺', '🦊', '🦝', '🐈', '🐱', '🦁', '🐯', '🐅', '🐆', '🐴', '🐎', '🦄', '🦓', '🦌', '🐮', '🐂', '🐃', '🐄', '🐷', '🐖', '🐗', '🐽', '🐏', '🐑', '🐐', '🐪', '🐫', '🦙', '🦒', '🐘', '🦏', '🦛', '🐭', '🐁', '🐀', '🐹', '🐰', '🐇', '🐿️', '🦔', '🦇', '🐻', '🐨', '🐼', '🦥', '🦦', '🦨', '🦘', '🦡', '🐾', '🦃', '🐔', '🐓', '🐣', '🐤', '🐥', '🐦', '🐧', '🕊️', '🦅', '🦆', '🦢', '🦉', '🦩', '🦚', '🦜', '🐸', '🐊', '🐢', '🦎', '🐍', '🐲', '🐉', '🦕', '🦖', '🐳', '🐋', '🐬', '🐟', '🐠', '🐡', '🦈', '🐙', '🐚', '🐌', '🦋', '🐛', '🐜', '🐝', '🐞', '🦗', '🕷️', '🕸️', '🦂', '🦟', '🦠', '💐', '🌸', '💮', '🏵️', '🌹', '🥀', '🌺', '🌻', '🌼', '🌷', '🌱', '🌲', '🌳', '🌴', '🌵', '🌾', '🌿', '☘️', '🍀', '🍁', '🍂', '🍃'],
   'Food & Drink': ['🍇', '🍈', '🍉', '🍊', '🍋', '🍌', '🍍', '🥭', '🍎', '🍏', '🍐', '🍑', '🍒', '🍓', '🥝', '🍅', '🥥', '🥑', '🍆', '🥔', '🥕', '🌽', '🌶️', '🥒', '🥬', '🥦', '🧄', '🧅', '🍄', '🥜', '🌰', '🍞', '🥐', '🥖', '🥨', '🥯', '🥞', '🧇', '🧀', '🍖', '🍗', '🥩', '🥓', '🍔', '🍟', '🍕', '🌭', '🥪', '🌮', '🌯', '🥙', '🧆', '🥚', '🍳', '🥘', '🍲', '🥣', '🥗', '🍿', '🧈', '🧂', '🥫', '🍱', '🍘', '🍙', '🍚', '🍛', '🍜', '🍝', '🍠', '🍢', '🍣', '🍤', '🍥', '🥮', '🍡', '🥟', '🥠', '🥡', '🦀', '🦞', '🦐', '🦑', '🦪', '🍦', '🍧', '🍨', '🍩', '🍪', '🎂', '🍰', '🧁', '🥧', '🍫', '🍬', '🍭', '🍮', '🍯', '🍼', '🥛', '☕', '🍵', '🍶', '🍾', '🍷', '🍸', '🍹', '🍺', '🍻', '🥂', '🥃', '🥤', '🧃', '🧉', '🧊', '🥢', '🍽️', '🍴', '🥄'],
-  'Symbols': ['❤️', '🧡', '💛', '💚', '💙', '💜', '🖤', '🤍', '🤎', '💔', '❣️', '💕', '💞', '💓', '💗', '💖', '💘', '💝', '💟', '☮️', '✝️', '☪️', '🕉️', '☸️', '✡️', '🔯', '🕎', '☯️', '☦️', '🛐', '⛎', '♈', '♉', '♊', '♋', '♌', '♍', '♎', '♏', '♐', '♑', '♒', '♓', '🆔', '⚛️', '🉑', '☢️', '☣️', '📴', '📳', '🈶', '🈚', '🈸', '🈺', '🈷️', '✴️', '🆚', '💮', '🉐', '㊙️', '㊗️', '🈴', '🈵', '🈹', '🈲', '🅰️', '🅱️', '🆎', '🆑', '🅾️', '🆘', '❌', '⭕', '🛑', '⛔', '📛', '🚫', '💯', '💢', '♨️', '🚷', '🚯', '🚳', '🚱', '🔞', '📵', '🚭', '❗️', '❕', '❓', '❔', '‼️', '⁉️', '🔅', '🔆', '〽️', '⚠️', '🚸', '🔱', '⚜️', '🔰', '♻️', '✅', '🈯', '💹', '❇️', '✳️', '❎', '🌐', '💠', 'Ⓜ️', '🌀', '💤', '🏧', '🚾', '♿', '🅿️', '🈳', '🈂️', '🛂', '🛃', '🛄', '🛅', '🚹', '🚺', '🚼', '🚻', '🚮', '🎦', '📶', '🈁', '🔣', 'ℹ️', '🔤', '🔡', '🔠', '🆖', '🆗', '🆙', '🆒', '🆕', '🆓', '0️⃣', '1️⃣', '2️⃣', '3️⃣', '4️⃣', '5️⃣', '6️⃣', '7️⃣', '8️⃣', '9️⃣', '🔟', '🔢', '#️⃣', '*️⃣', '⏏️', '▶️', '⏸️', '⏯️', '⏹️', '⏺️', '⏭️', '⏮️', '⏩', '⏪', '⏫', '⏬', '◀️', '🔼', '🔽', '➡️', '⬅️', '⬆️', '⬇️', '↗️', '↘️', '↙️', '↖️', '↕️', '↔️', '↪️', '↩️', '⤴️', '⤵️', '🔀', '🔁', '🔂', '🔄', '🔃', '🎵', '🎶', '➕', '➖', '➗', '✖️', '♾️', '💲', '💱', '™️', '©️', '®️', '〰️', '➰', '➿', '🔚', '🔙', '🔛', '🔝', '🔜', '✔️', '☑️', '🔘', '🔴', '🟠', '🟡', '🟢', '🔵', '🟣', '⚫', '⚪', '🟤', '🔺', '🔻', '🔸', '🔹', '🔶', '🔷', '🔳', '🔲', '▪️', '▫️', '◾', '◽', '◼️', '◻️', '🟥', '🟧', '🟨', '🟩', '🟦', '🟪', '⬛', '⬜', '🟫'],
+  'Symbols': ['❤️', '🧡', '💛', '💚', '💙', '💜', '🖤', '🤍', '🤎', '💔', '❣️', '💕', '💞', '💓', '💗', '💖', '💘', '💝', '💟', '☮️', '✝️', '☪️', '🕉️', '☸️', '✡️', '🔯', '🕎', '☯️', '☦️', '🛐', '⛎', '♈', '♉', '♊', '♋', '♌', '♍', '♎', '♏', '♐', '♑', '♒', '♓', '🆔', '⚛️', '🉑', '☢️', '☣️', '📴', '📳', '🈶', '🈚', '🈸', '🈺', '🈷️', '✴️', '🆚', '💮', '🉐', '㊙️', '㊗️', '🈴', '🈵', '🈹', '🈲', '🅰️', '🅱️', '🆎', '🆑', '🅾️', '🆘', '❌', '⭕', '🛑', '⛔', '📛', '🚫', '💯', '💢', '♨️', '🚷', '🚯', '🚳', '🚱', '🔞', '📵', '🚭', '❗️', '❕', '❓', '❔', '‼️', '⁉️', '🔅', '🔆', '〽️', '⚠️', '🚸', '🔱', '⚜️', '🔰', '♻️', '✅', '🈯', '💹', '❇️', '✳️', '❎', '🌐', '💠', 'Ⓜ️', '🌀', '💤', '🏧', '🚾', '♿', '🅿️', '🈳', '🈂️', '🛂', '🛃', '🛄', '🛅', '🚹', '🚺', '🚼', '🚻', '🚮', '🎦', '📶', '🈁', '🔣', 'ℹ️', '🔤', '🔡', '🔠', '🆖', '🆗', '🆙', '🆒', '🆕', '🆓', '0️⃣', '1️⃣', '2️⃣', '3️⃣', '4️⃣', '5️⃣', '6️⃣', '7️⃣', '8️⃣', '9️⃣', '🔟', '🔢', '#️⃣', '*️⃣', '⏏️', '▶️', '⏸️', '⏯️', '⏹️', '⏺️', '⏭️', '⏮️', '⏩', '⏪', '⏫', '⏬', '◀️', '🔼', '🔽', '➡️', '⬅️', '⬆️', '⬇️', '↗️', '↘️', '↙️', '↖️', '↕️', '↔️', '↪️', '↩️', '⤴️', '⤵️', '🔀', '🔁', '🔂', '🔄', '🔃', '🎵', '🎶', '➕', '➖', '➗', '✖️', '♾️', '💲', '💱', '™️', '©️', '®️', '〰️', '➰', '➿', '🔚', '🔙', '🔛', '🔝', '🔜', '✔️', '☑️', '🔘', '🔴', '🟠', '🟡', '🟢', '🔵', '🟣', '⚫', '⚪', '🟤', '🔺', '🔻', '🔸', '🔹', '🔶', '🔷', '🔳', '🔲', '▪️', '▫️', '◾', '◽', '◼️', '◻️', '🟥', '🟧', '🟨', '🟩', '🟦', '🟪', '⬛', '⬜', '🟫', '🔈', '🔇', '🔉', '🔊', '🔔', '🔕', '📣', '📢', '👁️‍🗨️', '💬', '💭', '🗯️', '♠️', '♣️', '♥️', '♦️', '🃏', '🎴', '🀄', '🕒', '🕓', '🕔', '🕕', '🕖', '🕗', '🕘', '🕙', '🕚', '🕛', '🕜', '🕝', '🕞', '🕟', '🕠', '🕡', '🕢', '🕣', '🕤', '🕥', '🕦', '🕧'],
 };
 
 // Ссылка на обработчик клика вне панели для его последующего удаления

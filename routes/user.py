@@ -114,17 +114,17 @@ def upload_avatar():
             # Добавляем user_id к имени файла для уникальности
             filename = f"user_{session['user_id']}_{filename}"
             
-            # Создаем папку, если её нет
+            # Создаем папку для аватаров, если её нет
+            avatars_dir = os.path.join(current_app.config['UPLOAD_FOLDER'], 'avatars')
             try:
-                if not os.path.exists(current_app.config['UPLOAD_FOLDER']):
-                    os.makedirs(current_app.config['UPLOAD_FOLDER'], exist_ok=True)
-                    logging.info(f"Создана папка для аватаров: {current_app.config['UPLOAD_FOLDER']}")
+                os.makedirs(avatars_dir, exist_ok=True)
+                logging.info(f"Создана папка для аватаров: {avatars_dir}")
             except Exception as mkdir_error:
                 logging.error(f"Ошибка при создании папки для аватаров: {str(mkdir_error)}")
                 return jsonify({'success': False, 'error': 'Upload directory error'})
             
             # Путь для сохранения
-            filepath = os.path.join(current_app.config['UPLOAD_FOLDER'], filename)
+            filepath = os.path.join(avatars_dir, filename)
             # Сохраняем файл
             try:
                 file.save(filepath)
@@ -142,8 +142,8 @@ def upload_avatar():
                         logging.warning('Колонка avatar_path отсутствует в модели User')
                         return jsonify({'success': False, 'error': 'Schema error'})
                     
-                    # Относительный путь для URL
-                    relative_path = os.path.join('static', 'avatars', filename).replace('\\', '/')
+                    # Относительный путь для URL (без 'static/' префикса)
+                    relative_path = os.path.join('avatars', filename).replace('\\', '/')
                     user.avatar_path = relative_path
                     db.session.commit()
                     logging.info(f"Обновлен avatar_path для пользователя {user.id}: {relative_path}")
