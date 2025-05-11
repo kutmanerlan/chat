@@ -221,9 +221,13 @@ function updateSidebarAvatar(avatarPath) {
     sidebarAvatar.innerHTML = '';
     
     if (avatarPath) {
+      let src = avatarPath;
+      if (!src.startsWith('http')) {
+        src = `/uploads/${src}`;
+      }
       // Create and set the new avatar image
       const img = document.createElement('img');
-      img.src = avatarPath;
+      img.src = src;
       img.alt = 'User Avatar';
       img.className = 'avatar-image';
       sidebarAvatar.appendChild(img);
