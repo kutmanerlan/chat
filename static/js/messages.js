@@ -126,16 +126,20 @@ function createMessageElement(message) {
   const timeFormatted = `${hours}:${minutes}`;
   const isEdited = message.is_edited === true;
 
+  let isImageOnly = false;
   // --- Unified file/image display logic ---
   let messageContentHTML = '';
   if (message.message_type === 'file' && message.mime_type && message.original_filename && message.file_path) {
     const fileUrl = `/uploads/${message.file_path}`;
     if (message.mime_type.startsWith('image/')) {
+      isImageOnly = true;
       messageContentHTML = `
-        <a href="${fileUrl}" target="_blank" rel="noopener noreferrer" class="message-image-link">
-          <img src="${fileUrl}" alt="${escapeHtml(message.original_filename)}" class="message-image-attachment" loading="lazy">
-        </a>
-        ${message.content ? `<div class="message-text-caption">${escapeHtml(message.content)}</div>` : ''}
+        <div class="image-card">
+          <a href="${fileUrl}" target="_blank" rel="noopener noreferrer" class="message-image-link">
+            <img src="${fileUrl}" alt="${escapeHtml(message.original_filename)}" class="message-image-attachment" loading="lazy">
+          </a>
+          <div class="image-time">${timeFormatted}</div>
+        </div>
       `;
     } else if (message.mime_type.startsWith('video/')) {
       messageContentHTML = `
@@ -196,12 +200,19 @@ function createMessageElement(message) {
   }
   // --- End unified logic ---
 
-  messageEl.innerHTML = `
-    <div class="message-content">${messageContentHTML}</div>
-    <div class="message-footer">
-      <div class="message-time">${timeFormatted}${isEdited ? ' <span class="edited-indicator">· Edited</span>' : ''}</div>
-    </div>
-  `;
+  if (isImageOnly) {
+    messageEl.classList.add('image-only');
+    messageEl.innerHTML = `
+      <div class="message-content">${messageContentHTML}</div>
+    `;
+  } else {
+    messageEl.innerHTML = `
+      <div class="message-content">${messageContentHTML}</div>
+      <div class="message-footer">
+        <div class="message-time">${timeFormatted}${isEdited ? ' <span class="edited-indicator">· Edited</span>' : ''}</div>
+      </div>
+    `;
+  }
 
   messageEl.addEventListener('contextmenu', function(e) {
     e.preventDefault();

@@ -1513,10 +1513,12 @@ function createGroupMessageElement(message, memberMap) {
       if (message.mime_type.startsWith('image/')) {
           // Display image
           messageContentHTML = `
-              <a href="${fileUrl}" target="_blank" rel="noopener noreferrer" class="message-image-link">
+              <div class="image-card">
+                <a href="${fileUrl}" target="_blank" rel="noopener noreferrer" class="message-image-link">
                   <img src="${fileUrl}" alt="${escapeHtml(message.original_filename)}" class="message-image-attachment" loading="lazy">
-              </a>
-              ${message.content ? `<div class="message-text-caption">${escapeHtml(message.content)}</div>` : ''}
+                </a>
+                <div class="image-time">${timeFormatted}</div>
+              </div>
           `;
       } else if (message.mime_type.startsWith('video/')) {
           // Display video player
@@ -1592,13 +1594,44 @@ function createGroupMessageElement(message, memberMap) {
   }
   // --- End Determine message content ---
 
-  messageEl.innerHTML = `
-    ${senderNameHTML}
-    <div class="message-content">${messageContentHTML}</div>
-    <div class="message-footer">
-      <div class="message-time">${timeFormatted}${isEdited ? ' <span class="edited-indicator">· Edited</span>' : ''}</div>
-    </div>
-  `;
+  let isImageOnly = false;
+  if (message.message_type === 'file' && message.mime_type && message.original_filename && message.file_path) {
+      const fileUrl = `/uploads/${message.file_path}`; 
+
+      if (message.mime_type.startsWith('image/')) {
+          isImageOnly = true;
+          messageContentHTML = `
+              <div class="image-card">
+                <a href="${fileUrl}" target="_blank" rel="noopener noreferrer" class="message-image-link">
+                  <img src="${fileUrl}" alt="${escapeHtml(message.original_filename)}" class="message-image-attachment" loading="lazy">
+                </a>
+                <div class="image-time">${timeFormatted}</div>
+              </div>
+          `;
+      } else if (message.mime_type.startsWith('video/')) {
+          // ... existing code ...
+      }
+      // ... existing code ...
+  } else {
+      // ... existing code ...
+  }
+  // --- End Determine message content ---
+
+  if (isImageOnly) {
+    messageEl.classList.add('image-only');
+    messageEl.innerHTML = `
+      ${senderNameHTML}
+      <div class="message-content">${messageContentHTML}</div>
+    `;
+  } else {
+    messageEl.innerHTML = `
+      ${senderNameHTML}
+      <div class="message-content">${messageContentHTML}</div>
+      <div class="message-footer">
+        <div class="message-time">${timeFormatted}${isEdited ? ' <span class=\"edited-indicator\">· Edited</span>' : ''}</div>
+      </div>
+    `;
+  }
 
   // Add context menu event listener
   messageEl.addEventListener('contextmenu', function(e) {

@@ -21,3 +21,90 @@
     word-break: break-all;
     margin: 8px 0;
 }
+
+/* Telegram-like image card for chat messages (final fix) */
+.image-card {
+    position: relative;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    background: #181818;
+    border-radius: 18px;
+    box-shadow: 0 2px 12px rgba(0,0,0,0.18);
+    overflow: hidden;
+    max-width: 340px;
+    max-height: 340px;
+    margin: 8px auto 0 auto;
+    padding: 0;
+}
+.image-card img {
+    display: block;
+    max-width: 340px;
+    max-height: 340px;
+    object-fit: contain;
+    border-radius: 18px;
+    background: #222;
+    margin: 0 auto;
+}
+.image-card .image-time {
+    position: absolute;
+    right: 12px;
+    bottom: 10px;
+    background: rgba(0,0,0,0.45);
+    color: #fff;
+    font-size: 13px;
+    padding: 2px 8px;
+    border-radius: 10px;
+    z-index: 2;
+}
+
+/* Strong override for image-only messages */
+.message.image-only, .message.image-only.message-sent, .message.image-only.message-received {
+    background: none !important;
+    box-shadow: none !important;
+    padding: 0 !important;
+    margin: 0 auto 12px auto !important;
+    border-radius: 0 !important;
+    max-width: unset !important;
+    align-self: center !important;
+    position: static !important;
+    width: auto !important;
+}
+.message.image-only .message-content {
+    max-width: 340px !important;
+    margin: 0 auto !important;
+}
+.message.image-only .message-footer { display: none !important; }
+
+div.message.image-only > div.message-content > div.image-card {
+    max-width: 340px !important;
+    max-height: 340px !important;
+    margin: 8px auto 0 auto !important;
+    display: flex !important;
+    justify-content: center !important;
+    align-items: center !important;
+    background: #181818 !important;
+    border-radius: 18px !important;
+    box-shadow: 0 2px 12px rgba(0,0,0,0.18) !important;
+    overflow: hidden !important;
+    border: 2px solid red !important; /* debug border */
+}
+div.message.image-only > div.message-content > div.image-card > a > img,
+div.message.image-only > div.message-content > div.image-card > img {
+    max-width: 340px !important;
+    max-height: 340px !important;
+    width: auto !important;
+    height: auto !important;
+    object-fit: contain !important;
+    border-radius: 18px !important;
+    background: #222 !important;
+    margin: 0 auto !important;
+    display: block !important;
+}
+div.message.image-only > div.message-content {
+    max-width: 340px !important;
+    margin: 0 auto !important;
+    padding: 0 !important;
+    background: none !important;
+    box-shadow: none !important;
+}
