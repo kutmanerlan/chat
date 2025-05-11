@@ -110,6 +110,51 @@ function formatDate(date) {
 }
 
 /**
+ * Check if text contains English characters
+ */
+function containsEnglishText(text) {
+  return /[a-zA-Z]/.test(text);
+}
+
+/**
+ * Check if word contains only English characters
+ */
+function isEnglishWord(word) {
+  return /^[a-zA-Z]+$/.test(word);
+}
+
+/**
+ * Translate text to Russian using Google Translate API, preserving Russian words
+ */
+async function translateToRussian(text) {
+  try {
+    // Split text into words and punctuation
+    const words = text.split(/(\s+|[.,!?;:()\[\]{}"'\-–—])/);
+    
+    // Translate only English words
+    const translatedWords = await Promise.all(words.map(async (word) => {
+      if (isEnglishWord(word)) {
+        try {
+          const response = await fetch('https://translate.googleapis.com/translate_a/single?client=gtx&sl=en&tl=ru&dt=t&q=' + encodeURIComponent(word));
+          const data = await response.json();
+          return data[0][0][0];
+        } catch (error) {
+          console.error('Translation error for word:', word, error);
+          return word; // Return original word if translation fails
+        }
+      }
+      return word; // Return non-English words as is
+    }));
+    
+    // Join words back together
+    return translatedWords.join('');
+  } catch (error) {
+    console.error('Translation error:', error);
+    throw new Error('Failed to translate message');
+  }
+}
+
+/**
  * Create a message element
  */
 function createMessageElement(message) {
@@ -214,10 +259,39 @@ function createMessageElement(message) {
         </a>
       `;
     } else {
-      messageContentHTML = escapeHtml(String(message.content || ''));
+      // Show translation if available
+      if (message.translation) {
+        messageContentHTML = `
+          <div class="original-text" style="display: none;">${escapeHtml(message.content)}</div>
+          <div class="translated-text">${escapeHtml(message.translation)}</div>
+        `;
+      } else {
+        messageContentHTML = escapeHtml(String(message.content || ''));
+      }
     }
   }
   // --- End unified logic ---
+
+  // Add translate button if message contains English text and no translation yet
+  let translateButtonHTML = '';
+  if (message.content && containsEnglishText(message.content) && !message.translation) {
+    translateButtonHTML = `
+      <div class="message-translate">
+        <button class="translate-button" onclick="handleTranslate(this, '${escapeHtml(message.content)}')">
+          Translate
+        </button>
+      </div>
+    `;
+  } else if (message.translation) {
+    // Show toggle button if translation exists
+    translateButtonHTML = `
+      <div class="message-translate">
+        <button class="translate-button" onclick="toggleTranslation(this)">
+          Show Original
+        </button>
+      </div>
+    `;
+  }
 
   if (isImageOnly) {
     messageEl.classList.add('image-only');
@@ -229,6 +303,7 @@ function createMessageElement(message) {
       <div class="message-content">${messageContentHTML}</div>
       <div class="message-footer">
         <div class="message-time">${timeFormatted}${isEdited ? ' <span class="edited-indicator">· Edited</span>' : ''}</div>
+        ${translateButtonHTML}
       </div>
     `;
   }
@@ -743,4 +818,85 @@ function formatFileSize(size) {
   if (size < 1024) return size + ' B';
   if (size < 1024 * 1024) return (size / 1024).toFixed(1) + ' KB';
   return (size / (1024 * 1024)).toFixed(1) + ' MB';
+}
+
+/**
+ * Handle translation button click
+ */
+async function handleTranslate(button, originalText) {
+  try {
+    button.disabled = true;
+    button.textContent = 'Translating...';
+    
+    const translatedText = await translateToRussian(originalText);
+    
+    // Find the message element
+    const messageEl = button.closest('.message');
+    const messageId = messageEl.dataset.messageId;
+    
+    // Save translation to server
+    const response = await fetch('/translate_message', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify({
+        message_id: messageId,
+        translation: translatedText
+      })
+    });
+    
+    const data = await response.json();
+    if (!data.success) {
+      throw new Error(data.error || 'Failed to save translation');
+    }
+    
+    // Update the content
+    const contentEl = messageEl.querySelector('.message-content');
+    contentEl.innerHTML = `
+      <div class="original-text" style="display: none;">${escapeHtml(originalText)}</div>
+      <div class="translated-text">${escapeHtml(translatedText)}</div>
+    `;
+    
+    // Update button to show original
+    button.textContent = 'Show Original';
+    button.onclick = () => {
+      const originalTextEl = contentEl.querySelector('.original-text');
+      const translatedTextEl = contentEl.querySelector('.translated-text');
+      
+      if (originalTextEl.style.display === 'none') {
+        originalTextEl.style.display = 'block';
+        translatedTextEl.style.display = 'none';
+        button.textContent = 'Show Translation';
+      } else {
+        originalTextEl.style.display = 'none';
+        translatedTextEl.style.display = 'block';
+        button.textContent = 'Show Original';
+      }
+    };
+  } catch (error) {
+    showErrorNotification('Failed to translate message');
+    button.disabled = false;
+    button.textContent = 'Translate';
+  }
+}
+
+/**
+ * Toggle between original and translated text
+ */
+function toggleTranslation(button) {
+  const messageEl = button.closest('.message');
+  const contentEl = messageEl.querySelector('.message-content');
+  const originalTextEl = contentEl.querySelector('.original-text');
+  const translatedTextEl = contentEl.querySelector('.translated-text');
+  
+  if (originalTextEl.style.display === 'none') {
+    originalTextEl.style.display = 'block';
+    translatedTextEl.style.display = 'none';
+    button.textContent = 'Show Translation';
+  } else {
+    originalTextEl.style.display = 'none';
+    translatedTextEl.style.display = 'block';
+    button.textContent = 'Show Original';
+  }
 }

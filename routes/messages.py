@@ -379,3 +379,39 @@ def upload_direct_file():
         import traceback
         print(traceback.format_exc())
         return jsonify({'success': False, 'error': 'Server error during file upload'}), 500
+
+@messages_bp.route('/translate_message', methods=['POST'])
+def translate_message():
+    if 'user_id' not in session:
+        return jsonify({'success': False, 'error': 'Not logged in'}), 401
+    try:
+        data = request.get_json()
+        message_id = data.get('message_id')
+        translation = data.get('translation')
+        
+        if not message_id or not translation:
+            return jsonify({'success': False, 'error': 'Message ID and translation are required'}), 400
+        
+        # Find the message
+        message = Message.query.get(message_id)
+        if not message:
+            return jsonify({'success': False, 'error': 'Message not found'}), 404
+        
+        # Check if user is the sender
+        if message.sender_id != session['user_id']:
+            return jsonify({'success': False, 'error': 'You can only translate your own messages'}), 403
+        
+        # Update message translation
+        message.translation = translation
+        
+        db.session.commit()
+        
+        # Return updated message
+        return jsonify({
+            'success': True,
+            'message': message.to_dict()
+        })
+    except Exception as e:
+        db.session.rollback()
+        logging.error(f"Error translating message: {str(e)}")
+        return jsonify({'success': False, 'error': 'Server error'}), 500

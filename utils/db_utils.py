@@ -127,6 +127,17 @@ def create_tables():
                     logging.info('message_type column added successfully')
                 except Exception as column_error:
                     logging.error(f"Error adding message_type column: {str(column_error)}")
+            
+            # Check for translation column in message table
+            if 'translation' not in message_columns:
+                logging.info('Adding translation column to message table')
+                try:
+                    with db.engine.connect() as connection:
+                        connection.execute(text("ALTER TABLE message ADD COLUMN translation TEXT"))
+                        connection.commit()
+                    logging.info('translation column added successfully to message')
+                except Exception as column_error:
+                    logging.error(f"Error adding translation column to message: {str(column_error)}")
         
         # Check if block table exists
         if 'block' not in inspector.get_table_names():

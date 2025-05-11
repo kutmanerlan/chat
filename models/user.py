@@ -81,6 +81,7 @@ class Message(db.Model):
     sender_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
     recipient_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
     content = db.Column(db.Text, nullable=False)
+    translation = db.Column(db.Text, nullable=True)  # Add translation field
     timestamp = db.Column(db.DateTime, default=datetime.utcnow, index=True)
     is_read = db.Column(db.Boolean, default=False)
     # Add fields for tracking edits
@@ -105,6 +106,7 @@ class Message(db.Model):
             'sender_id': self.sender_id,
             'recipient_id': self.recipient_id,
             'content': self.content,
+            'translation': self.translation,  # Add translation to dict
             'timestamp': self.timestamp.isoformat(),
             'is_read': self.is_read,
             'is_edited': self.is_edited if hasattr(self, 'is_edited') else False,
