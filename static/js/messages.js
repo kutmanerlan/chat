@@ -158,11 +158,18 @@ async function translateToRussian(text) {
  * Create a message element
  */
 function createMessageElement(message) {
-  const messageEl = document.createElement('div');
+  const messageDiv = document.createElement('div');
+  
+  console.log('Message sender_id:', message.sender_id);
+  console.log('Current user_id:', ChatApp.currentUser.user_id);
+  console.log('Types - message.sender_id:', typeof message.sender_id, 'ChatApp.currentUser.user_id:', typeof ChatApp.currentUser.user_id);
+  
   const isSent = parseInt(message.sender_id) === parseInt(ChatApp.currentUser.user_id);
-  messageEl.className = `message ${isSent ? 'message-sent' : 'message-received'}`;
-  messageEl.dataset.messageId = message.id;
-  messageEl.dataset.senderId = message.sender_id;
+  console.log('Is sent message?', isSent);
+  
+  messageDiv.className = `message ${isSent ? 'message-sent' : 'message-received'}`;
+  messageDiv.dataset.messageId = message.id;
+  messageDiv.dataset.senderId = message.sender_id;
 
   // Format timestamp
   const timestamp = new Date(message.timestamp);
@@ -190,13 +197,13 @@ function createMessageElement(message) {
         </div>
       `;
       // Render the file bubble and a regular message-footer with timestamp
-      messageEl.innerHTML = `
+      messageDiv.innerHTML = `
         ${messageContentHTML}
         <div class="message-footer">
           <div class="message-time">${timeFormatted}${isEdited ? ' <span class=\"edited-indicator\">· Edited</span>' : ''}</div>
         </div>
       `;
-      return messageEl;
+      return messageDiv;
     } else if (message.mime_type.startsWith('video/')) {
       messageContentHTML = `
         <video controls class="message-video-attachment" preload="metadata">
@@ -231,13 +238,13 @@ function createMessageElement(message) {
           </div>
         </div>
       `;
-      messageEl.innerHTML = `
+      messageDiv.innerHTML = `
         ${messageContentHTML}
         <div class="message-footer">
           <div class="message-time">${timeFormatted}${isEdited ? ' <span class=\"edited-indicator\">· Edited</span>' : ''}</div>
         </div>
       `;
-      return messageEl;
+      return messageDiv;
     }
   } else {
     // Default to text content if type is not 'file' or data is missing
@@ -274,7 +281,8 @@ function createMessageElement(message) {
 
   // Add translate button if message contains English text and no translation yet
   let translateButtonHTML = '';
-  if (message.content && containsEnglishText(message.content) && !message.translation) {
+  const isOwnMessage = parseInt(message.sender_id) === parseInt(ChatApp.currentUser.user_id);
+  if (isOwnMessage && message.content && containsEnglishText(message.content) && !message.translation) {
     translateButtonHTML = `
       <div class="message-translate">
         <button class="translate-button" onclick="handleTranslate(this, '${escapeHtml(message.content)}')">
@@ -282,7 +290,7 @@ function createMessageElement(message) {
         </button>
       </div>
     `;
-  } else if (message.translation) {
+  } else if (isOwnMessage && message.translation) {
     // Show toggle button if translation exists
     translateButtonHTML = `
       <div class="message-translate">
@@ -294,26 +302,26 @@ function createMessageElement(message) {
   }
 
   if (isImageOnly) {
-    messageEl.classList.add('image-only');
-    messageEl.innerHTML = `
+    messageDiv.classList.add('image-only');
+    messageDiv.innerHTML = `
       <div class="message-content">${messageContentHTML}</div>
     `;
   } else {
-    messageEl.innerHTML = `
+    messageDiv.innerHTML = `
       <div class="message-content">${messageContentHTML}</div>
       <div class="message-footer">
-        <div class="message-time">${timeFormatted}${isEdited ? ' <span class="edited-indicator">· Edited</span>' : ''}</div>
         ${translateButtonHTML}
+        <div class="message-time">${timeFormatted}${isEdited ? ' <span class=\"edited-indicator\">· Edited</span>' : ''}</div>
       </div>
     `;
   }
 
-  messageEl.addEventListener('contextmenu', function(e) {
+  messageDiv.addEventListener('contextmenu', function(e) {
     e.preventDefault();
-    showMessageContextMenu(e, message, messageEl);
+    showMessageContextMenu(e, message, messageDiv);
   });
 
-  return messageEl;
+  return messageDiv;
 }
 
 /**
@@ -860,20 +868,7 @@ async function handleTranslate(button, originalText) {
     
     // Update button to show original
     button.textContent = 'Show Original';
-    button.onclick = () => {
-      const originalTextEl = contentEl.querySelector('.original-text');
-      const translatedTextEl = contentEl.querySelector('.translated-text');
-      
-      if (originalTextEl.style.display === 'none') {
-        originalTextEl.style.display = 'block';
-        translatedTextEl.style.display = 'none';
-        button.textContent = 'Show Translation';
-      } else {
-        originalTextEl.style.display = 'none';
-        translatedTextEl.style.display = 'block';
-        button.textContent = 'Show Original';
-      }
-    };
+    button.onclick = function() { toggleTranslation(this); };
   } catch (error) {
     showErrorNotification('Failed to translate message');
     button.disabled = false;
@@ -889,14 +884,17 @@ function toggleTranslation(button) {
   const contentEl = messageEl.querySelector('.message-content');
   const originalTextEl = contentEl.querySelector('.original-text');
   const translatedTextEl = contentEl.querySelector('.translated-text');
-  
-  if (originalTextEl.style.display === 'none') {
-    originalTextEl.style.display = 'block';
-    translatedTextEl.style.display = 'none';
-    button.textContent = 'Show Translation';
-  } else {
-    originalTextEl.style.display = 'none';
-    translatedTextEl.style.display = 'block';
-    button.textContent = 'Show Original';
+
+  // Если оригинал скрыт, показать его и скрыть перевод
+  if (originalTextEl && translatedTextEl) {
+    if (originalTextEl.style.display === 'none') {
+      originalTextEl.style.display = 'block';
+      translatedTextEl.style.display = 'none';
+      button.textContent = 'Show Translation';
+    } else {
+      originalTextEl.style.display = 'none';
+      translatedTextEl.style.display = 'block';
+      button.textContent = 'Show Original';
+    }
   }
 }

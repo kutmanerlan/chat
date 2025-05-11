@@ -1,25 +1,103 @@
+.messages-container {
+  display: flex;
+  flex-direction: column;
+  width: 100%;
+}
+
+.message {
+  max-width: 70%;
+  margin: 8px 0;
+  clear: both;
+  overflow: hidden;
+}
+
+.message-sent {
+  float: right;
+  margin-left: auto;
+  margin-right: 10px;
+}
+
+.message-received {
+  float: left;
+  margin-right: auto;
+  margin-left: 10px;
+}
+
+.message-content,
+.translated-text,
+.original-text {
+  max-width: 340px;
+  min-width: 100px;
+  width: auto;
+  white-space: pre-line;
+  word-break: break-word;
+  overflow-wrap: break-word;
+  box-sizing: border-box;
+  border: 1px solid red;
+}
+
+.message-sent .message-content {
+  background-color: #0084ff;
+  color: white;
+  border-top-right-radius: 4px;
+}
+
+.message-received .message-content {
+  background-color: #e9ecef;
+  color: #1c1e21;
+  border-top-left-radius: 4px;
+}
+
+.message-footer {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  font-size: 12px;
+  margin-top: 2px;
+  gap: 6px;
+}
+
+.message-received .message-footer {
+  justify-content: flex-start;
+}
+
 .message-translate {
-  margin-top: 4px;
-  text-align: right;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  align-items: center;
+}
+
+.message-received .message-translate {
+  text-align: left;
 }
 
 .translate-button {
-  background: none;
-  border: none;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  height: 16px;
+  min-width: 0;
+  padding: 0 3px;
+  font-size: 10px;
+  line-height: 1;
+  background: #ffeb3b !important;
+  border: 2px solid red !important;
   color: #2196F3;
-  font-size: 12px;
-  padding: 2px 8px;
+  border-radius: 2px;
   cursor: pointer;
-  border-radius: 4px;
-  transition: background-color 0.2s;
+  transition: background 0.2s, border-color 0.2s;
+  box-shadow: none;
 }
 
 .translate-button:hover {
-  background-color: rgba(33, 150, 243, 0.1);
+  background-color: rgba(33, 150, 243, 0.08);
+  border-color: #1976d2;
 }
 
 .translate-button:disabled {
   color: #999;
+  border-color: #bbb;
   cursor: not-allowed;
 }
 
