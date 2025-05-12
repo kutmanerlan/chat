@@ -282,24 +282,25 @@ function createMessageElement(message) {
   // Add translate button if message contains English text and no translation yet
   let translateButtonHTML = '';
   const isOwnMessage = parseInt(message.sender_id) === parseInt(ChatApp.currentUser.user_id);
-  if (isOwnMessage && message.content && containsEnglishText(message.content) && !message.translation) {
-    translateButtonHTML = `
-      <div class="message-translate">
-        <button class="translate-button" onclick="handleTranslate(this, '${escapeHtml(message.content)}')">
-          Translate
-        </button>
-      </div>
-    `;
-  } else if (isOwnMessage && message.translation) {
-    // Show toggle button if translation exists
-    translateButtonHTML = `
-      <div class="message-translate">
-        <button class="translate-button" onclick="toggleTranslation(this)">
-          Show Original
-        </button>
-      </div>
-    `;
-  }
+  // REMOVE INLINE BUTTONS
+  // if (isOwnMessage && message.content && containsEnglishText(message.content) && !message.translation) {
+  //   translateButtonHTML = `
+  //     <div class="message-translate">
+  //       <button class="translate-button" onclick="handleTranslate(this, '${escapeHtml(message.content)}')">
+  //         Translate
+  //       </button>
+  //     </div>
+  //   `;
+  // } else if (isOwnMessage && message.translation) {
+  //   // Show toggle button if translation exists
+  //   translateButtonHTML = `
+  //     <div class="message-translate">
+  //       <button class="translate-button" onclick="toggleTranslation(this)">
+  //         Show Original
+  //       </button>
+  //     </div>
+  //   `;
+  // }
 
   if (isImageOnly) {
     messageDiv.classList.add('image-only');
@@ -310,7 +311,6 @@ function createMessageElement(message) {
     messageDiv.innerHTML = `
       <div class="message-content">${messageContentHTML}</div>
       <div class="message-footer">
-        ${translateButtonHTML}
         <div class="message-time">${timeFormatted}${isEdited ? ' <span class=\"edited-indicator\">· Edited</span>' : ''}</div>
       </div>
     `;
@@ -366,6 +366,24 @@ function showMessageContextMenu(event, message, messageEl) {
         <div class="menu-option-text">Delete Message</div>
       </div>
     `;
+    // Add Translate/Show Original option for own messages with English text
+    if (message.content && containsEnglishText(message.content)) {
+      if (!message.translation) {
+        menuOptions += `
+          <div class="menu-option translate-option">
+            <div class="menu-option-icon">🌐</div>
+            <div class="menu-option-text">Translate</div>
+          </div>
+        `;
+      } else {
+        menuOptions += `
+          <div class="menu-option toggle-translation-option">
+            <div class="menu-option-icon">🌐</div>
+            <div class="menu-option-text">${message.showingOriginal ? 'Show Translation' : 'Show Original'}</div>
+          </div>
+        `;
+      }
+    }
   }
   
   // Copy option (for all messages)
@@ -443,6 +461,21 @@ function showMessageContextMenu(event, message, messageEl) {
         });
       contextMenu.remove();
     });
+  }
+  
+  // Add event listeners for translation actions
+  if (isOwnMessage && message.content && containsEnglishText(message.content)) {
+    if (!message.translation) {
+      contextMenu.querySelector('.translate-option')?.addEventListener('click', async function() {
+        await handleTranslateContextMenu(message, messageEl);
+        contextMenu.remove();
+      });
+    } else {
+      contextMenu.querySelector('.toggle-translation-option')?.addEventListener('click', function() {
+        toggleTranslationContextMenu(message, messageEl);
+        contextMenu.remove();
+      });
+    }
   }
   
   // Close menu when clicking elsewhere
@@ -895,6 +928,56 @@ function toggleTranslation(button) {
       originalTextEl.style.display = 'none';
       translatedTextEl.style.display = 'block';
       button.textContent = 'Show Original';
+    }
+  }
+}
+
+/**
+ * Handle translation from context menu
+ */
+async function handleTranslateContextMenu(message, messageEl) {
+  try {
+    const button = null; // No button
+    const originalText = message.content;
+    const translatedText = await translateToRussian(originalText);
+    // Save translation to server
+    const response = await fetch('/translate_message', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ message_id: message.id, translation: translatedText })
+    });
+    const data = await response.json();
+    if (!data.success) throw new Error(data.error || 'Failed to save translation');
+    // Update the content
+    const contentEl = messageEl.querySelector('.message-content');
+    contentEl.innerHTML = `
+      <div class="original-text" style="display: none;">${escapeHtml(originalText)}</div>
+      <div class="translated-text">${escapeHtml(translatedText)}</div>
+    `;
+    // Optionally update message object in memory
+    message.translation = translatedText;
+    message.showingOriginal = false;
+  } catch (error) {
+    showErrorNotification('Failed to translate message');
+  }
+}
+
+/**
+ * Toggle between original and translated text from context menu
+ */
+function toggleTranslationContextMenu(message, messageEl) {
+  const contentEl = messageEl.querySelector('.message-content');
+  const originalTextEl = contentEl.querySelector('.original-text');
+  const translatedTextEl = contentEl.querySelector('.translated-text');
+  if (originalTextEl && translatedTextEl) {
+    if (originalTextEl.style.display === 'none') {
+      originalTextEl.style.display = 'block';
+      translatedTextEl.style.display = 'none';
+      message.showingOriginal = true;
+    } else {
+      originalTextEl.style.display = 'none';
+      translatedTextEl.style.display = 'block';
+      message.showingOriginal = false;
     }
   }
 }

@@ -34,6 +34,17 @@
   overflow-wrap: break-word;
   box-sizing: border-box;
   border: 1px solid red;
+  display: block;
+}
+
+.translated-text, .original-text {
+  margin-bottom: 0;
+  padding: 0;
+  background: none;
+  color: inherit;
+  border: none;
+  font-size: inherit;
+  line-height: inherit;
 }
 
 .message-sent .message-content {
@@ -99,8 +110,4 @@
   color: #999;
   border-color: #bbb;
   cursor: not-allowed;
-}
-
-.original-text, .translated-text {
-  margin-bottom: 4px;
 } 
