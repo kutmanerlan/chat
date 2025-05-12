@@ -241,7 +241,7 @@ function createMessageElement(message) {
   } else {
     // Only show one text: translation or original
     let textToShow = message.content;
-    if (message.translation && message.showingOriginal === false) {
+    if (message.translation && !message.showingOriginal) {
       textToShow = message.translation;
     }
     messageContentHTML = escapeHtml(String(textToShow || ''));
