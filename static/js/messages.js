@@ -251,7 +251,7 @@ function createMessageElement(message) {
   messageDiv.innerHTML = `
     <div class="message-content">${messageContentHTML}</div>
     <div class="message-footer">
-      <div class="message-time">${timeFormatted}${isEdited ? ' <span class=\"edited-indicator\">· Edited</span>' : ''}</div>
+      <div class="message-time">${timeFormatted}${isEdited ? ' <span class=\"edited-indicator\">· Edited</span>' : ''}${message.translation ? ' <span class=\"translated-indicator\">· Translated</span>' : ''}</div>
     </div>
   `;
 
@@ -284,8 +284,8 @@ function showMessageContextMenu(event, message, messageEl) {
   // Create menu options
   let menuOptions = '';
   
-  // Edit option (only for own messages)
-  if (isOwnMessage) {
+  // Edit option (only for own messages and not translated)
+  if (isOwnMessage && !message.translation) {
     menuOptions += `
       <div class="menu-option edit-option">
         <div class="menu-option-icon">
@@ -295,6 +295,11 @@ function showMessageContextMenu(event, message, messageEl) {
         </div>
         <div class="menu-option-text">Edit Message</div>
       </div>
+    `;
+  }
+  // Delete option (only for own messages)
+  if (isOwnMessage) {
+    menuOptions += `
       <div class="menu-option delete-option" style="color:#e74c3c;">
         <div class="menu-option-icon">
           <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
@@ -305,38 +310,35 @@ function showMessageContextMenu(event, message, messageEl) {
         <div class="menu-option-text">Delete Message</div>
       </div>
     `;
-    // Add Translate/Show Original option for own messages with English text
-    if (message.content && containsEnglishText(message.content)) {
-      if (!message.translation) {
-        menuOptions += `
-          <div class="menu-option translate-option">
-            <div class="menu-option-icon">
-              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round">
-                <circle cx="12" cy="12" r="10" stroke="#aaa" />
-                <ellipse cx="12" cy="12" rx="4" ry="10" stroke="#aaa" />
-                <path d="M2 12h20" stroke="#aaa"/>
-              </svg>
-            </div>
-            <div class="menu-option-text">Translate</div>
-          </div>
-        `;
-      } else {
-        menuOptions += `
-          <div class="menu-option toggle-translation-option">
-            <div class="menu-option-icon">
-              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round">
-                <circle cx="12" cy="12" r="10" stroke="#aaa" />
-                <ellipse cx="12" cy="12" rx="4" ry="10" stroke="#aaa" />
-                <path d="M2 12h20" stroke="#aaa"/>
-              </svg>
-            </div>
-            <div class="menu-option-text">${message.showingOriginal ? 'Show Translation' : 'Show Original'}</div>
-          </div>
-        `;
-      }
-    }
   }
-  
+  // Translate/Show Original option
+  if (isOwnMessage && !message.translation && message.content && containsEnglishText(message.content)) {
+    menuOptions += `
+      <div class="menu-option translate-option">
+        <div class="menu-option-icon">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round">
+            <circle cx="12" cy="12" r="10" stroke="#aaa" />
+            <ellipse cx="12" cy="12" rx="4" ry="10" stroke="#aaa" />
+            <path d="M2 12h20" stroke="#aaa"/>
+          </svg>
+        </div>
+        <div class="menu-option-text">Translate</div>
+      </div>
+    `;
+  } else if (message.translation) {
+    menuOptions += `
+      <div class="menu-option toggle-translation-option">
+        <div class="menu-option-icon">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round">
+            <circle cx="12" cy="12" r="10" stroke="#aaa" />
+            <ellipse cx="12" cy="12" rx="4" ry="10" stroke="#aaa" />
+            <path d="M2 12h20" stroke="#aaa"/>
+          </svg>
+        </div>
+        <div class="menu-option-text">Show Original</div>
+      </div>
+    `;
+  }
   // Copy option (for all messages)
   menuOptions += `
     <div class="menu-option copy-option">
