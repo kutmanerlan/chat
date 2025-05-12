@@ -335,7 +335,7 @@ function showMessageContextMenu(event, message, messageEl) {
             <path d="M2 12h20" stroke="#aaa"/>
           </svg>
         </div>
-        <div class="menu-option-text">Show Original</div>
+        <div class="menu-option-text">${message.showingOriginal ? 'Show Translation' : 'Show Original'}</div>
       </div>
     `;
   }
