@@ -159,14 +159,7 @@ async function translateToRussian(text) {
  */
 function createMessageElement(message) {
   const messageDiv = document.createElement('div');
-  
-  console.log('Message sender_id:', message.sender_id);
-  console.log('Current user_id:', ChatApp.currentUser.user_id);
-  console.log('Types - message.sender_id:', typeof message.sender_id, 'ChatApp.currentUser.user_id:', typeof ChatApp.currentUser.user_id);
-  
   const isSent = parseInt(message.sender_id) === parseInt(ChatApp.currentUser.user_id);
-  console.log('Is sent message?', isSent);
-  
   messageDiv.className = `message ${isSent ? 'message-sent' : 'message-received'}`;
   messageDiv.dataset.messageId = message.id;
   messageDiv.dataset.senderId = message.sender_id;
@@ -178,7 +171,6 @@ function createMessageElement(message) {
   const timeFormatted = `${hours}:${minutes}`;
   const isEdited = message.is_edited === true;
 
-  let isImageOnly = false;
   // --- Unified file/image display logic ---
   let messageContentHTML = '';
   if (message.message_type === 'file' && message.mime_type && message.original_filename && message.file_path) {
@@ -247,74 +239,21 @@ function createMessageElement(message) {
       return messageDiv;
     }
   } else {
-    // Default to text content if type is not 'file' or data is missing
-    const imgLinkRegex = /(https?:\/\/[\S]+\.(jpg|jpeg|png|gif|webp))|<a[^>]+>[^<]*\.(jpg|jpeg|png|gif|webp)<\/a>|(\w+\.(png|jpg|jpeg|gif|webp))/i;
-    if (message.content && imgLinkRegex.test(message.content)) {
-      let imageUrl = message.content;
-      if (message.content.includes('<a href=')) {
-        const hrefMatch = message.content.match(/href=["']([^"']+)["']/);
-        if (hrefMatch && hrefMatch[1]) {
-          imageUrl = hrefMatch[1];
-        }
-      }
-      if (!/^https?:\/\//.test(imageUrl) && !/^\/uploads\//.test(imageUrl)) {
-        imageUrl = `/uploads/${imageUrl}`;
-      }
-      messageContentHTML = `
-        <a href="${imageUrl}" target="_blank" rel="noopener noreferrer" class="message-image-link">
-          <img src="${imageUrl}" alt="Image" class="message-image-attachment" loading="lazy">
-        </a>
-      `;
-    } else {
-      // Show translation if available
-      if (message.translation) {
-        messageContentHTML = `
-          <div class="original-text" style="display: none;">${escapeHtml(message.content)}</div>
-          <div class="translated-text">${escapeHtml(message.translation)}</div>
-        `;
-      } else {
-        messageContentHTML = escapeHtml(String(message.content || ''));
-      }
+    // Only show one text: translation or original
+    let textToShow = message.content;
+    if (message.translation && message.showingOriginal === false) {
+      textToShow = message.translation;
     }
+    messageContentHTML = escapeHtml(String(textToShow || ''));
   }
   // --- End unified logic ---
 
-  // Add translate button if message contains English text and no translation yet
-  let translateButtonHTML = '';
-  const isOwnMessage = parseInt(message.sender_id) === parseInt(ChatApp.currentUser.user_id);
-  // REMOVE INLINE BUTTONS
-  // if (isOwnMessage && message.content && containsEnglishText(message.content) && !message.translation) {
-  //   translateButtonHTML = `
-  //     <div class="message-translate">
-  //       <button class="translate-button" onclick="handleTranslate(this, '${escapeHtml(message.content)}')">
-  //         Translate
-  //       </button>
-  //     </div>
-  //   `;
-  // } else if (isOwnMessage && message.translation) {
-  //   // Show toggle button if translation exists
-  //   translateButtonHTML = `
-  //     <div class="message-translate">
-  //       <button class="translate-button" onclick="toggleTranslation(this)">
-  //         Show Original
-  //       </button>
-  //     </div>
-  //   `;
-  // }
-
-  if (isImageOnly) {
-    messageDiv.classList.add('image-only');
-    messageDiv.innerHTML = `
-      <div class="message-content">${messageContentHTML}</div>
-    `;
-  } else {
-    messageDiv.innerHTML = `
-      <div class="message-content">${messageContentHTML}</div>
-      <div class="message-footer">
-        <div class="message-time">${timeFormatted}${isEdited ? ' <span class=\"edited-indicator\">· Edited</span>' : ''}</div>
-      </div>
-    `;
-  }
+  messageDiv.innerHTML = `
+    <div class="message-content">${messageContentHTML}</div>
+    <div class="message-footer">
+      <div class="message-time">${timeFormatted}${isEdited ? ' <span class=\"edited-indicator\">· Edited</span>' : ''}</div>
+    </div>
+  `;
 
   messageDiv.addEventListener('contextmenu', function(e) {
     e.preventDefault();
@@ -895,8 +834,8 @@ async function handleTranslate(button, originalText) {
     // Update the content
     const contentEl = messageEl.querySelector('.message-content');
     contentEl.innerHTML = `
-      <div class="original-text" style="display: none;">${escapeHtml(originalText)}</div>
-      <div class="translated-text">${escapeHtml(translatedText)}</div>
+      <span class=\"original-text\" style=\"display: none;\">${escapeHtml(originalText)}</span>
+      <span class=\"translated-text\">${escapeHtml(translatedText)}</span>
     `;
     
     // Update button to show original
@@ -937,7 +876,6 @@ function toggleTranslation(button) {
  */
 async function handleTranslateContextMenu(message, messageEl) {
   try {
-    const button = null; // No button
     const originalText = message.content;
     const translatedText = await translateToRussian(originalText);
     // Save translation to server
@@ -948,15 +886,12 @@ async function handleTranslateContextMenu(message, messageEl) {
     });
     const data = await response.json();
     if (!data.success) throw new Error(data.error || 'Failed to save translation');
-    // Update the content
-    const contentEl = messageEl.querySelector('.message-content');
-    contentEl.innerHTML = `
-      <div class="original-text" style="display: none;">${escapeHtml(originalText)}</div>
-      <div class="translated-text">${escapeHtml(translatedText)}</div>
-    `;
-    // Optionally update message object in memory
+    // Update the message object
     message.translation = translatedText;
     message.showingOriginal = false;
+    // Re-render the entire message element
+    const newMessageEl = createMessageElement(message);
+    messageEl.replaceWith(newMessageEl);
   } catch (error) {
     showErrorNotification('Failed to translate message');
   }
@@ -966,18 +901,7 @@ async function handleTranslateContextMenu(message, messageEl) {
  * Toggle between original and translated text from context menu
  */
 function toggleTranslationContextMenu(message, messageEl) {
-  const contentEl = messageEl.querySelector('.message-content');
-  const originalTextEl = contentEl.querySelector('.original-text');
-  const translatedTextEl = contentEl.querySelector('.translated-text');
-  if (originalTextEl && translatedTextEl) {
-    if (originalTextEl.style.display === 'none') {
-      originalTextEl.style.display = 'block';
-      translatedTextEl.style.display = 'none';
-      message.showingOriginal = true;
-    } else {
-      originalTextEl.style.display = 'none';
-      translatedTextEl.style.display = 'block';
-      message.showingOriginal = false;
-    }
-  }
+  message.showingOriginal = !message.showingOriginal;
+  const newMessageEl = createMessageElement(message);
+  messageEl.replaceWith(newMessageEl);
 }
