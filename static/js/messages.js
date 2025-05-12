@@ -310,14 +310,26 @@ function showMessageContextMenu(event, message, messageEl) {
       if (!message.translation) {
         menuOptions += `
           <div class="menu-option translate-option">
-            <div class="menu-option-icon">🌐</div>
+            <div class="menu-option-icon">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round">
+                <circle cx="12" cy="12" r="10" stroke="#aaa" />
+                <ellipse cx="12" cy="12" rx="4" ry="10" stroke="#aaa" />
+                <path d="M2 12h20" stroke="#aaa"/>
+              </svg>
+            </div>
             <div class="menu-option-text">Translate</div>
           </div>
         `;
       } else {
         menuOptions += `
           <div class="menu-option toggle-translation-option">
-            <div class="menu-option-icon">🌐</div>
+            <div class="menu-option-icon">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round">
+                <circle cx="12" cy="12" r="10" stroke="#aaa" />
+                <ellipse cx="12" cy="12" rx="4" ry="10" stroke="#aaa" />
+                <path d="M2 12h20" stroke="#aaa"/>
+              </svg>
+            </div>
             <div class="menu-option-text">${message.showingOriginal ? 'Show Translation' : 'Show Original'}</div>
           </div>
         `;
